@@ -67,13 +67,20 @@
 
 ---
 
-## 🚀 Schnellstart & Installation
+## 📥 Direkter Download & Schnellstart
 
-### Option 1: Standalone `.exe` starten (Kein Node.js nötig)
-1. Lade dir die `MannisBox.exe` (oder das ZIP-Archiv) aus den [Releases](https://github.com/TentixTV/MannisBuzzerBot/releases) herunter.
-2. Doppelklicke auf **`MannisBox.exe`** — fertig!
+### 🎮 Fertige App für Windows herunterladen (Keine Installation nötig)
+Lade dir einfach das fertige Windows-Paket herunter, entpacke es und starte direkt die **`MannisBox.exe`**:
 
-### Option 2: Aus dem Quellcode starten
+[![Download Windows ZIP](https://img.shields.io/badge/📦_Download-MannisBox_v1.0.1_(Windows_x64)-2563EB?style=for-the-badge&logo=windows)](https://github.com/TentixTV/MannisBuzzerBot/releases/tag/v1.0.1)
+
+1. Lade dir die neueste Version aus den **[GitHub Releases](https://github.com/TentixTV/MannisBuzzerBot/releases)** herunter.
+2. Entpacke das `.zip`-Archiv auf deinem PC.
+3. Starte die **`MannisBox.exe`** mit einem Doppelklick — der Bot verbindet sich automatisch!
+
+---
+
+### 💻 Für Entwickler: Aus dem Quellcode starten
 ```bash
 # 1. Repository klonen
 git clone https://github.com/TentixTV/MannisBuzzerBot.git
