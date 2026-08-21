@@ -1,0 +1,14 @@
+{
+  "token": "DEIN_DISCORD_BOT_TOKEN_HIER",
+  "hostId": "327863089796087809",
+  "guildId": "",
+  "voiceChannelId": "",
+  "textChannelId": "",
+  "points": {
+    "correct": 3,
+    "perfect": 4,
+    "wrongFirst": -1,
+    "wrongRepeat": -2
+  },
+  "soundVolume": 0.8
+}

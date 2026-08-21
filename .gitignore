@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+release/
+*.zip
+
+# Local configurations & secrets
+src/config/config.json
+*.env
+
+# Logs & temp
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.system_generated/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
