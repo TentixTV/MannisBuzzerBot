@@ -1,5 +1,5 @@
 // ==========================================================================
-// MANNISBOX — CLIENT APPLICATION LOGIC (EPIC SYNTH & DIRECT QUEUE SELECTION)
+// MANNISBOX — CLIENT APPLICATION LOGIC (v1.0.1 - BANS, UNDO & SCORE EDIT)
 // ==========================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnToggleLock = document.getElementById('btnToggleLock');
   const lblToggleLock = document.getElementById('lblToggleLock');
   const svgLockIcon = document.getElementById('svgLockIcon');
+  const btnUndoAction = document.getElementById('btnUndoAction');
   const btnEndRound = document.getElementById('btnEndRound');
   const btnToggleVoice = document.getElementById('btnToggleVoice');
   const lblToggleVoice = document.getElementById('lblToggleVoice');
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const activePlayerTime = document.getElementById('activePlayerTime');
   const activePlayerScore = document.getElementById('activePlayerScore');
   const lblWrongPenalty = document.getElementById('lblWrongPenalty');
+  const btnBanActivePlayer = document.getElementById('btnBanActivePlayer');
 
   const btnEvalWrong = document.getElementById('btnEvalWrong');
   const btnEvalSkip = document.getElementById('btnEvalSkip');
@@ -45,6 +47,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const queueListContainer = document.getElementById('queueListContainer');
   const scoreboardList = document.getElementById('scoreboardList');
   const playerCountBadge = document.getElementById('playerCountBadge');
+
+  // Bans Modal Elements
+  const btnOpenBans = document.getElementById('btnOpenBans');
+  const bannedCountDot = document.getElementById('bannedCountDot');
+  const bannedModal = document.getElementById('bannedModal');
+  const btnCloseBans = document.getElementById('btnCloseBans');
+  const btnCloseBansFooter = document.getElementById('btnCloseBansFooter');
+  const bannedListContainer = document.getElementById('bannedListContainer');
 
   // Settings Modal Elements
   const btnOpenSettings = document.getElementById('btnOpenSettings');
@@ -147,7 +157,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const t = ctx.currentTime;
 
     if (type === 'buzzer') {
-      // Epic punchy sub-bass drop + dual saw buzzer
       const oscSub = ctx.createOscillator();
       const subGain = ctx.createGain();
       oscSub.type = 'sine';
@@ -178,7 +187,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       osc2.stop(t + 0.5);
 
     } else if (type === 'wrong') {
-      // Epic heavy fail horn
       const osc1 = ctx.createOscillator();
       const osc2 = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -204,7 +212,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       osc2.stop(t + 0.85);
 
     } else if (type === 'correct') {
-      // Crystal Bell Major Arpeggio: C5 -> E5 -> G5 -> High C6
       const notes = [523.25, 659.25, 783.99, 1046.50];
       notes.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
@@ -233,7 +240,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
     } else if (type === 'perfect') {
-      // Grand Victory Fanfare
       const triplet = [523.25, 659.25, 783.99];
       triplet.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
@@ -249,7 +255,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         osc.stop(noteStart + 0.3);
       });
 
-      // Victory chord
       const chordStart = t + 0.33;
       const chordFreqs = [523.25, 783.99, 1046.50, 1318.51];
       chordFreqs.forEach((freq) => {
@@ -277,6 +282,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Arena status banner
     arenaStatusMessage.textContent = state.statusText || '';
+
+    // Undo button
+    btnUndoAction.disabled = !state.canUndo;
+
+    // Banned count dot
+    const bannedKeys = Object.keys(state.bannedPlayers || {});
+    if (bannedKeys.length > 0) {
+      bannedCountDot.classList.remove('hidden');
+      bannedCountDot.textContent = bannedKeys.length;
+    } else {
+      bannedCountDot.classList.add('hidden');
+    }
 
     // Cooldown pill
     if (state.cooldownSeconds && state.cooldownSeconds > 0) {
@@ -317,7 +334,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const pScore = state.scores?.[state.activePlayer.id]?.points || 0;
       activePlayerScore.textContent = `${pScore} Punkte`;
 
-      // Check wrong attempt penalty
       const wrongCount = state.roundWrongAttempts?.[state.activePlayer.id] || 0;
       if (wrongCount >= 1) {
         lblWrongPenalty.textContent = `${config.points?.wrongRepeat || -2} Punkte (Wiederholt)`;
@@ -329,14 +345,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       buzzerPlaceholder.classList.remove('hidden');
     }
 
-    // Buzzer Queue with Direct Selection Click
+    // Buzzer Queue
     const queue = state.queue || [];
     queueCountBadge.textContent = `${queue.length} Spieler`;
     if (queue.length === 0) {
       queueListContainer.innerHTML = '<div class="queue-empty">Keine weiteren Spieler in der Warteschlange</div>';
     } else {
       queueListContainer.innerHTML = queue.map((p, idx) => `
-        <div class="queue-item" data-player-id="${p.id}" title="Klicke hier, um ${escapeHtml(p.username)} sofort als nächsten dranzunehmen">
+        <div class="queue-item" data-player-id="${p.id}" data-player-name="${escapeHtml(p.username)}">
           <div class="queue-player">
             <span class="queue-pos">#${idx + 2}</span>
             <img src="${p.avatar || '../../App.png'}" class="queue-avatar" alt="Avatar">
@@ -344,23 +360,35 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
           <div class="queue-right">
             <span class="queue-time">${p.timeOffset || '+0s'}</span>
-            <button class="queue-pick-btn">Drannehmen</button>
+            <button class="queue-pick-btn" data-action="pick">Drannehmen</button>
+            <button class="btn-queue-ban" data-action="ban" title="Spieler sperren">🚫</button>
           </div>
         </div>
       `).join('');
 
-      // Add click listener to select player directly
       queueListContainer.querySelectorAll('.queue-item').forEach((el) => {
-        el.addEventListener('click', async () => {
-          const playerId = el.getAttribute('data-player-id');
-          if (playerId) {
-            await window.mannisBoxAPI.selectQueuePlayer(playerId);
+        const playerId = el.getAttribute('data-player-id');
+        const playerName = el.getAttribute('data-player-name');
+
+        el.querySelector('[data-action="pick"]')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await window.mannisBoxAPI.selectQueuePlayer(playerId);
+        });
+
+        el.querySelector('[data-action="ban"]')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (confirm(`Möchtest du ${playerName} wirklich für das Quiz sperren?`)) {
+            await window.mannisBoxAPI.banPlayer(playerId, playerName);
           }
+        });
+
+        el.addEventListener('click', async () => {
+          await window.mannisBoxAPI.selectQueuePlayer(playerId);
         });
       });
     }
 
-    // Scoreboard
+    // Scoreboard with Live Hover Adjusters
     const scoreEntries = Object.values(state.scores || {}).sort((a, b) => b.points - a.points);
     playerCountBadge.textContent = `${scoreEntries.length} Spieler`;
 
@@ -382,22 +410,81 @@ document.addEventListener('DOMContentLoaded', async () => {
         else if (idx === 2) { rankClass = 'rank-3'; medal = '🥉'; }
 
         return `
-          <div class="scoreboard-item ${rankClass}">
+          <div class="scoreboard-item ${rankClass}" data-player-id="${p.id}" data-player-name="${escapeHtml(p.username)}">
             <div class="player-rank-info">
               <span class="rank-badge">${medal}</span>
               <img src="${p.avatar || '../../App.png'}" class="player-avatar-thumb" alt="Avatar">
               <div class="player-names-wrap">
-                <span class="player-uname">${escapeHtml(p.username)}</span>
+                <span class="player-uname" title="${escapeHtml(p.username)}">${escapeHtml(p.username)}</span>
                 <span class="player-substats">✅ ${p.correct || 0} | ❌ ${p.wrong || 0}</span>
               </div>
             </div>
-            <div class="player-score-pill">${p.points} Pkt.</div>
+            
+            <div class="player-right-side">
+              <div class="score-hover-controls">
+                <button class="btn-score-adjust btn-minus" data-delta="-1" title="1 Punkt abziehen">-1</button>
+                <button class="btn-score-adjust btn-plus" data-delta="1" title="1 Punkt hinzufügen">+1</button>
+                <button class="btn-score-adjust btn-row-ban" data-action="ban" title="Spieler sperren">🚫</button>
+              </div>
+              <div class="player-score-pill">${p.points} Pkt.</div>
+            </div>
           </div>
         `;
       }).join('');
+
+      // Add listeners for score adjusters
+      scoreboardList.querySelectorAll('.scoreboard-item').forEach((el) => {
+        const playerId = el.getAttribute('data-player-id');
+        const playerName = el.getAttribute('data-player-name');
+
+        el.querySelector('.btn-minus')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await window.mannisBoxAPI.adjustPlayerScore(playerId, -1);
+        });
+
+        el.querySelector('.btn-plus')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await window.mannisBoxAPI.adjustPlayerScore(playerId, 1);
+        });
+
+        el.querySelector('.btn-row-ban')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (confirm(`Möchtest du ${playerName} wirklich für das Quiz sperren?`)) {
+            await window.mannisBoxAPI.banPlayer(playerId, playerName);
+          }
+        });
+      });
     }
 
+    // Render Banned List Modal
+    renderBannedListModal(state.bannedPlayers || {});
     updateChannelLabels();
+  }
+
+  function renderBannedListModal(bannedObj) {
+    const list = Object.values(bannedObj);
+    if (list.length === 0) {
+      bannedListContainer.innerHTML = '<div class="queue-empty">Keine Spieler gebannt.</div>';
+      return;
+    }
+
+    bannedListContainer.innerHTML = list.map((b) => `
+      <div class="banned-item">
+        <div class="banned-user-info">
+          <span>🚫</span>
+          <strong>${escapeHtml(b.username)}</strong>
+          <small class="help-text">(${b.id})</small>
+        </div>
+        <button class="btn-unban" data-id="${b.id}">Entbannen</button>
+      </div>
+    `).join('');
+
+    bannedListContainer.querySelectorAll('.btn-unban').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        await window.mannisBoxAPI.unbanPlayer(id);
+      });
+    });
   }
 
   function updateChannelLabels() {
@@ -436,6 +523,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await window.mannisBoxAPI.lockBuzzer(newLockState);
   });
 
+  btnUndoAction.addEventListener('click', async () => {
+    await window.mannisBoxAPI.undoLastAction();
+  });
+
   btnEndRound.addEventListener('click', async () => {
     if (confirm('Möchtest du diese Runde wirklich beenden und auswerten?')) {
       await window.mannisBoxAPI.endRound();
@@ -461,6 +552,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   btnResetScores.addEventListener('click', async () => {
     if (confirm('Möchtest du alle Punktestände und die Runde komplett auf 0 zurücksetzen?')) {
       await window.mannisBoxAPI.resetScores();
+    }
+  });
+
+  // Ban Active Player
+  btnBanActivePlayer.addEventListener('click', async () => {
+    if (!currentGameState?.activePlayer) return;
+    const player = currentGameState.activePlayer;
+    if (confirm(`Möchtest du ${player.username} wirklich für das Quiz sperren?`)) {
+      await window.mannisBoxAPI.banPlayer(player.id, player.username);
     }
   });
 
@@ -493,7 +593,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   btnInviteBot.addEventListener('click', openInviteUrl);
   btnInviteFromSettings.addEventListener('click', openInviteUrl);
 
-  // 8. Settings Modal
+  // 8. Bans Modal
+  btnOpenBans.addEventListener('click', () => {
+    bannedModal.classList.remove('hidden');
+  });
+  btnCloseBans.addEventListener('click', () => {
+    bannedModal.classList.add('hidden');
+  });
+  btnCloseBansFooter.addEventListener('click', () => {
+    bannedModal.classList.add('hidden');
+  });
+
+  // 9. Settings Modal
   function openSettingsModal() {
     settingsModal.classList.remove('hidden');
     refreshGuildsAndChannels();
@@ -614,7 +725,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateChannelLabels();
     closeSettingsModal();
 
-    // Restart bot if token changed or currently offline
     await window.mannisBoxAPI.startBot();
   });
 

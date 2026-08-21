@@ -134,6 +134,22 @@ ipcMain.handle('select-queue-player', async (event, playerId) => {
   return await botManager.selectQueuePlayer(playerId);
 });
 
+ipcMain.handle('ban-player', (event, { playerId, username }) => {
+  return botManager.banPlayer(playerId, username);
+});
+
+ipcMain.handle('unban-player', (event, playerId) => {
+  return botManager.unbanPlayer(playerId);
+});
+
+ipcMain.handle('adjust-player-score', (event, { playerId, delta }) => {
+  return botManager.adjustPlayerScore(playerId, delta);
+});
+
+ipcMain.handle('undo-last-action', () => {
+  return botManager.undoLastAction();
+});
+
 ipcMain.handle('end-round', async () => {
   return await botManager.endRound();
 });

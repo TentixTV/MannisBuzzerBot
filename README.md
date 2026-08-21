@@ -1,4 +1,4 @@
-# 🎮 MannisBox — Discord Musik-Quiz & Buzzer Master
+# 🎮 MannisBox — Discord Musik-Quiz & Buzzer Master (v1.0.1)
 
 <div align="center">
 
@@ -8,6 +8,7 @@
 
 [![Electron](https://img.shields.io/badge/Electron-v34.5.8-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://electronjs.org/)
 [![Discord.js](https://img.shields.io/badge/Discord.js-v14.18.0-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.js.org/)
+[![Version](https://img.shields.io/badge/Version-v1.0.1-10b981?style=for-the-badge)](https://github.com/TentixTV/MannisBuzzerBot/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Author](https://img.shields.io/badge/Author-TentixTV-8b5cf6?style=for-the-badge)](https://github.com/TentixTV)
 
@@ -15,14 +16,25 @@
 
 ---
 
-## 🌟 Highlights & Features
+## 🌟 Highlights & Features in v1.0.1
 
 - 🕹️ **Scribble Darkmode UI**: Inspiriert vom Skribbl-Design mit fetten 3D-Arcade-Buttons, animierten Badges und responsivem 3-Spalten-Layout.
+- 🚫 **Spieler-Bann-System**:
+  - Trolls oder Störenfriede können mit 1 Klick direkt aus dem Buzzer, der Queue oder der Rangliste gebannt werden.
+  - Gebannte Spieler können den Buzzer auf Discord nicht mehr drücken.
+  - Verwaltung und Entbannen jederzeit über das 🚫 Ban-Icon in der Kopfzeile möglich.
+- ✏️ **Live-Punktestand-Editor**:
+  - Fahre in der Rangliste mit der Maus über einen Spieler, um Punkte direkt per `+1` / `-1` anzupassen.
+  - Änderungen synchronisieren sich in Echtzeit mit dem Discord-Embed!
+- ↩️ **Aktionen & Punkte rückgängig machen (Undo)**:
+  - Punkte falsch vergeben? Klicke auf **„↩️ Letzte Punkte zurück“**, um die letzte Punktevergabe oder Runde sofort zurückzurollen.
+- 📊 **Elegante Discord-Rangliste**:
+  - Übersichtliche Ranglisten-Formatierung im Discord mit Medaillen (🥇, 🥈, 🥉), Rangnummern, aktuellen Punkten und Statistik-Badges (`✅ Richtig` / `❌ Falsch`).
 - ⚡ **Lokaler Bot-Lebenszyklus**: Der Discord-Bot läuft direkt in der Desktop-App. App auf ➔ Bot online. App zu ➔ Bot trennt Voice und geht offline.
 - 🔔 **Interaktive Buzzer-Arena**:
   - Live-Erfassung aller Klicks im Discord mit **Millisekunden-Reihenfolge** (1., 2., 3., ...).
   - Dynamische **Glocken-Animation mit schwingendem Pendelklöppel**.
-  - **Queue-Management**: Klicke auf beliebige Spieler in der Warteschlange, um sie direkt dranzunehmen.
+  - **Queue-Management**: Klicke auf beliebige Spieler in der Warteschlange, um sie sofort dranzunehmen.
 - 🔊 **Epische Sound-Engine**:
   - 🔔 **Buzzer**: Wuchtiger Sub-Bass-Punch mit reichem Sägezahn-Schall.
   - ❌ **Falsch**: Dramatischer zweistufiger Fail-Horn-Sound.

@@ -1,5 +1,22 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
+function formatDiscordLeaderboard(scores) {
+  const sorted = Object.values(scores || {}).sort((a, b) => b.points - a.points);
+  if (sorted.length === 0) return '*Noch keine Punkte in dieser Runde vergeben.*';
+
+  return sorted.slice(0, 10).map((p, idx) => {
+    let medal = `\`#${(idx + 1).toString().padStart(2, '0')}\``;
+    if (idx === 0) medal = '🥇 **1.**';
+    else if (idx === 1) medal = '🥈 **2.**';
+    else if (idx === 2) medal = '🥉 **3.**';
+
+    const pName = p.username.length > 16 ? p.username.substring(0, 14) + '..' : p.username;
+    const pts = p.points >= 0 ? `+${p.points}` : `${p.points}`;
+    
+    return `${medal} **${pName}** ➔ **\`${pts} Pkt\`** *(✅ ${p.correct || 0} | ❌ ${p.wrong || 0})*`;
+  }).join('\n');
+}
+
 function createBuzzerEmbed(state) {
   const {
     roundNumber = 1,
@@ -18,16 +35,16 @@ function createBuzzerEmbed(state) {
     .setColor(isLocked ? 0xef4444 : (activePlayer ? 0xf59e0b : 0x10b981))
     .setTitle(`🎮 MANNISBOX — RUNDE ${roundNumber}`)
     .setDescription(
-      `**👑 Spielleiter (Host):** ${hostDisplay}\n` +
-      `**⚡ Status:** ${isLocked ? '🔴 **Buzzer gesperrt**' : (activePlayer ? `🟡 **${activePlayer.username} antwortet gerade!**` : '🟢 **Buzzer ist BEREIT!**')}\n\n` +
+      `**👑 Spielleiter:** ${hostDisplay}\n` +
+      `**⚡ Status:** ${isLocked ? '🔒 **Buzzer gesperrt**' : (activePlayer ? `🎯 **${activePlayer.username} ist am Zug!**` : '🟢 **Buzzer ist FREIGEGEBEN!**')}\n\n` +
       `> *${statusText}*`
     );
 
   // Active Player & Queue
   if (activePlayer) {
     embed.addFields({
-      name: '🎯 Aktuell am Zug',
-      value: `👑 **${activePlayer.username}** (Reaktionszeit: ${activePlayer.timeOffset || '1. Platz'})`,
+      name: '🎤 Aktuell an der Reihe',
+      value: `👑 **${activePlayer.username}** \`(${activePlayer.timeOffset || '1. Platz'})\``,
       inline: false
     });
   }
@@ -35,37 +52,25 @@ function createBuzzerEmbed(state) {
   if (queue && queue.length > 0) {
     const queueList = queue
       .slice(0, 5)
-      .map((p, idx) => `\`#${idx + 2}\` **${p.username}** (${p.timeOffset || '+0s'})`)
+      .map((p, idx) => `\`#${idx + 2}\` **${p.username}** \`(${p.timeOffset || '+0s'})\``)
       .join('\n');
 
     embed.addFields({
       name: `⏳ Warteschlange (${queue.length})`,
-      value: queueList || '*Keine weiteren Spieler in der Queue*',
+      value: queueList || '*Keine weiteren Spieler*',
       inline: false
     });
   }
 
   // Live Scoreboard
-  const sortedScores = Object.values(scores || {}).sort((a, b) => b.points - a.points);
-  let scoreboardText = '*Noch keine Punkte verteilt.*';
-  if (sortedScores.length > 0) {
-    scoreboardText = sortedScores
-      .slice(0, 10)
-      .map((p, idx) => {
-        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `\`${idx + 1}.\``;
-        return `${medal} **${p.username}**: **${p.points} Pkt.** *(✅ ${p.correct || 0} | ❌ ${p.wrong || 0})*`;
-      })
-      .join('\n');
-  }
-
   embed.addFields({
-    name: '🏆 Live-Punktestand',
-    value: scoreboardText,
+    name: '🏆 Live-Rangliste',
+    value: formatDiscordLeaderboard(scores),
     inline: false
   });
 
   embed.setFooter({
-    text: 'MannisBox • Punkte: Richtig +3 | 100% Perfekt +4 | Falsch -1 (Folgefehler -2)'
+    text: 'MannisBox • Richtig +3 | 100% Perfekt +4 | Falsch -1 (Folgefehler -2)'
   });
   embed.setTimestamp();
 
@@ -76,7 +81,7 @@ function createBuzzerComponents(isLocked = false, isRoundEnded = false) {
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('mannisbox_buzzer')
-      .setLabel(isRoundEnded ? 'RUNDE BEENDET' : (isLocked ? 'BUZZER GESPERRT' : '🔔 BUZZER DRÜCKEN!'))
+      .setLabel(isRoundEnded ? 'RUNDE BEENDET' : (isLocked ? '🔒 BUZZER GESPERRT' : '🔔 BUZZER DRÜCKEN!'))
       .setStyle(isRoundEnded ? ButtonStyle.Secondary : (isLocked ? ButtonStyle.Danger : ButtonStyle.Success))
       .setDisabled(isLocked || isRoundEnded)
   );
@@ -88,16 +93,6 @@ function createRoundEndedEmbed(state) {
   const { roundNumber = 1, scores = {}, winner = null } = state;
   const sortedScores = Object.values(scores || {}).sort((a, b) => b.points - a.points);
 
-  let scoreboardText = '*Keine Punkte in dieser Runde.*';
-  if (sortedScores.length > 0) {
-    scoreboardText = sortedScores
-      .map((p, idx) => {
-        const medal = idx === 0 ? '🏆 1.' : idx === 1 ? '🥈 2.' : idx === 2 ? '🥉 3.' : `\`${idx + 1}.\``;
-        return `${medal} **${p.username}** — **${p.points} Punkte**`;
-      })
-      .join('\n');
-  }
-
   const embed = new EmbedBuilder()
     .setColor(0x8b5cf6)
     .setTitle(`🏁 RUNDE ${roundNumber} BEENDET!`)
@@ -108,7 +103,7 @@ function createRoundEndedEmbed(state) {
     )
     .addFields({
       name: '📊 Endstand dieser Runde',
-      value: scoreboardText,
+      value: formatDiscordLeaderboard(scores),
       inline: false
     })
     .setFooter({ text: 'MannisBox • Bereit für die nächste Runde!' })

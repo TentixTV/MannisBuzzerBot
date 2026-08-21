@@ -43,7 +43,9 @@ class BotManager extends EventEmitter {
       currentTextChannelId: null,
       currentVoiceChannelId: null,
       currentGuildId: null,
-      cooldownSeconds: 0
+      cooldownSeconds: 0,
+      bannedPlayers: {}, // playerId -> { id, username, timestamp }
+      actionHistory: [] // Array of { type, roundNumber, playerId, scoreDelta, wrongDelta, correctDelta, prevStatus }
     };
   }
 
@@ -233,10 +235,102 @@ class BotManager extends EventEmitter {
     }
   }
 
+  // --- PLAYER BANNING & UNBANNING ---
+  banPlayer(playerId, username) {
+    this.gameState.bannedPlayers[playerId] = {
+      id: playerId,
+      username: username || this.gameState.scores[playerId]?.username || 'Unbekannt',
+      timestamp: Date.now()
+    };
+
+    // Remove from active player if currently active
+    if (this.gameState.activePlayer && this.gameState.activePlayer.id === playerId) {
+      if (this.gameState.queue.length > 0) {
+        this.gameState.activePlayer = this.gameState.queue.shift();
+      } else {
+        this.gameState.activePlayer = null;
+        this.gameState.isLocked = false;
+      }
+    }
+
+    // Remove from queue
+    this.gameState.queue = this.gameState.queue.filter((p) => p.id !== playerId);
+
+    this.gameState.statusText = `⛔ **${this.gameState.bannedPlayers[playerId].username}** wurde für das Quiz gebannt!`;
+    this.updateDiscordMessage();
+    this.emitState();
+    return { success: true };
+  }
+
+  unbanPlayer(playerId) {
+    if (this.gameState.bannedPlayers[playerId]) {
+      const name = this.gameState.bannedPlayers[playerId].username;
+      delete this.gameState.bannedPlayers[playerId];
+      this.gameState.statusText = `✅ **${name}** wurde entbannt.`;
+      this.emitState();
+      return { success: true };
+    }
+    return { success: false, error: 'Spieler nicht gebannt' };
+  }
+
+  // --- SCORE ADJUSTMENT ON HOVER ---
+  adjustPlayerScore(playerId, delta) {
+    if (!this.gameState.scores[playerId]) return { success: false, error: 'Spieler nicht gefunden' };
+
+    this.gameState.scores[playerId].points += delta;
+    this.gameState.actionHistory.push({
+      type: 'manual_adjust',
+      roundNumber: this.gameState.roundNumber,
+      playerId,
+      scoreDelta: delta,
+      wrongDelta: 0,
+      correctDelta: 0,
+      prevStatus: this.gameState.statusText
+    });
+
+    this.gameState.statusText = `✏️ Punkte für **${this.gameState.scores[playerId].username}** angepasst (${delta >= 0 ? '+' : ''}${delta} Pkt.)!`;
+    this.updateDiscordMessage();
+    this.emitState();
+    return { success: true, newPoints: this.gameState.scores[playerId].points };
+  }
+
+  // --- UNDO LAST ACTION / ROUND ROLLBACK ---
+  undoLastAction() {
+    if (this.gameState.actionHistory.length === 0) {
+      return { success: false, error: 'Keine vorherige Aktion zum Rückgängigmachen vorhanden.' };
+    }
+
+    const lastAction = this.gameState.actionHistory.pop();
+    const { playerId, scoreDelta, wrongDelta, correctDelta, prevStatus } = lastAction;
+
+    if (this.gameState.scores[playerId]) {
+      this.gameState.scores[playerId].points -= scoreDelta;
+      this.gameState.scores[playerId].wrong = Math.max(0, (this.gameState.scores[playerId].wrong || 0) - wrongDelta);
+      this.gameState.scores[playerId].correct = Math.max(0, (this.gameState.scores[playerId].correct || 0) - correctDelta);
+    }
+
+    if (wrongDelta > 0 && this.gameState.roundWrongAttempts[playerId]) {
+      this.gameState.roundWrongAttempts[playerId] = Math.max(0, this.gameState.roundWrongAttempts[playerId] - 1);
+    }
+
+    this.gameState.statusText = `↩️ Letzte Punktevergabe rückgängig gemacht (${scoreDelta >= 0 ? '-' : '+'}${Math.abs(scoreDelta)} Pkt.)!`;
+    this.updateDiscordMessage();
+    this.emitState();
+    return { success: true };
+  }
+
   async handleBuzzerInteraction(interaction) {
     const userId = interaction.user.id;
     const username = interaction.member?.displayName || interaction.user.displayName || interaction.user.username;
     const avatar = interaction.user.displayAvatarURL({ size: 128 });
+
+    // Ban check
+    if (this.gameState.bannedPlayers[userId]) {
+      return interaction.reply({
+        content: '⛔ Du wurdest vom Spielleiter für dieses Quiz gesperrt!',
+        ephemeral: true
+      });
+    }
 
     // Host check
     if (userId === this.config.hostId) {
@@ -387,7 +481,6 @@ class BotManager extends EventEmitter {
     return { success: true };
   }
 
-  // Allow host to select any player in the queue directly
   async selectQueuePlayer(playerId) {
     const idx = this.gameState.queue.findIndex((p) => p.id === playerId);
     if (idx === -1) return { success: false, error: 'Spieler nicht in der Queue gefunden.' };
@@ -452,6 +545,16 @@ class BotManager extends EventEmitter {
       playerScore.wrong = (playerScore.wrong || 0) + 1;
       this.gameState.scores[userId] = playerScore;
 
+      this.gameState.actionHistory.push({
+        type: 'wrong',
+        roundNumber: this.gameState.roundNumber,
+        playerId: userId,
+        scoreDelta: penalty,
+        wrongDelta: 1,
+        correctDelta: 0,
+        prevStatus: this.gameState.statusText
+      });
+
       // Play epic wrong sound in voice!
       audioManager.playWrong();
 
@@ -481,6 +584,16 @@ class BotManager extends EventEmitter {
       playerScore.correct = (playerScore.correct || 0) + 1;
       this.gameState.scores[userId] = playerScore;
 
+      this.gameState.actionHistory.push({
+        type: 'correct',
+        roundNumber: this.gameState.roundNumber,
+        playerId: userId,
+        scoreDelta: gain,
+        wrongDelta: 0,
+        correctDelta: 1,
+        prevStatus: this.gameState.statusText
+      });
+
       // Play epic correct sound
       audioManager.playCorrect();
 
@@ -490,7 +603,7 @@ class BotManager extends EventEmitter {
 
       // 3-second cooldown after correct answer
       this.start3SecondCooldown(async () => {
-        this.gameState.statusText = `✅ Runde gewonnen von **${player.username}**! Starte die nächste Runde oder beende das Spiel.`;
+        this.gameState.statusText = `✅ Runde gewonnen von **${player.username}**! Starte nächste Runde oder beende das Spiel.`;
         this.gameState.isLocked = false;
         await this.updateDiscordMessage();
         this.emitState();
@@ -501,6 +614,16 @@ class BotManager extends EventEmitter {
       playerScore.points += gain;
       playerScore.correct = (playerScore.correct || 0) + 1;
       this.gameState.scores[userId] = playerScore;
+
+      this.gameState.actionHistory.push({
+        type: 'perfect',
+        roundNumber: this.gameState.roundNumber,
+        playerId: userId,
+        scoreDelta: gain,
+        wrongDelta: 0,
+        correctDelta: 1,
+        prevStatus: this.gameState.statusText
+      });
 
       // Play epic fanfare sound
       audioManager.playPerfect();
@@ -579,6 +702,7 @@ class BotManager extends EventEmitter {
     this.gameState.activePlayer = null;
     this.gameState.queue = [];
     this.gameState.cooldownSeconds = 0;
+    this.gameState.actionHistory = [];
     this.gameState.statusText = 'Punktestand wurde auf 0 zurückgesetzt!';
     this.updateDiscordMessage();
     this.emitState();
@@ -619,6 +743,8 @@ class BotManager extends EventEmitter {
       currentVoiceChannelId: this.gameState.currentVoiceChannelId,
       currentTextChannelId: this.gameState.currentTextChannelId,
       cooldownSeconds: this.gameState.cooldownSeconds,
+      bannedPlayers: this.gameState.bannedPlayers,
+      canUndo: this.gameState.actionHistory.length > 0,
       config: this.config
     };
     this.emit('game-state', payload);
@@ -638,6 +764,8 @@ class BotManager extends EventEmitter {
       currentVoiceChannelId: this.gameState.currentVoiceChannelId,
       currentTextChannelId: this.gameState.currentTextChannelId,
       cooldownSeconds: this.gameState.cooldownSeconds,
+      bannedPlayers: this.gameState.bannedPlayers,
+      canUndo: this.gameState.actionHistory.length > 0,
       config: this.config
     };
   }
