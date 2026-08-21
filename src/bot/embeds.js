@@ -2,18 +2,18 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('
 
 function formatDiscordLeaderboard(scores) {
   const sorted = Object.values(scores || {}).sort((a, b) => b.points - a.points);
-  if (sorted.length === 0) return '*Noch keine Punkte in dieser Runde vergeben.*';
+  if (sorted.length === 0) return '*Noch keine Punkte vergeben.*';
 
-  return sorted.slice(0, 10).map((p, idx) => {
-    let medal = `\`#${(idx + 1).toString().padStart(2, '0')}\``;
-    if (idx === 0) medal = '🥇 **1.**';
-    else if (idx === 1) medal = '🥈 **2.**';
-    else if (idx === 2) medal = '🥉 **3.**';
+  return sorted.map((p, idx) => {
+    let rankBadge = `\`#${(idx + 1).toString().padStart(2, '0')}\``;
+    if (idx === 0) rankBadge = '🥇 **1.**';
+    else if (idx === 1) rankBadge = '🥈 **2.**';
+    else if (idx === 2) rankBadge = '🥉 **3.**';
 
-    const pName = p.username.length > 16 ? p.username.substring(0, 14) + '..' : p.username;
+    const pName = p.username.length > 18 ? p.username.substring(0, 16) + '..' : p.username;
     const pts = p.points >= 0 ? `+${p.points}` : `${p.points}`;
     
-    return `${medal} **${pName}** ➔ **\`${pts} Pkt\`** *(✅ ${p.correct || 0} | ❌ ${p.wrong || 0})*`;
+    return `${rankBadge} **${pName}** ➔ **\`${pts} Pkt\`** *(✅ ${p.correct || 0} | ❌ ${p.wrong || 0})*`;
   }).join('\n');
 }
 
@@ -21,21 +21,25 @@ function createBuzzerEmbed(state) {
   const {
     roundNumber = 1,
     hostId = '327863089796087809',
-    hostTag = '',
+    hostName = '',
     isLocked = false,
     activePlayer = null,
     queue = [],
     scores = {},
-    statusText = 'Drücke den Buzzer, wenn du die Antwort kennst!'
+    statusText = 'Drücke den Buzzer, wenn du die Antwort kennst!',
+    channelPlayerCount = 0
   } = state;
 
-  const hostDisplay = hostId ? `<@${hostId}>` : (hostTag || 'Manni');
+  const hostDisplay = hostId 
+    ? (hostName ? `<@${hostId}> \`(${hostName})\`` : `<@${hostId}>`)
+    : '`Manni`';
 
   const embed = new EmbedBuilder()
     .setColor(isLocked ? 0xef4444 : (activePlayer ? 0xf59e0b : 0x10b981))
     .setTitle(`🎮 MANNISBOX — RUNDE ${roundNumber}`)
     .setDescription(
       `**👑 Spielleiter:** ${hostDisplay}\n` +
+      `**👥 Mitspieler im Voice:** \`${channelPlayerCount} Spieler\`\n` +
       `**⚡ Status:** ${isLocked ? '🔒 **Buzzer gesperrt**' : (activePlayer ? `🎯 **${activePlayer.username} ist am Zug!**` : '🟢 **Buzzer ist FREIGEGEBEN!**')}\n\n` +
       `> *${statusText}*`
     );
@@ -70,7 +74,7 @@ function createBuzzerEmbed(state) {
   });
 
   embed.setFooter({
-    text: 'MannisBox • Richtig +3 | 100% Perfekt +4 | Falsch -1 (Folgefehler -2)'
+    text: 'MannisBox v1.1.0 • Richtig +3 | 100% Perfekt +4 | Falsch -1 (Folgefehler -2)'
   });
   embed.setTimestamp();
 
@@ -81,7 +85,7 @@ function createBuzzerComponents(isLocked = false, isRoundEnded = false) {
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('mannisbox_buzzer')
-      .setLabel(isRoundEnded ? 'RUNDE BEENDET' : (isLocked ? '🔒 BUZZER GESPERRT' : '🔔 BUZZER DRÜCKEN!'))
+      .setLabel(isRoundEnded ? '🏁 RUNDE BEENDET' : (isLocked ? '🔒 BUZZER GESPERRT' : '🔔 BUZZER DRÜCKEN!'))
       .setStyle(isRoundEnded ? ButtonStyle.Secondary : (isLocked ? ButtonStyle.Danger : ButtonStyle.Success))
       .setDisabled(isLocked || isRoundEnded)
   );
@@ -89,24 +93,61 @@ function createBuzzerComponents(isLocked = false, isRoundEnded = false) {
   return [row];
 }
 
-function createRoundEndedEmbed(state) {
-  const { roundNumber = 1, scores = {}, winner = null } = state;
+function createFinalGameEndEmbed(state) {
+  const {
+    roundNumber = 1,
+    scores = {},
+    hostId = '',
+    hostName = '',
+    totalRounds = 1
+  } = state;
+
   const sortedScores = Object.values(scores || {}).sort((a, b) => b.points - a.points);
+  const winner = sortedScores[0];
+  const second = sortedScores[1];
+  const third = sortedScores[2];
+
+  let podiumText = '';
+  if (winner) {
+    podiumText += `🥇 **1. PLATZ — DER CHAMPION:** **${winner.username}** mit **${winner.points} Punkten**! 🏆🎉\n`;
+  }
+  if (second) {
+    podiumText += `🥈 **2. PLATZ:** **${second.username}** mit **${second.points} Punkten** 👏\n`;
+  }
+  if (third) {
+    podiumText += `🥉 **3. PLATZ:** **${third.username}** mit **${third.points} Punkten** ⭐\n`;
+  }
+
+  let fullRanking = sortedScores.map((p, idx) => {
+    let rankBadge = `\`#${(idx + 1).toString().padStart(2, '0')}\``;
+    if (idx === 0) rankBadge = '🥇';
+    else if (idx === 1) rankBadge = '🥈';
+    else if (idx === 2) rankBadge = '🥉';
+
+    const pts = p.points >= 0 ? `+${p.points}` : `${p.points}`;
+    return `${rankBadge} **${p.username}** ➔ **\`${pts} Punkte\`** *(✅ ${p.correct || 0} Richtig | ❌ ${p.wrong || 0} Falsch)*`;
+  }).join('\n');
+
+  if (!fullRanking) fullRanking = '*Keine Punkte in diesem Spiel vergeben.*';
+
+  const hostDisplay = hostId ? (hostName ? `<@${hostId}> \`(${hostName})\`` : `<@${hostId}>`) : '`Manni`';
 
   const embed = new EmbedBuilder()
-    .setColor(0x8b5cf6)
-    .setTitle(`🏁 RUNDE ${roundNumber} BEENDET!`)
+    .setColor(0xf59e0b)
+    .setTitle('🏆 MANNISBOX — ENDGÜLTIGES QUIZ-RANKING 🏆')
     .setDescription(
-      winner 
-        ? `🎉 **Rundensieger:** **${winner.username}**!\n\n`
-        : `Die Runde wurde beendet.\n\n`
+      `Das SongQuiz ist offiziell beendet!\n` +
+      `**👑 Spielleiter:** ${hostDisplay}\n` +
+      `**📊 Gespielte Runden:** \`${roundNumber}\`\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      (podiumText ? `${podiumText}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` : '')
     )
     .addFields({
-      name: '📊 Endstand dieser Runde',
-      value: formatDiscordLeaderboard(scores),
+      name: '📜 Vollständige Rangliste (Platz 1 - X)',
+      value: fullRanking,
       inline: false
     })
-    .setFooter({ text: 'MannisBox • Bereit für die nächste Runde!' })
+    .setFooter({ text: 'MannisBox v1.1.0 • Danke fürs Mitspielen! 🎵' })
     .setTimestamp();
 
   return embed;
@@ -115,5 +156,5 @@ function createRoundEndedEmbed(state) {
 module.exports = {
   createBuzzerEmbed,
   createBuzzerComponents,
-  createRoundEndedEmbed
+  createFinalGameEndEmbed
 };

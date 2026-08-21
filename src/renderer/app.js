@@ -1,5 +1,5 @@
 // ==========================================================================
-// MANNISBOX — CLIENT APPLICATION LOGIC (v1.0.1 - BANS, UNDO & SCORE EDIT)
+// MANNISBOX — CLIENT APPLICATION LOGIC (v1.1.0 - DELUXE ARENA & VOICE TRACK)
 // ==========================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cooldownTimerPill = document.getElementById('cooldownTimerPill');
   const cooldownSecondsText = document.getElementById('cooldownSecondsText');
   const arenaStatusMessage = document.getElementById('arenaStatusMessage');
+  const arenaCountdownOverlay = document.getElementById('arenaCountdownOverlay');
+  const countdownBigNumber = document.getElementById('countdownBigNumber');
+
   const activeBuzzerCard = document.getElementById('activeBuzzerCard');
   const buzzerPlaceholder = document.getElementById('buzzerPlaceholder');
   const activePlayerAvatar = document.getElementById('activePlayerAvatar');
@@ -45,6 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const queueCountBadge = document.getElementById('queueCountBadge');
   const queueListContainer = document.getElementById('queueListContainer');
+  const voiceMembersCountBadge = document.getElementById('voiceMembersCountBadge');
+  const voiceMembersList = document.getElementById('voiceMembersList');
   const scoreboardList = document.getElementById('scoreboardList');
   const playerCountBadge = document.getElementById('playerCountBadge');
 
@@ -78,6 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let config = {};
   let currentGameState = null;
   let botOnline = false;
+  let hostDisplayName = 'Manni';
   let botInviteUrl = 'https://discord.com/oauth2/authorize?client_id=1530938008532946985&permissions=8&integration_type=0&scope=bot+applications.commands';
   let availableGuilds = [];
   let availableChannels = { text: [], voice: [] };
@@ -94,6 +100,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     return audioCtx;
   }
 
+  // Soft ticking countdown sound
+  function playTickSound() {
+    try {
+      const ctx = getAudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const t = ctx.currentTime;
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, t);
+      osc.frequency.exponentialRampToValueAtTime(400, t + 0.04);
+      gain.gain.setValueAtTime(0.08, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.04);
+    } catch (e) {}
+  }
+
   // 1. Initialise Config
   try {
     config = await window.mannisBoxAPI.getConfig();
@@ -104,11 +129,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function updateHostDisplay() {
-    if (config.hostId) {
-      lblCurrentHost.textContent = `@${config.hostId}`;
-    } else {
-      lblCurrentHost.textContent = '@Manni';
-    }
+    const id = config.hostId || '327863089796087809';
+    const name = (currentGameState && currentGameState.hostName) ? currentGameState.hostName : hostDisplayName;
+    lblCurrentHost.textContent = `@${id} (${name})`;
   }
 
   // 2. Setup IPC Listeners
@@ -118,6 +141,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       botStatusBadge.className = 'status-badge online';
       botStatusBadge.querySelector('.status-text').textContent = 'Bot Online (' + (status.user?.tag || 'Connected') + ')';
       if (status.inviteUrl) botInviteUrl = status.inviteUrl;
+      if (status.hostName) hostDisplayName = status.hostName;
+      updateHostDisplay();
       await refreshGuildsAndChannels();
     } else {
       botStatusBadge.className = 'status-badge offline';
@@ -139,6 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.mannisBoxAPI.onGameState((state) => {
     currentGameState = state;
+    if (state.hostName) hostDisplayName = state.hostName;
     renderGameState(state);
   });
 
@@ -295,13 +321,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       bannedCountDot.classList.add('hidden');
     }
 
-    // Cooldown pill
+    // Cooldown & Evaluation Center Overlay (3.. 2.. 1..)
     if (state.cooldownSeconds && state.cooldownSeconds > 0) {
       cooldownTimerPill.classList.remove('hidden');
       cooldownSecondsText.textContent = state.cooldownSeconds;
+
+      arenaCountdownOverlay.classList.remove('hidden');
+      countdownBigNumber.textContent = state.cooldownSeconds;
+      playTickSound();
     } else {
       cooldownTimerPill.classList.add('hidden');
+      arenaCountdownOverlay.classList.add('hidden');
     }
+
+    // Double-Click Protection: Disable evaluation buttons when evaluating
+    const isEvaluating = !!state.isEvaluating;
+    btnEvalWrong.disabled = isEvaluating;
+    btnEvalSkip.disabled = isEvaluating;
+    btnEvalCorrect.disabled = isEvaluating;
+    btnEvalPerfect.disabled = isEvaluating;
 
     // Action buttons states
     btnToggleLock.disabled = !state.isRoundActive;
@@ -388,7 +426,42 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-    // Scoreboard with Live Hover Adjusters
+    // Voice Members List
+    const voiceMembers = state.voiceMembers || [];
+    voiceMembersCountBadge.textContent = `${voiceMembers.length} im Voice`;
+    if (voiceMembers.length === 0) {
+      voiceMembersList.innerHTML = '<div class="queue-empty">Keine Mitspieler im Voice-Kanal</div>';
+    } else {
+      voiceMembersList.innerHTML = voiceMembers.map((m) => `
+        <div class="voice-member-chip ${m.isBanned ? 'banned' : ''}" title="${m.isBanned ? 'Gebannter Spieler' : 'Mitspieler im Voice'}">
+          <img src="${m.avatar || '../../App.png'}" class="chip-avatar" alt="Avatar">
+          <span>${escapeHtml(m.username)}</span>
+          ${m.isBanned 
+            ? `<button class="btn-chip-ban" data-action="unban" data-id="${m.id}" title="Entbannen">✅</button>`
+            : `<button class="btn-chip-ban" data-action="ban" data-id="${m.id}" data-name="${escapeHtml(m.username)}" title="Sperren">🚫</button>`
+          }
+        </div>
+      `).join('');
+
+      voiceMembersList.querySelectorAll('[data-action="ban"]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const name = btn.getAttribute('data-name');
+          if (confirm(`Möchtest du ${name} vom Quiz sperren?`)) {
+            await window.mannisBoxAPI.banPlayer(id, name);
+          }
+        });
+      });
+
+      voiceMembersList.querySelectorAll('[data-action="unban"]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          await window.mannisBoxAPI.unbanPlayer(id);
+        });
+      });
+    }
+
+    // Scoreboard with Slide-Down Drawer on Hover
     const scoreEntries = Object.values(state.scores || {}).sort((a, b) => b.points - a.points);
     playerCountBadge.textContent = `${scoreEntries.length} Spieler`;
 
@@ -411,43 +484,44 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         return `
           <div class="scoreboard-item ${rankClass}" data-player-id="${p.id}" data-player-name="${escapeHtml(p.username)}">
-            <div class="player-rank-info">
-              <span class="rank-badge">${medal}</span>
-              <img src="${p.avatar || '../../App.png'}" class="player-avatar-thumb" alt="Avatar">
-              <div class="player-names-wrap">
-                <span class="player-uname" title="${escapeHtml(p.username)}">${escapeHtml(p.username)}</span>
-                <span class="player-substats">✅ ${p.correct || 0} | ❌ ${p.wrong || 0}</span>
-              </div>
-            </div>
-            
-            <div class="player-right-side">
-              <div class="score-hover-controls">
-                <button class="btn-score-adjust btn-minus" data-delta="-1" title="1 Punkt abziehen">-1</button>
-                <button class="btn-score-adjust btn-plus" data-delta="1" title="1 Punkt hinzufügen">+1</button>
-                <button class="btn-score-adjust btn-row-ban" data-action="ban" title="Spieler sperren">🚫</button>
+            <div class="scoreboard-main-row">
+              <div class="player-rank-info">
+                <span class="rank-badge">${medal}</span>
+                <img src="${p.avatar || '../../App.png'}" class="player-avatar-thumb" alt="Avatar">
+                <div class="player-names-wrap">
+                  <span class="player-uname" title="${escapeHtml(p.username)}">${escapeHtml(p.username)}</span>
+                  <span class="player-substats">✅ ${p.correct || 0} | ❌ ${p.wrong || 0}</span>
+                </div>
               </div>
               <div class="player-score-pill">${p.points} Pkt.</div>
+            </div>
+
+            <!-- Slide-Down Hover Drawer -->
+            <div class="scoreboard-action-drawer">
+              <button class="btn-drawer-action btn-drawer-minus" data-action="minus" title="1 Punkt abziehen">-1 Punkt</button>
+              <button class="btn-drawer-action btn-drawer-plus" data-action="plus" title="1 Punkt hinzufügen">+1 Punkt</button>
+              <button class="btn-drawer-action btn-drawer-ban" data-action="ban" title="Spieler sperren">🚫 Sperren</button>
             </div>
           </div>
         `;
       }).join('');
 
-      // Add listeners for score adjusters
+      // Add listeners for drawer buttons
       scoreboardList.querySelectorAll('.scoreboard-item').forEach((el) => {
         const playerId = el.getAttribute('data-player-id');
         const playerName = el.getAttribute('data-player-name');
 
-        el.querySelector('.btn-minus')?.addEventListener('click', async (e) => {
+        el.querySelector('[data-action="minus"]')?.addEventListener('click', async (e) => {
           e.stopPropagation();
           await window.mannisBoxAPI.adjustPlayerScore(playerId, -1);
         });
 
-        el.querySelector('.btn-plus')?.addEventListener('click', async (e) => {
+        el.querySelector('[data-action="plus"]')?.addEventListener('click', async (e) => {
           e.stopPropagation();
           await window.mannisBoxAPI.adjustPlayerScore(playerId, 1);
         });
 
-        el.querySelector('.btn-row-ban')?.addEventListener('click', async (e) => {
+        el.querySelector('[data-action="ban"]')?.addEventListener('click', async (e) => {
           e.stopPropagation();
           if (confirm(`Möchtest du ${playerName} wirklich für das Quiz sperren?`)) {
             await window.mannisBoxAPI.banPlayer(playerId, playerName);
@@ -456,7 +530,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-    // Render Banned List Modal
     renderBannedListModal(state.bannedPlayers || {});
     updateChannelLabels();
   }
@@ -528,7 +601,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   btnEndRound.addEventListener('click', async () => {
-    if (confirm('Möchtest du diese Runde wirklich beenden und auswerten?')) {
+    if (confirm('Möchtest du das gesamte Quiz beenden und das finale Ranking (Platz 1 bis X) im Discord veröffentlichen?')) {
       await window.mannisBoxAPI.endRound();
     }
   });
@@ -564,22 +637,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 6. Evaluation Decision Buttons
+  // 6. Evaluation Decision Buttons with Double-Click Protection
   btnEvalWrong.addEventListener('click', async () => {
+    if (currentGameState?.isEvaluating) return;
     playLocalSound('wrong');
     await window.mannisBoxAPI.evaluatePlayer('wrong');
   });
 
   btnEvalSkip.addEventListener('click', async () => {
+    if (currentGameState?.isEvaluating) return;
     await window.mannisBoxAPI.evaluatePlayer('skip');
   });
 
   btnEvalCorrect.addEventListener('click', async () => {
+    if (currentGameState?.isEvaluating) return;
     playLocalSound('correct');
     await window.mannisBoxAPI.evaluatePlayer('correct');
   });
 
   btnEvalPerfect.addEventListener('click', async () => {
+    if (currentGameState?.isEvaluating) return;
     playLocalSound('perfect');
     await window.mannisBoxAPI.evaluatePlayer('perfect');
   });

@@ -17,8 +17,8 @@
       <div class="brand-section">
         <img src="../../App.png" alt="MannisBox" class="brand-logo">
         <div class="brand-text">
-          <h1 class="brand-title">MANNI'S BOX <span class="version-tag">v1.0.1</span></h1>
-          <span class="brand-subtitle">Discord Musik-Quiz & Buzzer Arena</span>
+          <h1 class="brand-title">MANNI'S BOX <span class="version-tag">v1.1.0</span></h1>
+          <span class="brand-subtitle">Discord Musik-Quiz & Buzzer Arena • Idee von ThisManniGuy</span>
         </div>
       </div>
 
@@ -74,7 +74,7 @@
         <div class="channel-status-card">
           <div class="channel-info-row">
             <span class="info-label">Host:</span>
-            <span id="lblCurrentHost" class="info-value host-pill">@327863089796087809</span>
+            <span id="lblCurrentHost" class="info-value host-pill" title="Spielleiter">@327863089796087809 (Manni)</span>
           </div>
           <div class="channel-info-row">
             <span class="info-label">Server:</span>
@@ -120,13 +120,13 @@
             <span class="btn-label">Letzte Punkte zurück</span>
           </button>
 
-          <!-- End Round Button -->
+          <!-- End Round / Final Ranking Button -->
           <button id="btnEndRound" class="btn-chunky btn-danger" disabled>
             <svg class="btn-svg-icon icon-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
               <line x1="4" y1="22" x2="4" y2="15"></line>
             </svg>
-            <span class="btn-label">Runde beenden</span>
+            <span class="btn-label">Runde beenden & Ranking</span>
           </button>
 
           <!-- Toggle Voice Button -->
@@ -157,7 +157,7 @@
         </div>
       </section>
 
-      <!-- Middle Column: Buzzer Arena -->
+      <!-- Middle Column: Buzzer Arena & Voice Members -->
       <section class="panel arena-panel">
         <div class="panel-header arena-header">
           <div class="arena-title-wrap">
@@ -169,7 +169,7 @@
           </div>
           <div class="arena-header-pills">
             <div id="cooldownTimerPill" class="cooldown-pill hidden">
-              ⏳ Buzzer öffnet in <strong id="cooldownSecondsText">3</strong>s
+              ⏳ Nächster Zug in <strong id="cooldownSecondsText">3</strong>s
             </div>
             <div id="arenaStatusPill" class="arena-pill ready">
               Bereit für Runde
@@ -183,6 +183,14 @@
 
         <!-- Active Buzzer Spotlight -->
         <div class="buzzer-spotlight-container">
+          <!-- Animated Full-Screen Center Arena Countdown Overlay -->
+          <div id="arenaCountdownOverlay" class="arena-countdown-overlay hidden">
+            <div class="countdown-circle">
+              <span id="countdownBigNumber" class="countdown-number">3</span>
+              <span class="countdown-subtext">NÄCHSTER ZUG...</span>
+            </div>
+          </div>
+
           <!-- When a player has buzzed -->
           <div id="activeBuzzerCard" class="active-buzzer-card hidden">
             <div class="buzzer-top-badges">
@@ -215,7 +223,7 @@
               </div>
             </div>
 
-            <!-- Decision Rating Buttons -->
+            <!-- Decision Rating Buttons with Double-Click Protection -->
             <div class="evaluation-actions">
               <button id="btnEvalWrong" class="eval-btn eval-wrong" title="Antwort war falsch (-1 Pkt. bzw. -2 bei Folgefehler)">
                 <div class="eval-icon-circle">
@@ -269,36 +277,24 @@
             </div>
           </div>
 
-          <!-- Waiting Placeholder with Realistic Animated Bell & Clapper Ball -->
+          <!-- Solid Clean Animated Golden Bell -->
           <div id="buzzerPlaceholder" class="buzzer-placeholder">
-            <div class="animated-bell-arena">
-              <svg class="bell-interactive-svg" viewBox="0 0 100 100">
-                <!-- Sonic sound ripple waves -->
-                <circle class="sonic-wave wave-1" cx="50" cy="45" r="28" fill="none" stroke="#6366f1" stroke-width="2"/>
-                <circle class="sonic-wave wave-2" cx="50" cy="45" r="38" fill="none" stroke="#8b5cf6" stroke-width="1.5"/>
+            <div class="golden-bell-container">
+              <svg class="golden-bell-svg" viewBox="0 0 64 64" fill="none">
+                <!-- Bell Body & Clapper as single unified harmonious SVG -->
+                <path d="M32 6 C29.8 6 28 7.8 28 10 C28 10.5 28.1 11 28.3 11.4 C20.5 13.8 15 21.2 15 30 C15 39 12 43 9 46 C8.4 46.6 8.8 47.6 9.6 47.6 L54.4 47.6 C55.2 47.6 55.6 46.6 55 46 C52 43 49 39 49 30 C49 21.2 43.5 13.8 35.7 11.4 C35.9 11 36 10.5 36 10 C36 7.8 34.2 6 32 6 Z" 
+                      fill="url(#goldBellGrad)" stroke="#fde047" stroke-width="2"/>
+                <!-- Inner clapper visible at bottom -->
+                <circle cx="32" cy="52" r="5" fill="#f59e0b" stroke="#fbbf24" stroke-width="1.5"/>
+                <!-- Bottom rim highlight -->
+                <ellipse cx="32" cy="47.6" rx="22" ry="3.5" fill="#ca8a04" stroke="#fef08a" stroke-width="1"/>
                 
-                <!-- Bell Top loop -->
-                <path d="M46 16 C46 12 54 12 54 16" fill="none" stroke="#a5b4fc" stroke-width="3" stroke-linecap="round"/>
-                
-                <!-- Inner Clapper Ball (Animated physics) -->
-                <g class="bell-clapper-group">
-                  <line x1="50" y1="40" x2="50" y2="72" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
-                  <circle cx="50" cy="74" r="6" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.5" class="clapper-ball"/>
-                </g>
-
-                <!-- Outer Bell Shell (Swinging pendulum) -->
-                <g class="bell-shell-group">
-                  <path d="M50 18 C36 18 30 38 28 58 C26 64 22 68 20 70 C19 72 21 74 24 74 L76 74 C79 74 81 72 80 70 C78 68 74 64 72 58 C70 38 64 18 50 18 Z" 
-                        fill="url(#bellGradient)" stroke="#818cf8" stroke-width="2.5" stroke-linejoin="round"/>
-                  <!-- Bell Rim highlight -->
-                  <ellipse cx="50" cy="74" rx="28" ry="4" fill="#4338ca" stroke="#a5b4fc" stroke-width="1.5"/>
-                </g>
-
                 <defs>
-                  <linearGradient id="bellGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#818cf8"/>
-                    <stop offset="50%" stop-color="#6366f1"/>
-                    <stop offset="100%" stop-color="#4338ca"/>
+                  <linearGradient id="goldBellGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#fef08a"/>
+                    <stop offset="35%" stop-color="#facc15"/>
+                    <stop offset="70%" stop-color="#eab308"/>
+                    <stop offset="100%" stop-color="#ca8a04"/>
                   </linearGradient>
                 </defs>
               </svg>
@@ -317,7 +313,7 @@
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
               <h4>Warteschlange</h4>
-              <small class="queue-hint">(Klicke auf einen Spieler, um ihn direkt auszuwählen)</small>
+              <small class="queue-hint">(Klicke auf einen Spieler zum Drannehmen)</small>
             </div>
             <span id="queueCountBadge" class="badge-pill">0 Spieler</span>
           </div>
@@ -325,9 +321,28 @@
             <div class="queue-empty">Keine weiteren Spieler in der Warteschlange</div>
           </div>
         </div>
+
+        <!-- Voice Channel Members List (Bottom Section) -->
+        <div class="voice-members-section">
+          <div class="voice-members-header">
+            <div class="queue-title-wrap">
+              <svg class="mini-svg icon-speaker" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <h4>Mitspieler im Voice-Kanal</h4>
+            </div>
+            <span id="voiceMembersCountBadge" class="badge-pill">0 im Voice</span>
+          </div>
+          <div id="voiceMembersList" class="voice-members-chips">
+            <div class="queue-empty">Verbinde den Voice-Kanal, um Mitspieler zu sehen</div>
+          </div>
+        </div>
       </section>
 
-      <!-- Right Column: Scoreboard with Live Score Editing on Hover -->
+      <!-- Right Column: Scoreboard with Slide-Down Hover Drawer -->
       <section class="panel scoreboard-panel">
         <div class="panel-header">
           <svg class="header-icon-svg icon-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

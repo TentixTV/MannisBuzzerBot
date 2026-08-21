@@ -2,6 +2,7 @@ const {
   Client,
   GatewayIntentBits,
   ChannelType,
+  ActivityType,
   PermissionsBitField
 } = require('discord.js');
 const {
@@ -14,7 +15,7 @@ const audioManager = require('./audioManager');
 const {
   createBuzzerEmbed,
   createBuzzerComponents,
-  createRoundEndedEmbed
+  createFinalGameEndEmbed
 } = require('./embeds');
 const { loadConfig, saveConfig } = require('../config/configManager');
 const EventEmitter = require('events');
@@ -27,12 +28,14 @@ class BotManager extends EventEmitter {
     this.isReady = false;
     this.currentVoiceConnection = null;
     this.cooldownTimer = null;
+    this.hostName = '';
 
     // Game state
     this.gameState = {
       roundNumber: 1,
       isRoundActive: false,
       isLocked: false,
+      isEvaluating: false,
       activePlayer: null,
       queue: [],
       scores: {}, // playerId -> { id, username, avatar, points, correct, wrong }
@@ -45,7 +48,9 @@ class BotManager extends EventEmitter {
       currentGuildId: null,
       cooldownSeconds: 0,
       bannedPlayers: {}, // playerId -> { id, username, timestamp }
-      actionHistory: [] // Array of { type, roundNumber, playerId, scoreDelta, wrongDelta, correctDelta, prevStatus }
+      voiceMembers: [], // List of { id, username, avatar, isBanned }
+      hostName: '',
+      actionHistory: []
     };
   }
 
@@ -54,7 +59,77 @@ class BotManager extends EventEmitter {
     if (this.config.soundVolume !== undefined) {
       audioManager.setVolume(this.config.soundVolume);
     }
+    this.resolveHostName();
     this.emitState();
+  }
+
+  async resolveHostName() {
+    if (!this.client || !this.isReady || !this.config.hostId) return;
+    try {
+      const user = await this.client.users.fetch(this.config.hostId);
+      if (user) {
+        this.hostName = user.displayName || user.username;
+        this.gameState.hostName = this.hostName;
+      }
+    } catch (err) {
+      this.hostName = 'Manni';
+      this.gameState.hostName = 'Manni';
+    }
+    this.emitState();
+  }
+
+  async updateRichPresence() {
+    if (!this.client || !this.isReady || !this.client.user) return;
+    try {
+      const playersInVoice = this.gameState.voiceMembers.length;
+      const round = this.gameState.roundNumber;
+      
+      this.client.user.setPresence({
+        activities: [{
+          name: `SongQuiz 🎵 | Runde ${round}`,
+          type: ActivityType.Playing,
+          state: `👥 ${playersInVoice} Mitspieler`
+        }],
+        status: 'online'
+      });
+    } catch (err) {
+      console.error('[Bot] Error setting rich presence:', err);
+    }
+  }
+
+  async updateVoiceMembers() {
+    if (!this.client || !this.isReady || !this.gameState.currentGuildId || !this.gameState.currentVoiceChannelId) {
+      this.gameState.voiceMembers = [];
+      this.emitState();
+      return;
+    }
+
+    try {
+      const guild = await this.client.guilds.fetch(this.gameState.currentGuildId);
+      if (!guild) return;
+
+      const voiceChannel = await guild.channels.fetch(this.gameState.currentVoiceChannelId);
+      if (!voiceChannel || !voiceChannel.members) return;
+
+      const membersList = [];
+      for (const [id, member] of voiceChannel.members) {
+        // Exclude bot itself and Host from regular players list
+        if (member.user.bot || id === this.client.user.id || id === this.config.hostId) continue;
+        
+        membersList.push({
+          id: member.id,
+          username: member.displayName || member.user.username,
+          avatar: member.user.displayAvatarURL({ size: 64 }),
+          isBanned: !!this.gameState.bannedPlayers[member.id]
+        });
+      }
+
+      this.gameState.voiceMembers = membersList;
+      this.updateRichPresence();
+      this.emitState();
+    } catch (err) {
+      console.error('[Bot] Error updating voice members:', err);
+    }
   }
 
   async start() {
@@ -69,9 +144,12 @@ class BotManager extends EventEmitter {
       ]
     });
 
-    this.client.on('ready', () => {
+    this.client.on('ready', async () => {
       this.isReady = true;
       console.log(`[Bot] Logged in as ${this.client.user.tag}`);
+      await this.resolveHostName();
+      this.updateRichPresence();
+
       this.emit('status-changed', {
         online: true,
         user: {
@@ -80,9 +158,14 @@ class BotManager extends EventEmitter {
           username: this.client.user.username,
           avatar: this.client.user.displayAvatarURL()
         },
+        hostName: this.hostName,
         inviteUrl: this.getInviteUrl()
       });
       this.emitState();
+    });
+
+    this.client.on('voiceStateUpdate', async () => {
+      await this.updateVoiceMembers();
     });
 
     this.client.on('interactionCreate', async (interaction) => {
@@ -213,6 +296,7 @@ class BotManager extends EventEmitter {
         }
       });
 
+      await this.updateVoiceMembers();
       this.emit('voice-status', { connected: true, guildId, channelId });
       return { success: true };
     } catch (err) {
@@ -231,6 +315,7 @@ class BotManager extends EventEmitter {
       this.currentVoiceConnection = null;
       audioManager.setConnection(null);
       this.gameState.currentVoiceChannelId = null;
+      this.gameState.voiceMembers = [];
       this.emit('voice-status', { connected: false });
     }
   }
@@ -257,6 +342,7 @@ class BotManager extends EventEmitter {
     this.gameState.queue = this.gameState.queue.filter((p) => p.id !== playerId);
 
     this.gameState.statusText = `⛔ **${this.gameState.bannedPlayers[playerId].username}** wurde für das Quiz gebannt!`;
+    this.updateVoiceMembers();
     this.updateDiscordMessage();
     this.emitState();
     return { success: true };
@@ -267,6 +353,7 @@ class BotManager extends EventEmitter {
       const name = this.gameState.bannedPlayers[playerId].username;
       delete this.gameState.bannedPlayers[playerId];
       this.gameState.statusText = `✅ **${name}** wurde entbannt.`;
+      this.updateVoiceMembers();
       this.emitState();
       return { success: true };
     }
@@ -275,7 +362,22 @@ class BotManager extends EventEmitter {
 
   // --- SCORE ADJUSTMENT ON HOVER ---
   adjustPlayerScore(playerId, delta) {
-    if (!this.gameState.scores[playerId]) return { success: false, error: 'Spieler nicht gefunden' };
+    if (!this.gameState.scores[playerId]) {
+      // Create player entry if from voice list
+      const voiceUser = this.gameState.voiceMembers.find(m => m.id === playerId);
+      if (voiceUser) {
+        this.gameState.scores[playerId] = {
+          id: playerId,
+          username: voiceUser.username,
+          avatar: voiceUser.avatar,
+          points: 0,
+          correct: 0,
+          wrong: 0
+        };
+      } else {
+        return { success: false, error: 'Spieler nicht gefunden' };
+      }
+    }
 
     this.gameState.scores[playerId].points += delta;
     this.gameState.actionHistory.push({
@@ -340,8 +442,8 @@ class BotManager extends EventEmitter {
       });
     }
 
-    // Check if buzzer is locked or round inactive
-    if (!this.gameState.isRoundActive || this.gameState.isLocked) {
+    // Check if buzzer is locked or round inactive or in evaluation cooldown
+    if (!this.gameState.isRoundActive || this.gameState.isLocked || this.gameState.isEvaluating) {
       return interaction.reply({
         content: '🔒 Der Buzzer ist derzeit gesperrt!',
         ephemeral: true
@@ -396,7 +498,6 @@ class BotManager extends EventEmitter {
     if (!this.gameState.activePlayer) {
       this.gameState.activePlayer = player;
       this.gameState.statusText = `🔔 **${username}** hat zuerst gebuzzert und antwortet jetzt!`;
-      // Play epic buzzer sound in voice!
       audioManager.playBuzzer();
       await interaction.reply({
         content: `🎉 **Buzzer ausgelöst!** Du bist als 1. dran! Antworte jetzt im Voice-Chat!`,
@@ -441,6 +542,7 @@ class BotManager extends EventEmitter {
 
       this.gameState.isRoundActive = true;
       this.gameState.isLocked = false;
+      this.gameState.isEvaluating = false;
       this.gameState.activePlayer = null;
       this.gameState.queue = [];
       this.gameState.roundWrongAttempts = {};
@@ -450,21 +552,26 @@ class BotManager extends EventEmitter {
       this.gameState.currentGuildId = targetGuildId;
       this.gameState.cooldownSeconds = 0;
 
+      await this.resolveHostName();
+      await this.updateVoiceMembers();
+
       const embed = createBuzzerEmbed({
         roundNumber: this.gameState.roundNumber,
         hostId: this.config.hostId,
-        hostTag: 'Manni',
+        hostName: this.hostName,
         isLocked: false,
         activePlayer: null,
         queue: [],
         scores: this.gameState.scores,
-        statusText: this.gameState.statusText
+        statusText: this.gameState.statusText,
+        channelPlayerCount: this.gameState.voiceMembers.length
       });
 
       const components = createBuzzerComponents(false, false);
       const msg = await channel.send({ embeds: [embed], components });
       this.gameState.currentMessage = msg;
 
+      this.updateRichPresence();
       this.emitState();
       return { success: true, messageId: msg.id };
     } catch (err) {
@@ -503,6 +610,7 @@ class BotManager extends EventEmitter {
     }
 
     this.gameState.cooldownSeconds = 3;
+    this.gameState.isEvaluating = true;
     this.gameState.isLocked = true;
     this.emitState();
 
@@ -511,6 +619,7 @@ class BotManager extends EventEmitter {
       if (this.gameState.cooldownSeconds <= 0) {
         clearInterval(this.cooldownTimer);
         this.cooldownTimer = null;
+        this.gameState.isEvaluating = false;
         if (nextActionCallback) {
           await nextActionCallback();
         }
@@ -520,9 +629,13 @@ class BotManager extends EventEmitter {
   }
 
   async evaluateActivePlayer(action) {
-    // action: 'wrong' | 'correct' | 'perfect' | 'skip'
+    // Prevent double clicking while evaluating
+    if (this.gameState.isEvaluating) {
+      return { success: false, error: 'Bereits in der Auswertung.' };
+    }
+
     if (!this.gameState.activePlayer) {
-      return { success: false, error: 'Kein aktiver Spieler zum Bewerten vorhanden.' };
+      return { success: false, error: 'Kein aktiver Spieler vorhanden.' };
     }
 
     const player = this.gameState.activePlayer;
@@ -555,16 +668,16 @@ class BotManager extends EventEmitter {
         prevStatus: this.gameState.statusText
       });
 
-      // Play epic wrong sound in voice!
       audioManager.playWrong();
 
       this.gameState.statusText = `❌ **${player.username}** lag falsch (${penalty} Pkt.)! Zug beendet.`;
       await this.updateDiscordMessage();
       this.emitState();
 
-      // 3-second cooldown before next player or reopening buzzer!
+      // 3-second animated countdown
       this.start3SecondCooldown(async () => {
         if (this.gameState.queue.length > 0) {
+          // Next player in queue slides up
           const nextPlayer = this.gameState.queue.shift();
           this.gameState.activePlayer = nextPlayer;
           this.gameState.statusText = `➔ **${nextPlayer.username}** ist jetzt an der Reihe!`;
@@ -594,16 +707,17 @@ class BotManager extends EventEmitter {
         prevStatus: this.gameState.statusText
       });
 
-      // Play epic correct sound
       audioManager.playCorrect();
 
       this.gameState.statusText = `✅ **${player.username}** hat richtig geantwortet (+${gain} Pkt.)! 🎉`;
       await this.updateDiscordMessage();
       this.emitState();
 
-      // 3-second cooldown after correct answer
+      // Reset queue on correct answer and start 3s countdown
       this.start3SecondCooldown(async () => {
-        this.gameState.statusText = `✅ Runde gewonnen von **${player.username}**! Starte nächste Runde oder beende das Spiel.`;
+        this.gameState.queue = []; // Clear queue on correct
+        this.gameState.activePlayer = null;
+        this.gameState.statusText = `✅ Frage gelöst von **${player.username}**! Starte nächste Runde für den nächsten Song.`;
         this.gameState.isLocked = false;
         await this.updateDiscordMessage();
         this.emitState();
@@ -625,23 +739,23 @@ class BotManager extends EventEmitter {
         prevStatus: this.gameState.statusText
       });
 
-      // Play epic fanfare sound
       audioManager.playPerfect();
 
       this.gameState.statusText = `🌟 **${player.username}** hat VOLLSTÄNDIG RICHTIG mit Songname geantwortet (+${gain} Pkt.)! 🏆`;
       await this.updateDiscordMessage();
       this.emitState();
 
-      // 3-second cooldown
+      // Reset queue on perfect answer
       this.start3SecondCooldown(async () => {
-        this.gameState.statusText = `🌟 Perfekter Treffer von **${player.username}**! Bereit für nächste Runde.`;
+        this.gameState.queue = []; // Clear queue
+        this.gameState.activePlayer = null;
+        this.gameState.statusText = `🌟 Perfekter Treffer von **${player.username}**! Starte nächste Runde für den nächsten Song.`;
         this.gameState.isLocked = false;
         await this.updateDiscordMessage();
         this.emitState();
       });
 
     } else if (action === 'skip') {
-      // Immediate skip without 3-second penalty wait
       if (this.gameState.queue.length > 0) {
         const nextPlayer = this.gameState.queue.shift();
         this.gameState.activePlayer = nextPlayer;
@@ -665,15 +779,17 @@ class BotManager extends EventEmitter {
 
     this.gameState.isRoundActive = false;
     this.gameState.isLocked = true;
+    this.gameState.isEvaluating = false;
     this.gameState.cooldownSeconds = 0;
 
     if (this.gameState.currentMessage) {
       try {
-        const winner = this.gameState.activePlayer;
-        const endEmbed = createRoundEndedEmbed({
+        const endEmbed = createFinalGameEndEmbed({
           roundNumber: this.gameState.roundNumber,
           scores: this.gameState.scores,
-          winner
+          hostId: this.config.hostId,
+          hostName: this.hostName,
+          totalRounds: this.gameState.roundNumber
         });
         const components = createBuzzerComponents(true, true);
         await this.gameState.currentMessage.edit({ embeds: [endEmbed], components });
@@ -685,8 +801,9 @@ class BotManager extends EventEmitter {
     this.gameState.roundNumber += 1;
     this.gameState.activePlayer = null;
     this.gameState.queue = [];
-    this.gameState.statusText = `Runde beendet! Bereit für Runde ${this.gameState.roundNumber}.`;
+    this.gameState.statusText = `Quiz-Runde offiziell beendet! Endstand in Discord gesendet.`;
 
+    this.updateRichPresence();
     this.emitState();
     return { success: true, nextRound: this.gameState.roundNumber };
   }
@@ -702,9 +819,11 @@ class BotManager extends EventEmitter {
     this.gameState.activePlayer = null;
     this.gameState.queue = [];
     this.gameState.cooldownSeconds = 0;
+    this.gameState.isEvaluating = false;
     this.gameState.actionHistory = [];
     this.gameState.statusText = 'Punktestand wurde auf 0 zurückgesetzt!';
     this.updateDiscordMessage();
+    this.updateRichPresence();
     this.emitState();
     return { success: true };
   }
@@ -715,12 +834,13 @@ class BotManager extends EventEmitter {
       const embed = createBuzzerEmbed({
         roundNumber: this.gameState.roundNumber,
         hostId: this.config.hostId,
-        hostTag: 'Manni',
+        hostName: this.hostName,
         isLocked: this.gameState.isLocked,
         activePlayer: this.gameState.activePlayer,
         queue: this.gameState.queue,
         scores: this.gameState.scores,
-        statusText: this.gameState.statusText
+        statusText: this.gameState.statusText,
+        channelPlayerCount: this.gameState.voiceMembers.length
       });
       const components = createBuzzerComponents(this.gameState.isLocked, !this.gameState.isRoundActive);
       await this.gameState.currentMessage.edit({ embeds: [embed], components });
@@ -734,6 +854,7 @@ class BotManager extends EventEmitter {
       roundNumber: this.gameState.roundNumber,
       isRoundActive: this.gameState.isRoundActive,
       isLocked: this.gameState.isLocked,
+      isEvaluating: this.gameState.isEvaluating,
       activePlayer: this.gameState.activePlayer,
       queue: this.gameState.queue,
       scores: this.gameState.scores,
@@ -744,6 +865,8 @@ class BotManager extends EventEmitter {
       currentTextChannelId: this.gameState.currentTextChannelId,
       cooldownSeconds: this.gameState.cooldownSeconds,
       bannedPlayers: this.gameState.bannedPlayers,
+      voiceMembers: this.gameState.voiceMembers,
+      hostName: this.hostName,
       canUndo: this.gameState.actionHistory.length > 0,
       config: this.config
     };
@@ -755,6 +878,7 @@ class BotManager extends EventEmitter {
       roundNumber: this.gameState.roundNumber,
       isRoundActive: this.gameState.isRoundActive,
       isLocked: this.gameState.isLocked,
+      isEvaluating: this.gameState.isEvaluating,
       activePlayer: this.gameState.activePlayer,
       queue: this.gameState.queue,
       scores: this.gameState.scores,
@@ -765,6 +889,8 @@ class BotManager extends EventEmitter {
       currentTextChannelId: this.gameState.currentTextChannelId,
       cooldownSeconds: this.gameState.cooldownSeconds,
       bannedPlayers: this.gameState.bannedPlayers,
+      voiceMembers: this.gameState.voiceMembers,
+      hostName: this.hostName,
       canUndo: this.gameState.actionHistory.length > 0,
       config: this.config
     };
