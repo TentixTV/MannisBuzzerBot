@@ -1,36 +1,42 @@
-# 🎮 MannisBox — Discord Musik-Quiz & Buzzer Master (v1.0.1)
-
 <div align="center">
 
-![MannisBox Banner](App.png)
+# 🎮 MannisBox — Discord Musik-Quiz & Buzzer Master
 
-### **Die ultimative Desktop-App für Musik-Quizze & Buzzer-Runden auf Discord!**
+### *Die ultimative Desktop-App für Musik-Quizze & Buzzer-Runden auf Discord!*
 
-[![Electron](https://img.shields.io/badge/Electron-v34.5.8-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://electronjs.org/)
-[![Discord.js](https://img.shields.io/badge/Discord.js-v14.18.0-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.js.org/)
-[![Version](https://img.shields.io/badge/Version-v1.0.1-10b981?style=for-the-badge)](https://github.com/TentixTV/MannisBuzzerBot/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Author](https://img.shields.io/badge/Author-TentixTV-8b5cf6?style=for-the-badge)](https://github.com/TentixTV)
+<br>
 
-</div>
+[![Electron](https://img.shields.io/badge/Electron-34.5.8-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://electronjs.org/)
+[![Discord.js](https://img.shields.io/badge/Discord.js-14.18.0-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.js.org/)
+[![Version](https://img.shields.io/badge/Release-v1.0.1-10B981?style=for-the-badge)](https://github.com/TentixTV/MannisBuzzerBot/releases)
+[![Idea](https://img.shields.io/badge/Idee-ThisManniGuy-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com)
+[![Author](https://img.shields.io/badge/Entwickler-TentixTV-8B5CF6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TentixTV)
+[![License: MIT](https://img.shields.io/badge/Lizenz-MIT-F59E0B?style=for-the-badge)](LICENSE)
+
+<br>
+
+> 💡 **Idee & Konzept:** **ThisManniGuy** (Discord)  
+> 🛠️ **Entwicklung:** **TentixTV** im Auftrag von **ThisManniGuy**
 
 ---
 
-## 🌟 Highlights & Features in v1.0.1
+</div>
+
+## 🌟 Highlights & Features (v1.0.1)
 
 - 🕹️ **Scribble Darkmode UI**: Inspiriert vom Skribbl-Design mit fetten 3D-Arcade-Buttons, animierten Badges und responsivem 3-Spalten-Layout.
-- 🚫 **Spieler-Bann-System**:
-  - Trolls oder Störenfriede können mit 1 Klick direkt aus dem Buzzer, der Queue oder der Rangliste gebannt werden.
-  - Gebannte Spieler können den Buzzer auf Discord nicht mehr drücken.
-  - Verwaltung und Entbannen jederzeit über das 🚫 Ban-Icon in der Kopfzeile möglich.
+- 🚫 **Spieler-Bann-System (Anti-Troll)**:
+  - Trolls oder Störenfriede können mit 1 Klick direkt aus dem Buzzer, der Queue oder der Rangliste gesperrt werden.
+  - Gebannte Spieler können den Buzzer auf Discord nicht mehr drücken (`⛔ Du wurdest gesperrt!`).
+  - Verwaltung und Entbannen jederzeit über das 🚫-Symbol in der Kopfzeile.
 - ✏️ **Live-Punktestand-Editor**:
-  - Fahre in der Rangliste mit der Maus über einen Spieler, um Punkte direkt per `+1` / `-1` anzupassen.
+  - Fahre in der Rangliste rechts mit der Maus über einen Spieler, um Punkte per `-1` / `+1` direkt anzupassen.
   - Änderungen synchronisieren sich in Echtzeit mit dem Discord-Embed!
 - ↩️ **Aktionen & Punkte rückgängig machen (Undo)**:
-  - Punkte falsch vergeben? Klicke auf **„↩️ Letzte Punkte zurück“**, um die letzte Punktevergabe oder Runde sofort zurückzurollen.
+  - Punkte falsch vergeben? Klicke auf **„↩️ Letzte Punkte zurück“**, um die letzte Punktevergabe sofort zurückzurollen.
 - 📊 **Elegante Discord-Rangliste**:
-  - Übersichtliche Ranglisten-Formatierung im Discord mit Medaillen (🥇, 🥈, 🥉), Rangnummern, aktuellen Punkten und Statistik-Badges (`✅ Richtig` / `❌ Falsch`).
-- ⚡ **Lokaler Bot-Lebenszyklus**: Der Discord-Bot läuft direkt in der Desktop-App. App auf ➔ Bot online. App zu ➔ Bot trennt Voice und geht offline.
+  - Aufgeräumte Tabelle im Discord mit Medaillen (🥇, 🥈, 🥉), Rangnummern, aktuellen Punkten und Statistik-Badges (`✅ Richtig` / `❌ Falsch`).
+- ⚡ **Lokaler Bot-Lebenszyklus**: Der Discord-Bot läuft direkt in der Desktop-App. App auf ➔ Bot online. App zu ➔ Bot offline.
 - 🔔 **Interaktive Buzzer-Arena**:
   - Live-Erfassung aller Klicks im Discord mit **Millisekunden-Reihenfolge** (1., 2., 3., ...).
   - Dynamische **Glocken-Animation mit schwingendem Pendelklöppel**.
@@ -105,7 +111,8 @@ Ausgabe-Dateien:
 
 ---
 
-## 📜 Lizenz & Autor
+## 📜 Danksagung & Lizenz
 
-Entwickelt mit ❤️ von **[TentixTV](https://github.com/TentixTV)**.  
-Lizenziert unter der **MIT License** — siehe [LICENSE](LICENSE) für Details.
+- **Konzept & Idee:** **ThisManniGuy** (Discord)
+- **Entwicklung:** **[TentixTV](https://github.com/TentixTV)** im Auftrag von **ThisManniGuy**.
+- **Lizenz:** Lizenziert unter der **MIT License** — siehe [LICENSE](LICENSE) für Details.
