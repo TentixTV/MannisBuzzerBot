@@ -6,9 +6,12 @@ package-lock.json
 dist/
 release/
 *.zip
+*.rar
+*.lnk
 
 # Local configurations & secrets
 src/config/config.json
+src/config/mannisbox_config.json
 *.env
 
 # Logs & temp

@@ -1,0 +1,101 @@
+﻿<USER_REQUEST>
+Also ich hab nh Big Big Update, es gibt jetzt beim Start 3 Modis die man auswÃ¤hlen kann und so verÃ¤ndert sich auch die Bio vom Bot usw. bzw. welches Spiel gespielt wird, usw. alles immernoch schÃ¶n Fancy halten und mit dem Bot Kompatibel machen!
+
+Hier ist die Idee Liste von meinem Kunden.
+
+1. Spiel - Normales Song Raten (NAME: Erkennst du den Song)
+
+3 - 6 Spieler oder 3 Spieler mehrere Runden (Kategorien)
+
+Anforderungen an das Programm:
+- Programm benÃ¶tigt wie eine Admin (Spielmacher) Ansicht wo Punkte an die jenigen vergeben werden kÃ¶nnen die den Song richtig erraten haben (so Ã¤hnlich wie schon vorhanden)
+- und eine Ansicht die ich Streamen kann wo die Leute sehen kÃ¶nnen wer gedrÃ¼ckt hat und wie viele Punkte die jenigen Spieler haben und wo angezeit wird welcher Song das war wenn ich auflÃ¶se
+
+- Songs die gespielt werden, werden vorher als Information rein gepackt damit sie bei richtigen Antworten oder wenn am Ende aufgelÃ¶st wird angezeigt werden kÃ¶nnen
+da wÃ¼rde ich wie ne Tabelle machen fÃ¼r mich wo ich dann in der Spielmacher Ansicht die Informationen fÃ¼r den Song rein kopiere und die wird dann freigegeben fÃ¼r den Bildschirm den ich streame
+
+
+Spielemacher Ansicht:
+- Buzzer freischalten
+- Wenn Buzzer von einen der Spieler gedrÃ¼ckt wird Antwort richtig oder Falsch Auswahl
+- Timer fÃ¼r die Buzzer freischalten (damit ich weiÃŸ wie lange die Runde jetzt lÃ¤uft - nicht das ich den Song Ã¼ber 1 min lang laufen lasse XD )
+- Spielernamen vergeben am Anfang des Spiels
+- Iwie nen Feld wo ich Song und Interpret aus meiner Exel Tabelle einfÃ¼gen kann um diesen dann auf der Teilnehmer-Ansicht zu sehen
+
+!NEU! 
+- Ich lege einen Ordner mit Musik an die gespielt werden kann 
+- Idee ist das das Programm Musik aus dem Ordner zufÃ¤llig auswÃ¤hlt und die passende Information die in der .mp3 stehen nimmt zum anzeigen
+- Bitte so das ich im Programm auswÃ¤hlen kann welcher Ordner er nehmen soll zum Spielen (so kann man eine Runde Rap/R&B, Schlager, Party, 2010er, 80er, 90er, 70er machen)
+- Dann wÃ¤re es glaube auch besser wenn wir Ã¼ber den MannisBox Account einfach die Musik abspielen lassen wegen Latenz und KratzgerÃ¤uschen (ich trau Discord nicht Ã¼bern Weg)
+
+
+Teilnehmer Ansicht:
+- Spieler Namen werden angezeigt
+- Punktzahl jedes Spielers
+- Bildschirm leuchtet GrÃ¼n oder Rot wenn Antwort Richtig oder Falsch
+- Songname soll bei korrekter Antwort angezeigt werden oder wenn ich die Runde auflÃ¶se weil keiner drauf kommt
+- Timer wie lange die Runde noch offen ist der Wert ist daran gekoppelt wann die Buzzer freigeschaltet werden
+
+2. Spiel - Hitster
+
+
+2 - 8 Spieler
+
+dafÃ¼r ist ja die App schon gut genug
+
+
+3. Spiel - Wallpaper / Filme erkennen
+
+3 - 6 Spieler
+
+Anforderungen an das Programm:
+
+- wÃ¼rde die Wallpaper vorbereiten in Ordnern (immer 4 Versionen von einem Wallpaper fÃ¼r einen Film) Und die mÃ¼ssen dann  alle 10 Sekunden ne Stufe hoch springen (Bild muss sich verschÃ¤rfen)
+- je nachdem wie schnell der Spieler buzzert und die richitge Antwort liefert gibt es je nach Zeit die vergangen ist Punkte
+- also unter 10 Sekunden 50 Punkte
+- unter 20 Sekunden 35 Punkte
+- unter 30 Sekunden 25 Punkte 
+- unter 40 Sekunden 15 Punkte (letzte Stufe bevor das Bild aufgelÃ¶st wird)
+- danach ist die Runde gesperrt und das Bild wird komplett Scharf angezeigt
+
+Ich stells mir auch wieder mit einer Spielmacher-Ansicht vor und einer Ansicht fÃ¼r die Teilnehmer wo das Wallpaper zu sehen ist + das Feld wo ich auflÃ¶sen kann um welchen Film es sich handelt
+
+Spielmacher Ansicht:
+- Buzzer freischalten
+- Wenn Buzzer von einen der Spieler gedrÃ¼ckt wird Antwort richtig oder Falsch Auswahl
+- Ein Feld wo man den Ordner rein machen kann damit die App weiÃŸ welches wallpaper sie anzeigen soll
+- Spielernamen vergeben am Anfang der Runde
+- Runde freischalten Timer wird aber gestoppt, lÃ¤uft an der gleichen Zeit weiter wenn ich wieder frei gebe)
+- MÃ¶glichkeit die Runde abzubrechen (wenn 2 Leute falsch lagen damit ich sagen kann jo genug Chancen den wenn andere in ne Richtung gehen wird es ja einfacher fÃ¼r die anderen)
+- An den Timer gekoppelt :
+	- also unter 10 Sekunden 50 Punkte
+	- unter 20 Sekunden 35 Punkte
+	- unter 30 Sekunden 25 Punkte
+	- unter 40 Sekunden 15 Punkte (letzte Stufe bevor das Bild aufgelÃ¶st wird)
+
+Die app muss merken wenn Spieler 1 buzzert und grÃ¼nes Licht bekommt das sie die Punkte zuordnet je nach Zeit quasi XD
+
+
+Teilnehmer Ansicht:
+
+- Wallpaper Diashow alle 10 Sekunden eine Stufe schÃ¤rfer
+- Spielernamen
+- Punktezahl
+- Timer
+- Letztes Bild wird dann das Wallpaper mit Einblendung des Namens sein (auch wenn ich AuflÃ¶se quasi) â€¦ klassisches ODER Entweder ich lÃ¶se vorher auf durch richtige Antwort eines Spielers -> Wallpaper komplett Scharf mit Namen ODER der TImer lÃ¤uft ab und keiner traut sich zu sagen welcher Film es sein kÃ¶nnte -> Wallpaper komplett Scharf mit Namen :D
+
+
+
+Alles beachten so wie er es will so das ich es Testen kann usw. inkl. dem wenn ein bestimmtest Spiel gerade lÃ¤uft dann muss der Text mit den Buttons usw. auch angepasst werden, und das mit dem Wallpaper da musst du das Bild in der Box anzeigen lassen, darin ist auch ein Timer der Live funktioniert und wie da schon steht alle 10 Sekunden von Extrem Unscharf bis Scharf usw. dafÃ¼r musst du dann eine Gute API machen und in der App kann Manni das Bild dann Hochladen das wird dann in den Bot geladen LIVE!!! Danke /goal 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-09-02T21:20:06+02:00.
+
+The user has mentioned some items in the form @[ITEM]. Here is extra information about the items that were mentioned by the user, in the order that they appear:
+
+/goal is a [Slash Command]:
+The user has marked this task with /goal, indicating that this task is intended to run for a long time without user input, e.g. overnight. You should be extra thorough and only stop when you are confident the goal has been completely fulfilled. The system will force you to continue execution, prompting you to audit your work until completion. Once complete, include <!-- GOAL_COMPLETE --> in your response. If the user explicitly asked to stop or cancel this goal, include <!-- GOAL_CANCELLED --> in your response to cancel the goal.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.8 Flash (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>

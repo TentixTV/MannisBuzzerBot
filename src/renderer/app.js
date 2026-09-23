@@ -8,6 +8,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   const voiceStatusBadge = document.getElementById('voiceStatusBadge');
   const voiceStatusText = document.getElementById('voiceStatusText');
   const roundNumberBadge = document.getElementById('roundNumberBadge');
+  const goalBadgeContainer = document.getElementById('goalBadgeContainer');
+  const lblGoalValue = document.getElementById('lblGoalValue');
+  const btnToggleBoost = document.getElementById('btnToggleBoost');
+  const lblBoostStatus = document.getElementById('lblBoostStatus');
+  const arenaBoostBanner = document.getElementById('arenaBoostBanner');
+
+  // Grand Champion Victory Modal Elements
+  const victoryModal = document.getElementById('victoryModal');
+  const victoryWinnerAvatar = document.getElementById('victoryWinnerAvatar');
+  const victoryWinnerName = document.getElementById('victoryWinnerName');
+  const victoryWinnerScoreTag = document.getElementById('victoryWinnerScoreTag');
+  const btnVictoryNewGame = document.getElementById('btnVictoryNewGame');
+  const btnVictoryClose = document.getElementById('btnVictoryClose');
 
   const lblCurrentHost = document.getElementById('lblCurrentHost');
   const lblCurrentGuild = document.getElementById('lblCurrentGuild');
@@ -78,6 +91,366 @@ document.addEventListener('DOMContentLoaded', async () => {
   const lblVolumeVal = document.getElementById('lblVolumeVal');
   const btnInviteFromSettings = document.getElementById('btnInviteFromSettings');
   const testSoundBtns = document.querySelectorAll('.btn-test-sound');
+  // Big Big Update Elements
+  const screenFlashLayer = document.getElementById('screenFlashLayer');
+  const btnModeSong = document.getElementById('btnModeSong');
+  const btnModeHitster = document.getElementById('btnModeHitster');
+  const btnModeWallpaper = document.getElementById('btnModeWallpaper');
+  const btnToggleStreamView = document.getElementById('btnToggleStreamView');
+  const btnCloseStreamView = document.getElementById('btnCloseStreamView');
+  const inAppStreamContainer = document.getElementById('inAppStreamContainer');
+  const inAppStreamFrame = document.getElementById('inAppStreamFrame');
+  const btnCopyObsLink = document.getElementById('btnCopyObsLink');
+
+  const songRegiePanel = document.getElementById('songRegiePanel');
+  const wallpaperRegiePanel = document.getElementById('wallpaperRegiePanel');
+
+  const btnSelectMusicFolder = document.getElementById('btnSelectMusicFolder');
+  const lblMusicFolderStatus = document.getElementById('lblMusicFolderStatus');
+  const selMusicGenre = document.getElementById('selMusicGenre');
+  const btnPickRandomSong = document.getElementById('btnPickRandomSong');
+
+  const localAudioPlayer = document.getElementById('localAudioPlayer');
+  const btnAudioPlayPause = document.getElementById('btnAudioPlayPause');
+  const lblAudioTrackTitle = document.getElementById('lblAudioTrackTitle');
+  const rngAudioPlayerVolume = document.getElementById('rngAudioPlayerVolume');
+
+  const txtExcelArtist = document.getElementById('txtExcelArtist');
+  const txtExcelTitle = document.getElementById('txtExcelTitle');
+  const btnApplyExcelSong = document.getElementById('btnApplyExcelSong');
+
+  const btnSelectWpFolder = document.getElementById('btnSelectWpFolder');
+  const lblWpFolderStatus = document.getElementById('lblWpFolderStatus');
+  const btnSelectWpImage = document.getElementById('btnSelectWpImage');
+  const txtWpMovieTitle = document.getElementById('txtWpMovieTitle');
+  const btnUploadWp = document.getElementById('btnUploadWp');
+  const btnResolveWp = document.getElementById('btnResolveWp');
+
+  const wpCard1 = document.getElementById('wpCard1');
+  const wpCard2 = document.getElementById('wpCard2');
+  const wpCard3 = document.getElementById('wpCard3');
+  const wpCard4 = document.getElementById('wpCard4');
+
+  const roundTimerPill = document.getElementById('roundTimerPill');
+  const lblRoundTimerSeconds = document.getElementById('lblRoundTimerSeconds');
+  const btnResumeRound = document.getElementById('btnResumeRound');
+  const btnAbortRound = document.getElementById('btnAbortRound');
+
+  // Frameless Window Titlebar Controls
+  const titlebarMin = document.getElementById('titlebarMin');
+  const titlebarMax = document.getElementById('titlebarMax');
+  const titlebarClose = document.getElementById('titlebarClose');
+  const titlebarIconMax = document.getElementById('titlebarIconMax');
+  const titlebarIconRestore = document.getElementById('titlebarIconRestore');
+
+  // 10s Buzzer Answer Timer Elements
+  const answerTimerBox = document.getElementById('answerTimerBox');
+  const lblAnswerTimerSeconds = document.getElementById('lblAnswerTimerSeconds');
+  const answerTimerBarFill = document.getElementById('answerTimerBarFill');
+  const answerExpiredAlert = document.getElementById('answerExpiredAlert');
+  const btnExpiredEndRound = document.getElementById('btnExpiredEndRound');
+  const btnExpiredRelease = document.getElementById('btnExpiredRelease');
+  const btnPickNextWallpaper = document.getElementById('btnPickNextWallpaper');
+
+  let selectedWpImagePath = '';
+  let lastBoostActive = false;
+
+  // Hitster Regie Elements
+  const hitsterRegiePanel = document.getElementById('hitsterRegiePanel');
+  const btnSelectHitsterFolder = document.getElementById('btnSelectHitsterFolder');
+  const lblHitsterFolderStatus = document.getElementById('lblHitsterFolderStatus');
+  const btnPickHitsterSong = document.getElementById('btnPickHitsterSong');
+  const txtHitsterYear = document.getElementById('txtHitsterYear');
+  const txtHitsterArtist = document.getElementById('txtHitsterArtist');
+  const txtHitsterTitle = document.getElementById('txtHitsterTitle');
+  const btnApplyHitsterCard = document.getElementById('btnApplyHitsterCard');
+  const btnResolveHitster = document.getElementById('btnResolveHitster');
+  const hitsterTimelineRegieList = document.getElementById('hitsterTimelineRegieList');
+
+  // Arena Game Banners
+  const arenaSongBanner = document.getElementById('arenaSongBanner');
+  const arenaSongTitleText = document.getElementById('arenaSongTitleText');
+  const arenaHitsterBanner = document.getElementById('arenaHitsterBanner');
+  const arenaHitsterTrackText = document.getElementById('arenaHitsterTrackText');
+  const arenaHitsterYearBadge = document.getElementById('arenaHitsterYearBadge');
+  const arenaHitsterTimelineDeck = document.getElementById('arenaHitsterTimelineDeck');
+  const hitsterSlotContainer = document.getElementById('hitsterSlotContainer');
+  const txtNewPlayerName = document.getElementById('txtNewPlayerName');
+  const btnAddPlayer = document.getElementById('btnAddPlayer');
+  const arenaWallpaperBanner = document.getElementById('arenaWallpaperBanner');
+  const arenaWpPreviewImg = document.getElementById('arenaWpPreviewImg');
+  const arenaWpStageText = document.getElementById('arenaWpStageText');
+  const arenaWpResolvedTitle = document.getElementById('arenaWpResolvedTitle');
+
+  // Dynamic Evaluation Actions Sets
+  const evalActionsSong = document.getElementById('evalActionsSong');
+  const evalActionsHitster = document.getElementById('evalActionsHitster');
+  const evalActionsWallpaper = document.getElementById('evalActionsWallpaper');
+
+  const btnHitsterWrong = document.getElementById('btnHitsterWrong');
+  const btnHitsterSkip = document.getElementById('btnHitsterSkip');
+  const btnHitsterCorrect = document.getElementById('btnHitsterCorrect');
+  const btnHitsterRevealCenter = document.getElementById('btnHitsterRevealCenter');
+
+  const btnWpWrong = document.getElementById('btnWpWrong');
+  const btnWpSkip = document.getElementById('btnWpSkip');
+  const btnWpCorrect = document.getElementById('btnWpCorrect');
+  const btnWpResolveCenter = document.getElementById('btnWpResolveCenter');
+  const lblWpCorrectPointsSub = document.getElementById('lblWpCorrectPointsSub');
+
+  // 3D Startup Gate & Physical Rig Elements
+  const startupGateModal = document.getElementById('startupGateModal');
+  const cardSelectSong = document.getElementById('cardSelectSong');
+  const cardSelectHitster = document.getElementById('cardSelectHitster');
+  const cardSelectWallpaper = document.getElementById('cardSelectWallpaper');
+  const btnOpenGamePicker = document.getElementById('btnOpenGamePicker');
+  const btnPhysicalBuzzer = document.getElementById('btnPhysicalBuzzer');
+  const sceneHitsterCard = document.getElementById('sceneHitsterCard');
+  const hitster3DFlippableCard = document.getElementById('hitster3DFlippableCard');
+  const arenaHitsterCardYear = document.getElementById('arenaHitsterCardYear');
+
+  // Dynamic 3D Game-Faithful Boards & UI Elements
+  const arenaModeIconBadge = document.getElementById('arenaModeIconBadge');
+  const arenaMainTitle = document.getElementById('arenaMainTitle');
+  const arenaModeSubtitle = document.getElementById('arenaModeSubtitle');
+  const arenaBoardSong = document.getElementById('arenaBoardSong');
+  const arenaBoardHitster = document.getElementById('arenaBoardHitster');
+  const arenaBoardWallpaper = document.getElementById('arenaBoardWallpaper');
+  const btnHitsterDeckPlay = document.getElementById('btnHitsterDeckPlay');
+  const btnHitsterDeckNext = document.getElementById('btnHitsterDeckNext');
+  const btnHitsterQuickReveal = document.getElementById('btnHitsterQuickReveal');
+  const arenaHitsterCardTitle = document.getElementById('arenaHitsterCardTitle');
+  const selHitsterActivePlayer = document.getElementById('selHitsterActivePlayer');
+  const hitsterPlayerShelvesContainer = document.getElementById('hitsterPlayerShelvesContainer');
+  const hitsterDecadesBar = document.getElementById('hitsterDecadesBar');
+  const arenaWpClapperTitle = document.getElementById('arenaWpClapperTitle');
+  const arenaWpStageBadge = document.getElementById('arenaWpStageBadge');
+  const lblWpNextStageTimer = document.getElementById('lblWpNextStageTimer');
+  const arenaWpCinemaImg = document.getElementById('arenaWpCinemaImg');
+  const arenaWpScreenPlaceholder = document.getElementById('arenaWpScreenPlaceholder');
+  const circleWpProgress = document.getElementById('circleWpProgress');
+  const lblWpRadialSeconds = document.getElementById('lblWpRadialSeconds');
+  const arenaWpResolvedOverlay = document.getElementById('arenaWpResolvedOverlay');
+  const arenaWpResolvedTitleLarge = document.getElementById('arenaWpResolvedTitleLarge');
+
+  // Hitster in-memory player cards collection (username -> [{ year, title, artist }])
+  const playerHitsterCards = {};
+
+  // Live Folder Search & Autocomplete Elements
+  const txtSearchSong = document.getElementById('txtSearchSong');
+  const songSearchResults = document.getElementById('songSearchResults');
+  const txtSearchHitster = document.getElementById('txtSearchHitster');
+  const hitsterSearchResults = document.getElementById('hitsterSearchResults');
+  const txtSearchWallpaper = document.getElementById('txtSearchWallpaper');
+  const wpSearchResults = document.getElementById('wpSearchResults');
+
+  // Interactive Score & Floating Editor Popup Elements
+  const lblHostScore = document.getElementById('lblHostScore');
+  const quickScoreEditorPopup = document.getElementById('quickScoreEditorPopup');
+  const btnQuickScoreClose = document.getElementById('btnQuickScoreClose');
+  const quickScorePlayerName = document.getElementById('quickScorePlayerName');
+  const txtQuickScoreValue = document.getElementById('txtQuickScoreValue');
+  const btnQuickScoreSave = document.getElementById('btnQuickScoreSave');
+
+  // Loaded assets cache for instant 60fps search
+  let loadedMusicFiles = [];
+  let loadedWallpaperRounds = [];
+  let editingScorePlayer = null;
+  let customWallpaperStagePoints = { 1: 4, 2: 3, 3: 2, 4: 1 };
+
+  // Bespoke Vector SVG Icons (No broken emojis)
+  const SVG_CHIP = `<svg class="svg-chip-icon" viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="10" stroke="#f59e0b" stroke-width="2" fill="#78350f" stroke-dasharray="3.2 2"/><circle cx="12" cy="12" r="6.5" stroke="#fbbf24" stroke-width="1.5" fill="#1e1b4b"/><circle cx="12" cy="12" r="3" fill="#fbbf24"/></svg>`;
+  const SVG_PENCIL = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+  const SVG_DISC = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const SVG_TROPHY = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>`;
+  const SVG_TARGET = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`;
+
+  // Bespoke In-App Modal Dialogs (Alert / Confirm / Prompt - Replaces ugly Windows popups)
+  function showCustomAlert(message, title = 'MannisBox') {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('customAppDialogModal');
+      const titleEl = document.getElementById('customDialogTitle');
+      const msgEl = document.getElementById('customDialogMessage');
+      const iconEl = document.getElementById('customDialogIconContainer');
+      const inputEl = document.getElementById('customDialogInput');
+      const cancelBtn = document.getElementById('btnCustomDialogCancel');
+      const confirmBtn = document.getElementById('btnCustomDialogConfirm');
+
+      if (!modal) {
+        window.alert(message);
+        return resolve();
+      }
+
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      inputEl.classList.add('hidden');
+      cancelBtn.classList.add('hidden');
+      confirmBtn.textContent = 'Verstanden';
+
+      iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#6366f1" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+      iconEl.style.borderColor = '#6366f1';
+      iconEl.style.background = 'rgba(99, 102, 241, 0.15)';
+
+      modal.classList.remove('hidden');
+      confirmBtn.focus();
+
+      function onConfirm() {
+        cleanup();
+        resolve();
+      }
+
+      function onKeyDown(e) {
+        if (e.key === 'Enter' || e.key === 'Escape') {
+          e.preventDefault();
+          onConfirm();
+        }
+      }
+
+      function cleanup() {
+        confirmBtn.removeEventListener('click', onConfirm);
+        document.removeEventListener('keydown', onKeyDown);
+        modal.classList.add('hidden');
+      }
+
+      confirmBtn.addEventListener('click', onConfirm);
+      document.addEventListener('keydown', onKeyDown);
+    });
+  }
+
+  function showCustomConfirm(message, title = 'Bestätigung erforderlich') {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('customAppDialogModal');
+      const titleEl = document.getElementById('customDialogTitle');
+      const msgEl = document.getElementById('customDialogMessage');
+      const iconEl = document.getElementById('customDialogIconContainer');
+      const inputEl = document.getElementById('customDialogInput');
+      const cancelBtn = document.getElementById('btnCustomDialogCancel');
+      const confirmBtn = document.getElementById('btnCustomDialogConfirm');
+
+      if (!modal) {
+        return resolve(window.confirm(message));
+      }
+
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      inputEl.classList.add('hidden');
+      cancelBtn.classList.remove('hidden');
+      cancelBtn.textContent = 'Abbrechen';
+      confirmBtn.textContent = 'Bestätigen';
+
+      iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+      iconEl.style.borderColor = '#f59e0b';
+      iconEl.style.background = 'rgba(245, 158, 11, 0.15)';
+
+      modal.classList.remove('hidden');
+      confirmBtn.focus();
+
+      function onConfirm() {
+        cleanup();
+        resolve(true);
+      }
+
+      function onCancel() {
+        cleanup();
+        resolve(false);
+      }
+
+      function onKeyDown(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onConfirm();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
+      }
+
+      function cleanup() {
+        confirmBtn.removeEventListener('click', onConfirm);
+        cancelBtn.removeEventListener('click', onCancel);
+        document.removeEventListener('keydown', onKeyDown);
+        modal.classList.add('hidden');
+      }
+
+      confirmBtn.addEventListener('click', onConfirm);
+      cancelBtn.addEventListener('click', onCancel);
+      document.addEventListener('keydown', onKeyDown);
+    });
+  }
+
+  function showCustomPrompt(message, defaultValue = '', title = 'Eingabe erforderlich') {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('customAppDialogModal');
+      const titleEl = document.getElementById('customDialogTitle');
+      const msgEl = document.getElementById('customDialogMessage');
+      const iconEl = document.getElementById('customDialogIconContainer');
+      const inputEl = document.getElementById('customDialogInput');
+      const cancelBtn = document.getElementById('btnCustomDialogCancel');
+      const confirmBtn = document.getElementById('btnCustomDialogConfirm');
+
+      if (!modal) {
+        return resolve(window.prompt(message, defaultValue));
+      }
+
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      inputEl.value = defaultValue;
+      inputEl.classList.remove('hidden');
+      cancelBtn.classList.remove('hidden');
+      cancelBtn.textContent = 'Abbrechen';
+      confirmBtn.textContent = 'Übernehmen';
+
+      iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+      iconEl.style.borderColor = '#38bdf8';
+      iconEl.style.background = 'rgba(56, 189, 248, 0.15)';
+
+      modal.classList.remove('hidden');
+      inputEl.focus();
+      inputEl.select();
+
+      function onConfirm() {
+        const val = inputEl.value;
+        cleanup();
+        resolve(val);
+      }
+
+      function onCancel() {
+        cleanup();
+        resolve(null);
+      }
+
+      function onKeyDown(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onConfirm();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
+      }
+
+      function cleanup() {
+        confirmBtn.removeEventListener('click', onConfirm);
+        cancelBtn.removeEventListener('click', onCancel);
+        inputEl.removeEventListener('keydown', onKeyDown);
+        document.removeEventListener('keydown', onKeyDown);
+        inputEl.classList.add('hidden');
+        modal.classList.add('hidden');
+      }
+
+      confirmBtn.addEventListener('click', onConfirm);
+      cancelBtn.addEventListener('click', onCancel);
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onConfirm();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
+      });
+    });
+  }
 
   // Local state
   let config = {};
@@ -124,6 +497,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     config = await window.mannisBoxAPI.getConfig();
     populateSettingsForm(config);
     updateHostDisplay();
+    updateChannelLabels();
+    refreshGuildsAndChannels();
   } catch (err) {
     console.error('Error loading config:', err);
   }
@@ -136,17 +511,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. Setup IPC Listeners
   window.mannisBoxAPI.onBotStatus(async (status) => {
-    botOnline = status.online;
-    if (status.online) {
+    const isOnline = !!(status.online || status.connected);
+    botOnline = isOnline;
+    if (isOnline) {
+      const tag = status.tag || status.user?.tag || 'MannisBox#6040';
       botStatusBadge.className = 'status-badge online';
-      botStatusBadge.querySelector('.status-text').textContent = 'Bot Online (' + (status.user?.tag || 'Connected') + ')';
+      botStatusBadge.querySelector('.status-text').textContent = 'Bot Online (' + tag + ')';
       if (status.inviteUrl) botInviteUrl = status.inviteUrl;
       if (status.hostName) hostDisplayName = status.hostName;
       updateHostDisplay();
       await refreshGuildsAndChannels();
     } else {
       botStatusBadge.className = 'status-badge offline';
-      botStatusBadge.querySelector('.status-text').textContent = status.error ? 'Fehler beim Starten' : 'Bot Offline';
+      botStatusBadge.querySelector('.status-text').textContent = status.error ? ('Fehler: ' + status.error) : 'Bot Offline';
     }
   });
 
@@ -168,8 +545,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGameState(state);
   });
 
-  window.mannisBoxAPI.onError((err) => {
-    alert('Discord Bot Fehler: ' + err);
+  window.mannisBoxAPI.onError(async (err) => {
+    await showCustomAlert('Discord Bot Fehler: ' + err, 'Bot Fehler');
   });
 
   // 3. Epic Local Sound Synthesizer
@@ -299,9 +676,446 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // 3.5 Hitster Player Shelves Rendering (Real Hitster Rules & Progress to 10 cards)
+  function renderHitsterPlayerShelves(state) {
+    if (!hitsterPlayerShelvesContainer) return;
+
+    // Reset local cache if scores are empty
+    if (state && (!state.scores || Object.keys(state.scores).length === 0)) {
+      Object.keys(playerHitsterCards).forEach(k => delete playerHitsterCards[k]);
+    }
+
+    // Sync from state.hitsterState.playerShelves and scores
+    if (state?.hitsterState?.playerShelves) {
+      Object.entries(state.hitsterState.playerShelves).forEach(([name, shelf]) => {
+        if (shelf?.cards && Array.isArray(shelf.cards)) {
+          playerHitsterCards[name] = [...shelf.cards];
+        }
+      });
+    }
+    if (state?.scores) {
+      Object.values(state.scores).forEach(p => {
+        if (p.cards && Array.isArray(p.cards) && p.cards.length > 0) {
+          playerHitsterCards[p.username] = [...p.cards];
+        }
+      });
+    }
+
+    const allPlayersMap = {};
+    if (state && state.scores) {
+      Object.values(state.scores).forEach(p => {
+        allPlayersMap[p.username] = { id: p.id, username: p.username, avatar: p.avatar, points: p.points || 0 };
+      });
+    }
+    if (state && state.voiceMembers) {
+      state.voiceMembers.forEach(m => {
+        if (!allPlayersMap[m.username]) {
+          allPlayersMap[m.username] = { id: m.id, username: m.username, avatar: m.avatar, points: 0 };
+        }
+      });
+    }
+
+    Object.keys(playerHitsterCards).forEach(name => {
+      if (!allPlayersMap[name]) {
+        allPlayersMap[name] = { id: name, username: name, avatar: '../../App.png', points: 0 };
+      }
+    });
+
+    const playerNames = Object.keys(allPlayersMap);
+
+    // Update Dropdown in Hitster Evaluation Bar
+    if (selHitsterActivePlayer) {
+      const currentSelected = selHitsterActivePlayer.value;
+      let opts = '<option value="">(Wähle Spieler...)</option>';
+      playerNames.forEach(name => {
+        opts += `<option value="${escapeHtml(name)}" ${name === currentSelected ? 'selected' : ''}>${escapeHtml(name)}</option>`;
+      });
+      selHitsterActivePlayer.innerHTML = opts;
+
+      if (currentSelected && playerNames.includes(currentSelected)) {
+        selHitsterActivePlayer.value = currentSelected;
+      } else if (state && state.activePlayer && state.activePlayer.username) {
+        selHitsterActivePlayer.value = state.activePlayer.username;
+      } else if (playerNames.length > 0 && !selHitsterActivePlayer.value) {
+        selHitsterActivePlayer.value = playerNames[0];
+      }
+    }
+
+    if (playerNames.length === 0) {
+      hitsterPlayerShelvesContainer.innerHTML = '<div class="queue-empty">Keine Spieler angelegt. Starte eine Runde oder lege rechts Spieler an!</div>';
+      return;
+    }
+
+    hitsterPlayerShelvesContainer.innerHTML = playerNames.map(name => {
+      const p = allPlayersMap[name];
+      const cards = (state?.hitsterState?.playerShelves?.[name]?.cards) || playerHitsterCards[name] || (p.cards && Array.isArray(p.cards) ? p.cards : []);
+      const chips = (state?.hitsterState?.playerShelves?.[name]?.chips !== undefined) ? state.hitsterState.playerShelves[name].chips : (p.chips !== undefined ? p.chips : 3);
+      const count = cards.length;
+      const isWinner = count >= 10;
+
+      const cardsHtml = count === 0
+        ? '<span class="shelf-empty-hint">Noch keine Karten gesammelt</span>'
+        : cards.map(c => `
+            <div class="hitster-shelf-chip">
+              <span class="chip-year">${SVG_DISC} ${c.year}</span>
+              <span class="chip-title" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}</span>
+            </div>
+          `).join('');
+
+      return `
+        <div class="hitster-player-shelf ${isWinner ? 'winner-shelf' : ''}">
+          <div class="player-shelf-header">
+            <div class="player-shelf-name">
+              <img src="${p.avatar || '../../App.png'}" class="shelf-avatar" alt="Avatar">
+              <span>${escapeHtml(p.username)}</span>
+              ${isWinner ? `<span class="winner-trophy-badge">${SVG_TROPHY} GEWINNER!</span>` : ''}
+              <div class="hitster-chips-badge" title="Hitster Spielchips zum Anfechten">
+                <span>${SVG_CHIP} ${chips}</span>
+                <button class="btn-chip-adjust" data-player="${escapeHtml(p.username)}" data-delta="-1" title="Chip abziehen">-</button>
+                <button class="btn-chip-adjust" data-player="${escapeHtml(p.username)}" data-delta="1" title="Chip hinzufügen">+</button>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button class="btn-throw-chip" data-player="${escapeHtml(p.username)}" title="Diesen Spieler anfechten lassen (Chip werfen)">
+                <span>${SVG_CHIP} Chip werfen</span>
+              </button>
+              <span class="player-shelf-progress">${SVG_TARGET} ${count} / 10 Karten</span>
+            </div>
+          </div>
+          <div class="player-shelf-timeline">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
   // 4. Render Game State
+  let lastHandledFlash = null;
+
   function renderGameState(state) {
     if (!state) return;
+
+    // Game Mode Sync & 3D WebGL Horizon
+    const mode = state.gameMode;
+    const isStandby = !mode || mode === 'standby';
+
+    if (isStandby) {
+      if (startupGateModal) startupGateModal.classList.remove('hidden');
+    } else {
+      if (startupGateModal && !startupGateModal.dataset.manualOpen) {
+        startupGateModal.classList.add('hidden');
+      }
+    }
+
+    btnModeSong.classList.toggle('active', mode === 'song');
+    btnModeHitster.classList.toggle('active', mode === 'hitster');
+    btnModeWallpaper.classList.toggle('active', mode === 'wallpaper');
+
+    if (window.ue5StageInstance) {
+      window.ue5StageInstance.setGameMode(isStandby ? 'standby' : mode);
+    }
+
+    // Dynamic 3-Board Middle Column Switch
+    if (arenaBoardSong) arenaBoardSong.classList.toggle('hidden', mode !== 'song');
+    if (arenaBoardHitster) arenaBoardHitster.classList.toggle('hidden', mode !== 'hitster');
+    if (arenaBoardWallpaper) arenaBoardWallpaper.classList.toggle('hidden', mode !== 'wallpaper');
+
+    // Dynamic Arena Main Header
+    if (arenaModeIconBadge && arenaMainTitle) {
+      if (mode === 'wallpaper') {
+        arenaModeIconBadge.textContent = '🎬';
+        arenaMainTitle.textContent = 'Filme & Wallpaper Quiz';
+      } else if (mode === 'hitster') {
+        arenaModeIconBadge.textContent = '📻';
+        arenaMainTitle.textContent = 'Hitster Zeitstrahl';
+      } else {
+        arenaModeIconBadge.textContent = '🎵';
+        arenaMainTitle.textContent = 'Erkennst du den Song';
+      }
+    }
+
+    // Regie Sub-Panels
+    songRegiePanel.classList.toggle('hidden', mode !== 'song');
+    hitsterRegiePanel.classList.toggle('hidden', mode !== 'hitster');
+    wallpaperRegiePanel.classList.toggle('hidden', mode !== 'wallpaper');
+
+    // Arena Game Banners
+    if (arenaSongBanner) arenaSongBanner.classList.toggle('hidden', mode !== 'song');
+    if (arenaHitsterBanner) arenaHitsterBanner.classList.toggle('hidden', mode !== 'hitster');
+    if (arenaWallpaperBanner) arenaWallpaperBanner.classList.toggle('hidden', mode !== 'wallpaper');
+
+    // Evaluation Actions Sets
+    evalActionsSong.classList.toggle('hidden', mode !== 'song');
+    evalActionsHitster.classList.toggle('hidden', mode !== 'hitster');
+    evalActionsWallpaper.classList.toggle('hidden', mode !== 'wallpaper');
+
+    // Fullscreen Screen Flash
+    if (state.screenFlash === 'green' && lastHandledFlash !== 'green') {
+      screenFlashLayer.className = 'screen-flash-layer flash-glow-green';
+      setTimeout(() => { screenFlashLayer.className = 'screen-flash-layer'; }, 1400);
+    } else if (state.screenFlash === 'red' && lastHandledFlash !== 'red') {
+      screenFlashLayer.className = 'screen-flash-layer flash-glow-red';
+      setTimeout(() => { screenFlashLayer.className = 'screen-flash-layer'; }, 1400);
+    }
+    lastHandledFlash = state.screenFlash;
+
+    // Round Timer HUD
+    if (state.roundTimer && state.roundTimer.active) {
+      lblRoundTimerSeconds.textContent = Math.ceil(state.roundTimer.remaining) + 's';
+      roundTimerPill.classList.remove('hidden');
+    } else {
+      lblRoundTimerSeconds.textContent = '--s';
+    }
+
+    // Goal & Boost State Handling
+    if (lblGoalValue) {
+      lblGoalValue.textContent = state.goal || (mode === 'hitster' ? 10 : 50);
+    }
+    const isBoostActive = !!state.isBoostActive;
+    if (btnToggleBoost) {
+      btnToggleBoost.classList.toggle('active', isBoostActive);
+      if (lblBoostStatus) {
+        lblBoostStatus.textContent = 'BOOST 2X';
+      }
+    }
+    if (arenaBoostBanner) {
+      arenaBoostBanner.classList.toggle('hidden', !isBoostActive);
+    }
+    if (btnPhysicalBuzzer) {
+      btnPhysicalBuzzer.classList.toggle('boosted', isBoostActive);
+    }
+    if (window.ue5StageInstance) {
+      window.ue5StageInstance.setBoostActive(isBoostActive);
+      if (isBoostActive && !lastBoostActive) {
+        window.ue5StageInstance.triggerBoostSupercharge();
+        document.body.classList.add('screen-shake-boost');
+        setTimeout(() => document.body.classList.remove('screen-shake-boost'), 650);
+        screenFlashLayer.className = 'screen-flash-layer flash-glow-boost';
+        setTimeout(() => { screenFlashLayer.className = 'screen-flash-layer'; }, 850);
+      }
+    }
+    lastBoostActive = isBoostActive;
+
+    // Grand Champion Victory Celebration Modal
+    if (state.winner) {
+      if (victoryModal && victoryModal.classList.contains('hidden')) {
+        victoryModal.classList.remove('hidden');
+        playLocalSound('perfect');
+        if (window.ue5StageInstance) window.ue5StageInstance.triggerBuzzerShockwave();
+      }
+      if (victoryWinnerAvatar) {
+        victoryWinnerAvatar.src = state.winner.avatar || '../../App.png';
+      }
+      if (victoryWinnerName) {
+        victoryWinnerName.textContent = state.winner.username || 'Champion';
+      }
+      if (victoryWinnerScoreTag) {
+        victoryWinnerScoreTag.textContent = (state.winner.cards ? `${state.winner.cards} Karten` : `${state.winner.points || 0} Punkte`) + ' • Sieger!';
+      }
+    } else {
+      if (victoryModal && !victoryModal.dataset.manuallyOpened) {
+        victoryModal.classList.add('hidden');
+      }
+    }
+
+    // 1. Song Quiz State Rendering
+    if (state.songState) {
+      const song = state.songState;
+      const displaySong = song.revealed ? song.fullTitle : (song.censoredTitle || '████████ - ████████');
+      arenaSongTitleText.textContent = displaySong;
+      if (song.fullTitle) lblAudioTrackTitle.textContent = song.fullTitle;
+    }
+
+    // 2. Hitster State Rendering
+    if (state.hitsterState) {
+      const card = state.hitsterState.currentCard;
+      const flippableCard = document.getElementById('hitster3DFlippableCard');
+      const cardYearNumber = document.getElementById('arenaHitsterCardYear');
+      if (card && card.title) {
+        const fullTrackText = `${card.artist || 'Unbekannt'} - ${card.title}`;
+        arenaHitsterTrackText.textContent = fullTrackText;
+        if (arenaHitsterCardTitle) arenaHitsterCardTitle.textContent = fullTrackText;
+        if (cardYearNumber) cardYearNumber.textContent = card.revealed ? (card.year || '????') : '????';
+        if (flippableCard) {
+          if (card.revealed) {
+            flippableCard.classList.add('is-flipped');
+          } else {
+            flippableCard.classList.remove('is-flipped');
+          }
+        }
+        if (card.revealed) {
+          arenaHitsterYearBadge.textContent = card.year || '????';
+          arenaHitsterYearBadge.style.background = '#10b981';
+        } else {
+          arenaHitsterYearBadge.textContent = '????';
+          arenaHitsterYearBadge.style.background = 'linear-gradient(180deg, #8b5cf6, #6d28d9)';
+        }
+      } else {
+        arenaHitsterTrackText.textContent = 'Kein Song aktiv';
+        if (arenaHitsterCardTitle) arenaHitsterCardTitle.textContent = 'Warte auf Track...';
+        if (cardYearNumber) cardYearNumber.textContent = '????';
+        if (flippableCard) flippableCard.classList.remove('is-flipped');
+        arenaHitsterYearBadge.textContent = '????';
+      }
+
+      // Render timeline list in Regie
+      const timeline = state.hitsterState.timeline || [];
+      if (timeline.length > 0) {
+        hitsterTimelineRegieList.innerHTML = timeline.map(c => `
+          <div class="hitster-timeline-chip">
+            <span style="color: #fbbf24; font-weight: 900; display: inline-flex; align-items: center; gap: 4px;">${SVG_DISC} ${c.year}</span>
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(c.title)}</span>
+          </div>
+        `).join('');
+      } else {
+        hitsterTimelineRegieList.innerHTML = '<span style="font-size: 10px; color: #64748b;">Noch keine Karten platziert</span>';
+      }
+
+      // Render Interactive Arena Deck
+      arenaHitsterTimelineDeck.classList.toggle('hidden', state.gameMode !== 'hitster');
+      if (hitsterSlotContainer) {
+        let slotHtml = '';
+        if (timeline.length === 0) {
+          slotHtml = `
+            <button class="hitster-slot-btn" data-slot="0">
+              <span>${SVG_TARGET} ERSTE KARTE</span>
+              <small>Hier platzieren</small>
+            </button>
+          `;
+        } else {
+          slotHtml += `
+            <button class="hitster-slot-btn" data-slot="0">
+              <span>${SVG_TARGET} VOR ${timeline[0].year}</span>
+              <small>Älter als ${timeline[0].year}</small>
+            </button>
+          `;
+
+          for (let i = 0; i < timeline.length; i++) {
+            const tc = timeline[i];
+            slotHtml += `
+              <div class="hitster-placed-card">
+                <span class="hitster-placed-year">${SVG_DISC} ${tc.year}</span>
+                <span class="hitster-placed-title" title="${escapeHtml(tc.title)}">${escapeHtml(tc.title)}</span>
+                <span class="hitster-placed-artist" title="${escapeHtml(tc.artist || '')}">${escapeHtml(tc.artist || '')}</span>
+              </div>
+            `;
+
+            if (i < timeline.length - 1) {
+              const nextTc = timeline[i + 1];
+              slotHtml += `
+                <button class="hitster-slot-btn" data-slot="${i + 1}">
+                  <span>${SVG_TARGET} DAZWISCHEN</span>
+                  <small>${tc.year} – ${nextTc.year}</small>
+                </button>
+              `;
+            } else {
+              slotHtml += `
+                <button class="hitster-slot-btn" data-slot="${timeline.length}">
+                  <span>${SVG_TARGET} NACH ${tc.year}</span>
+                  <small>Neuer als ${tc.year}</small>
+                </button>
+              `;
+            }
+          }
+        }
+        hitsterSlotContainer.innerHTML = slotHtml;
+
+        hitsterSlotContainer.querySelectorAll('.hitster-slot-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const slotIdx = parseInt(btn.getAttribute('data-slot'), 10);
+            const targetPlayer = selHitsterActivePlayer?.value || currentGameState?.activePlayer?.username || '';
+            const res = await window.mannisBoxAPI.placeHitsterCard(slotIdx, targetPlayer);
+            if (res && res.player && res.correct) {
+              if (!playerHitsterCards[res.player.username]) playerHitsterCards[res.player.username] = [];
+              playerHitsterCards[res.player.username] = [...(res.player.cards || [])];
+              renderHitsterPlayerShelves(currentGameState);
+            }
+          });
+        });
+      }
+
+      // Render Real Hitster Player Shelves
+      renderHitsterPlayerShelves(state);
+    }
+
+    // 3. Wallpaper Quiz State Rendering
+    if (state.wallpaperState) {
+      const wp = state.wallpaperState;
+      const st = Math.min(5, Math.max(1, wp.stage || 1));
+      wpCard1.classList.toggle('active-stage', st === 1);
+      wpCard2.classList.toggle('active-stage', st === 2);
+      wpCard3.classList.toggle('active-stage', st === 3);
+      wpCard4.classList.toggle('active-stage', st === 4);
+
+      if (state.wallpaperStagePoints) {
+        customWallpaperStagePoints = { ...state.wallpaperStagePoints };
+      }
+      const p1 = customWallpaperStagePoints[1] ?? 4;
+      const p2 = customWallpaperStagePoints[2] ?? 3;
+      const p3 = customWallpaperStagePoints[3] ?? 2;
+      const p4 = customWallpaperStagePoints[4] ?? 1;
+      const el1 = document.getElementById('lblWpStage1Pts');
+      const el2 = document.getElementById('lblWpStage2Pts');
+      const el3 = document.getElementById('lblWpStage3Pts');
+      const el4 = document.getElementById('lblWpStage4Pts');
+      if (el1) el1.textContent = `${p1} Pkt`;
+      if (el2) el2.textContent = `${p2} Pkt`;
+      if (el3) el3.textContent = `${p3} Pkt`;
+      if (el4) el4.textContent = `${p4} Pkt`;
+
+      arenaWpStageText.textContent = `Stufe ${st} (${wp.points || 4} Pkt)`;
+      lblWpCorrectPointsSub.textContent = `+${state.activePlayer?.potentialPoints || wp.points || 4} Pkt`;
+
+      // Cinema Theater 16:9 Screen & Progressive Blur
+      const imgPath = wp.imagePath || wp.currentImage;
+      if (imgPath) {
+        arenaWpCinemaImg.src = `http://localhost:8888/api/image?path=${encodeURIComponent(imgPath)}`;
+        arenaWpCinemaImg.style.display = 'block';
+        if (arenaWpScreenPlaceholder) arenaWpScreenPlaceholder.style.display = 'none';
+      } else {
+        arenaWpCinemaImg.style.display = 'none';
+        if (arenaWpScreenPlaceholder) arenaWpScreenPlaceholder.style.display = 'flex';
+      }
+
+      if (wp.resolved) {
+        arenaWpCinemaImg.className = 'cinema-wallpaper-image blur-stage-5';
+        arenaWpResolvedTitle.textContent = wp.movieTitle || 'Film Aufgelöst';
+        if (arenaWpResolvedOverlay) arenaWpResolvedOverlay.classList.remove('hidden');
+        if (arenaWpResolvedTitleLarge) arenaWpResolvedTitleLarge.textContent = wp.movieTitle || 'Film Aufgelöst!';
+        if (arenaWpClapperTitle) {
+          arenaWpClapperTitle.textContent = 'FILM: ' + (wp.movieTitle || 'Aufgelöst');
+          arenaWpClapperTitle.classList.remove('film-blurred');
+          arenaWpClapperTitle.classList.add('film-revealed');
+        }
+        if (arenaWpStageBadge) arenaWpStageBadge.textContent = 'AUFGELÖST';
+        if (lblWpNextStageTimer) lblWpNextStageTimer.textContent = 'Film aufgedeckt';
+        if (lblWpRadialSeconds) lblWpRadialSeconds.textContent = '✓';
+      } else {
+        arenaWpCinemaImg.className = `cinema-wallpaper-image blur-stage-${st}`;
+        arenaWpResolvedTitle.textContent = '';
+        if (arenaWpResolvedOverlay) arenaWpResolvedOverlay.classList.add('hidden');
+        if (arenaWpClapperTitle) {
+          arenaWpClapperTitle.textContent = 'FILM: ' + (wp.movieTitle || 'Film gesucht...');
+          arenaWpClapperTitle.classList.remove('film-revealed');
+          arenaWpClapperTitle.classList.add('film-blurred');
+        }
+        if (arenaWpStageBadge) arenaWpStageBadge.textContent = `STUFE ${st} • ${wp.points || 4} PUNKTE`;
+
+        // 10-Second Countdown Radial Meter
+        if (state.roundTimer && state.roundTimer.active) {
+          const rem = Math.max(0, state.roundTimer.remaining);
+          const inStage = Math.ceil(rem % 10) || 10;
+          if (lblWpRadialSeconds) lblWpRadialSeconds.textContent = inStage + 's';
+          if (lblWpNextStageTimer) lblWpNextStageTimer.textContent = `Nächste Stufe in ${inStage}s`;
+          const offset = (113.1 * (1 - inStage / 10)).toFixed(1);
+          if (circleWpProgress) circleWpProgress.style.strokeDashoffset = offset;
+        } else {
+          if (lblWpRadialSeconds) lblWpRadialSeconds.textContent = '--s';
+          if (lblWpNextStageTimer) lblWpNextStageTimer.textContent = 'Timer pausiert';
+        }
+      }
+    }
 
     // Round badge
     roundNumberBadge.textContent = state.roundNumber || 1;
@@ -340,6 +1154,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnEvalSkip.disabled = isEvaluating;
     btnEvalCorrect.disabled = isEvaluating;
     btnEvalPerfect.disabled = isEvaluating;
+    btnHitsterWrong.disabled = isEvaluating;
+    btnHitsterSkip.disabled = isEvaluating;
+    btnHitsterCorrect.disabled = isEvaluating;
+    btnHitsterRevealCenter.disabled = isEvaluating;
+    btnWpWrong.disabled = isEvaluating;
+    btnWpSkip.disabled = isEvaluating;
+    btnWpCorrect.disabled = isEvaluating;
+    btnWpResolveCenter.disabled = isEvaluating;
 
     // Action buttons states
     btnToggleLock.disabled = !state.isRoundActive;
@@ -370,7 +1192,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       activePlayerTime.textContent = state.activePlayer.timeOffset ? `⚡ ${state.activePlayer.timeOffset}` : '⚡ 1. Platz';
 
       const pScore = state.scores?.[state.activePlayer.id]?.points || 0;
-      activePlayerScore.textContent = `${pScore} Punkte`;
+      activePlayerScore.innerHTML = `${pScore} Punkte ${SVG_PENCIL}`;
+      activePlayerScore.classList.add('tag-score-interactive');
+      activePlayerScore.title = 'Klicke hier, um die Punkte direkt anzupassen!';
 
       const wrongCount = state.roundWrongAttempts?.[state.activePlayer.id] || 0;
       if (wrongCount >= 1) {
@@ -378,9 +1202,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         lblWrongPenalty.textContent = `${config.points?.wrongFirst || -1} Punkt`;
       }
+
+      // 10s Buzzer Answer Timer
+      if (state.answerTimer) {
+        if (answerTimerBox) answerTimerBox.classList.remove('hidden');
+        const rem = state.answerTimer.remaining !== undefined ? state.answerTimer.remaining : 10;
+        const tot = state.answerTimer.total || 10;
+        if (lblAnswerTimerSeconds) lblAnswerTimerSeconds.textContent = `${rem}s`;
+        if (answerTimerBarFill) answerTimerBarFill.style.width = `${Math.max(0, Math.min(100, (rem / tot) * 100))}%`;
+
+        if (state.answerTimer.expired) {
+          if (answerExpiredAlert) answerExpiredAlert.classList.remove('hidden');
+        } else {
+          if (answerExpiredAlert) answerExpiredAlert.classList.add('hidden');
+        }
+      } else {
+        if (answerTimerBox) answerTimerBox.classList.add('hidden');
+        if (answerExpiredAlert) answerExpiredAlert.classList.add('hidden');
+      }
     } else {
       activeBuzzerCard.classList.add('hidden');
       buzzerPlaceholder.classList.remove('hidden');
+      if (answerTimerBox) answerTimerBox.classList.add('hidden');
+      if (answerExpiredAlert) answerExpiredAlert.classList.add('hidden');
     }
 
     // Buzzer Queue
@@ -415,7 +1259,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         el.querySelector('[data-action="ban"]')?.addEventListener('click', async (e) => {
           e.stopPropagation();
-          if (confirm(`Möchtest du ${playerName} wirklich für das Quiz sperren?`)) {
+          if (await showCustomConfirm(`Möchtest du ${playerName} wirklich für das Quiz sperren?`, 'Spieler sperren')) {
             await window.mannisBoxAPI.banPlayer(playerId, playerName);
           }
         });
@@ -447,7 +1291,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.addEventListener('click', async () => {
           const id = btn.getAttribute('data-id');
           const name = btn.getAttribute('data-name');
-          if (confirm(`Möchtest du ${name} vom Quiz sperren?`)) {
+          if (await showCustomConfirm(`Möchtest du ${name} vom Quiz sperren?`, 'Spieler sperren')) {
             await window.mannisBoxAPI.banPlayer(id, name);
           }
         });
@@ -493,23 +1337,33 @@ document.addEventListener('DOMContentLoaded', async () => {
                   <span class="player-substats">✅ ${p.correct || 0} | ❌ ${p.wrong || 0}</span>
                 </div>
               </div>
-              <div class="player-score-pill">${p.points} Pkt.</div>
+              <div class="player-score-pill tag-score-interactive" title="Klicke hier, um Punkte direkt anzupassen">${p.points} Pkt. ${SVG_PENCIL}</div>
             </div>
 
             <!-- Slide-Down Hover Drawer -->
             <div class="scoreboard-action-drawer">
-              <button class="btn-drawer-action btn-drawer-minus" data-action="minus" title="1 Punkt abziehen">-1 Punkt</button>
-              <button class="btn-drawer-action btn-drawer-plus" data-action="plus" title="1 Punkt hinzufügen">+1 Punkt</button>
-              <button class="btn-drawer-action btn-drawer-ban" data-action="ban" title="Spieler sperren">🚫 Sperren</button>
+              <button class="btn-drawer-action btn-drawer-minus" data-action="minus" title="1 Punkt abziehen">-1</button>
+              <button class="btn-drawer-action btn-drawer-plus" data-action="plus" title="1 Punkt hinzufügen">+1</button>
+              <button class="btn-drawer-action btn-drawer-buzz" data-action="buzz" title="Für diesen Spieler buzzern">🚨 Buzz</button>
+              <button class="btn-drawer-action" data-action="rename" title="Namen ändern">${SVG_PENCIL}</button>
+              <button class="btn-drawer-action btn-drawer-ban" data-action="ban" title="Spieler sperren">🚫</button>
+              <button class="btn-drawer-action btn-drawer-del" data-action="del" title="Spieler entfernen">🗑️</button>
             </div>
           </div>
         `;
       }).join('');
 
-      // Add listeners for drawer buttons
+      // Add listeners for drawer buttons and interactive score pills
       scoreboardList.querySelectorAll('.scoreboard-item').forEach((el) => {
         const playerId = el.getAttribute('data-player-id');
         const playerName = el.getAttribute('data-player-name');
+
+        el.querySelector('.player-score-pill')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const p = state.scores?.[playerId];
+          const pts = p ? p.points : 0;
+          openQuickScorePopup({ id: playerId, name: playerName, points: pts }, e.currentTarget);
+        });
 
         el.querySelector('[data-action="minus"]')?.addEventListener('click', async (e) => {
           e.stopPropagation();
@@ -521,9 +1375,29 @@ document.addEventListener('DOMContentLoaded', async () => {
           await window.mannisBoxAPI.adjustPlayerScore(playerId, 1);
         });
 
+        el.querySelector('[data-action="buzz"]')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await window.mannisBoxAPI.manualBuzzPlayer(playerId);
+        });
+
+        el.querySelector('[data-action="rename"]')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const newName = await showCustomPrompt(`Neuer Name für "${playerName}":`, playerName, 'Spieler umbenennen');
+          if (newName && newName.trim() && newName.trim() !== playerName) {
+            await window.mannisBoxAPI.renamePlayer(playerId, newName.trim());
+          }
+        });
+
+        el.querySelector('[data-action="del"]')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (await showCustomConfirm(`Spieler "${playerName}" wirklich entfernen?`, 'Spieler entfernen')) {
+            await window.mannisBoxAPI.removePlayer(playerId);
+          }
+        });
+
         el.querySelector('[data-action="ban"]')?.addEventListener('click', async (e) => {
           e.stopPropagation();
-          if (confirm(`Möchtest du ${playerName} wirklich für das Quiz sperren?`)) {
+          if (await showCustomConfirm(`Möchtest du ${playerName} wirklich für das Quiz sperren?`, 'Spieler sperren')) {
             await window.mannisBoxAPI.banPlayer(playerId, playerName);
           }
         });
@@ -532,6 +1406,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     renderBannedListModal(state.bannedPlayers || {});
     updateChannelLabels();
+
+    // Update Manni host score badge in bottom-left status card
+    if (lblHostScore) {
+      const hostId = config.hostId || '327863089796087809';
+      const hostEntry = state.scores?.[hostId] || Object.values(state.scores || {}).find(p => /manni/i.test(p.username) || p.id === hostId);
+      const hostPts = hostEntry ? hostEntry.points : 0;
+      lblHostScore.innerHTML = `${hostPts} Pkt ${SVG_PENCIL}`;
+    }
   }
 
   function renderBannedListModal(bannedObj) {
@@ -575,18 +1457,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 5. Host Actions
   btnStartRound.addEventListener('click', async () => {
-    if (!config.textChannelId) {
-      alert('Bitte wähle zuerst in den Einstellungen (⚙️) einen Textkanal für den Buzzer aus!');
-      openSettingsModal();
-      return;
-    }
     const res = await window.mannisBoxAPI.startRound({
-      guildId: config.guildId,
-      textChannelId: config.textChannelId,
-      voiceChannelId: config.voiceChannelId
+      guildId: config.guildId || null,
+      textChannelId: config.textChannelId || null,
+      voiceChannelId: config.voiceChannelId || null
     });
     if (!res.success) {
-      alert('Fehler beim Starten der Runde: ' + res.error);
+      await showCustomAlert('Fehler beim Starten der Runde: ' + res.error, 'Runden-Fehler');
     }
   });
 
@@ -601,7 +1478,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   btnEndRound.addEventListener('click', async () => {
-    if (confirm('Möchtest du das gesamte Quiz beenden und das finale Ranking (Platz 1 bis X) im Discord veröffentlichen?')) {
+    if (await showCustomConfirm('Möchtest du das gesamte Quiz beenden und das finale Ranking (Platz 1 bis X) im Discord veröffentlichen?', 'Quiz beenden')) {
       await window.mannisBoxAPI.endRound();
     }
   });
@@ -611,20 +1488,39 @@ document.addEventListener('DOMContentLoaded', async () => {
       await window.mannisBoxAPI.leaveVoice();
     } else {
       if (!config.guildId || !config.voiceChannelId) {
-        alert('Bitte wähle in den Einstellungen (⚙️) einen Server und Voice-Kanal aus!');
+        await showCustomAlert('Bitte wähle in den Einstellungen einen Server und Voice-Kanal aus!', 'Voice Setup');
         openSettingsModal();
         return;
       }
       const res = await window.mannisBoxAPI.joinVoice(config.guildId, config.voiceChannelId);
       if (!res.success) {
-        alert('Fehler beim Verbinden mit dem Voice-Kanal: ' + res.error);
+        await showCustomAlert('Fehler beim Verbinden mit dem Voice-Kanal: ' + res.error, 'Voice Fehler');
       }
     }
   });
 
   btnResetScores.addEventListener('click', async () => {
-    if (confirm('Möchtest du alle Punktestände und die Runde komplett auf 0 zurücksetzen?')) {
+    if (await showCustomConfirm('Möchtest du alle Punktestände und die Runde komplett auf 0 zurücksetzen?', 'Punktestände zurücksetzen')) {
       await window.mannisBoxAPI.resetScores();
+    }
+  });
+
+  // Player Management: Spieler manuell anlegen
+  btnAddPlayer.addEventListener('click', async () => {
+    const name = txtNewPlayerName.value.trim();
+    if (name) {
+      await window.mannisBoxAPI.addCustomPlayer(name);
+      txtNewPlayerName.value = '';
+    }
+  });
+
+  txtNewPlayerName.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter') {
+      const name = txtNewPlayerName.value.trim();
+      if (name) {
+        await window.mannisBoxAPI.addCustomPlayer(name);
+        txtNewPlayerName.value = '';
+      }
     }
   });
 
@@ -632,7 +1528,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   btnBanActivePlayer.addEventListener('click', async () => {
     if (!currentGameState?.activePlayer) return;
     const player = currentGameState.activePlayer;
-    if (confirm(`Möchtest du ${player.username} wirklich für das Quiz sperren?`)) {
+    if (await showCustomConfirm(`Möchtest du ${player.username} wirklich für das Quiz sperren?`, 'Spieler sperren')) {
       await window.mannisBoxAPI.banPlayer(player.id, player.username);
     }
   });
@@ -730,9 +1626,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function refreshGuildsAndChannels() {
-    if (!botOnline) return;
     try {
       availableGuilds = await window.mannisBoxAPI.getGuilds();
+      if (availableGuilds && availableGuilds.length > 0) {
+        botOnline = true;
+        botStatusBadge.className = 'status-badge online';
+      }
+
       selGuild.innerHTML = '<option value="">-- Server wählen --</option>';
       availableGuilds.forEach((g) => {
         const opt = document.createElement('option');
@@ -741,6 +1641,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (g.id === config.guildId) opt.selected = true;
         selGuild.appendChild(opt);
       });
+
+      // Automatically select guild if none set or invalid
+      if ((!config.guildId || !availableGuilds.some(g => g.id === config.guildId)) && availableGuilds.length > 0) {
+        config.guildId = availableGuilds[0].id;
+        selGuild.value = config.guildId;
+        await window.mannisBoxAPI.saveConfig(config);
+      }
 
       if (config.guildId) {
         await loadChannelsForGuild(config.guildId);
@@ -758,27 +1665,45 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    availableChannels = await window.mannisBoxAPI.getChannels(guildId);
+    try {
+      availableChannels = await window.mannisBoxAPI.getChannels(guildId);
 
-    selTextChannel.innerHTML = '<option value="">-- Textkanal wählen --</option>';
-    availableChannels.text.forEach((ch) => {
-      const opt = document.createElement('option');
-      opt.value = ch.id;
-      opt.textContent = `#${ch.name}`;
-      if (ch.id === config.textChannelId) opt.selected = true;
-      selTextChannel.appendChild(opt);
-    });
+      selTextChannel.innerHTML = '<option value="">-- Textkanal wählen --</option>';
+      availableChannels.text.forEach((ch) => {
+        const opt = document.createElement('option');
+        opt.value = ch.id;
+        opt.textContent = `#${ch.name}`;
+        if (ch.id === config.textChannelId) opt.selected = true;
+        selTextChannel.appendChild(opt);
+      });
 
-    selVoiceChannel.innerHTML = '<option value="">-- Voice-Kanal wählen --</option>';
-    availableChannels.voice.forEach((ch) => {
-      const opt = document.createElement('option');
-      opt.value = ch.id;
-      opt.textContent = `🔊 ${ch.name}`;
-      if (ch.id === config.voiceChannelId) opt.selected = true;
-      selVoiceChannel.appendChild(opt);
-    });
+      // Auto-select text channel if not set
+      if (!config.textChannelId && availableChannels.text.length > 0) {
+        config.textChannelId = availableChannels.text[0].id;
+        selTextChannel.value = config.textChannelId;
+        await window.mannisBoxAPI.saveConfig(config);
+      }
 
-    updateChannelLabels();
+      selVoiceChannel.innerHTML = '<option value="">-- Voice-Kanal wählen --</option>';
+      availableChannels.voice.forEach((ch) => {
+        const opt = document.createElement('option');
+        opt.value = ch.id;
+        opt.textContent = `🔊 ${ch.name}`;
+        if (ch.id === config.voiceChannelId) opt.selected = true;
+        selVoiceChannel.appendChild(opt);
+      });
+
+      // Auto-select voice channel if not set
+      if (!config.voiceChannelId && availableChannels.voice.length > 0) {
+        config.voiceChannelId = availableChannels.voice[0].id;
+        selVoiceChannel.value = config.voiceChannelId;
+        await window.mannisBoxAPI.saveConfig(config);
+      }
+
+      updateChannelLabels();
+    } catch (err) {
+      console.error('Error loading channels:', err);
+    }
   }
 
   selGuild.addEventListener('change', async (e) => {
@@ -803,6 +1728,898 @@ document.addEventListener('DOMContentLoaded', async () => {
     closeSettingsModal();
 
     await window.mannisBoxAPI.startBot();
+  });
+
+  // --- BIG BIG UPDATE EVENT LISTENERS ---
+
+  // 1. Mode Switching with Instant UI Transformation
+  async function switchGameMode(mode) {
+    if (!currentGameState) {
+      currentGameState = {
+        gameMode: mode,
+        isRoundActive: false,
+        isLocked: false,
+        scores: {},
+        voiceMembers: []
+      };
+    } else {
+      currentGameState.gameMode = mode;
+    }
+
+    if (startupGateModal) {
+      delete startupGateModal.dataset.manualOpen;
+      startupGateModal.classList.add('hidden');
+    }
+
+    if (window.ue5StageInstance) {
+      window.ue5StageInstance.setGameMode(mode);
+    }
+
+    // Instantly update active tabs
+    btnModeSong.classList.toggle('active', mode === 'song');
+    btnModeHitster.classList.toggle('active', mode === 'hitster');
+    btnModeWallpaper.classList.toggle('active', mode === 'wallpaper');
+
+    // Instantly toggle dynamic game boards
+    if (arenaBoardSong) arenaBoardSong.classList.toggle('hidden', mode !== 'song');
+    if (arenaBoardHitster) arenaBoardHitster.classList.toggle('hidden', mode !== 'hitster');
+    if (arenaBoardWallpaper) arenaBoardWallpaper.classList.toggle('hidden', mode !== 'wallpaper');
+
+    // Dynamic Arena Main Header
+    if (arenaModeIconBadge && arenaMainTitle) {
+      if (mode === 'wallpaper') {
+        arenaModeIconBadge.textContent = '🎬';
+        arenaMainTitle.textContent = 'Filme & Wallpaper Quiz';
+      } else if (mode === 'hitster') {
+        arenaModeIconBadge.textContent = '📻';
+        arenaMainTitle.textContent = 'Hitster Zeitstrahl';
+      } else {
+        arenaModeIconBadge.textContent = '🎵';
+        arenaMainTitle.textContent = 'Erkennst du den Song';
+      }
+    }
+
+    // Instantly toggle Regie subpanels
+    songRegiePanel.classList.toggle('hidden', mode !== 'song');
+    hitsterRegiePanel.classList.toggle('hidden', mode !== 'hitster');
+    wallpaperRegiePanel.classList.toggle('hidden', mode !== 'wallpaper');
+
+    // Instantly toggle Arena Game Banners
+    if (arenaSongBanner) arenaSongBanner.classList.toggle('hidden', mode !== 'song');
+    if (arenaHitsterBanner) arenaHitsterBanner.classList.toggle('hidden', mode !== 'hitster');
+    if (arenaHitsterTimelineDeck) arenaHitsterTimelineDeck.classList.toggle('hidden', mode !== 'hitster');
+    if (arenaWallpaperBanner) arenaWallpaperBanner.classList.toggle('hidden', mode !== 'wallpaper');
+
+    // Instantly toggle Evaluation Actions
+    evalActionsSong.classList.toggle('hidden', mode !== 'song');
+    evalActionsHitster.classList.toggle('hidden', mode !== 'hitster');
+    evalActionsWallpaper.classList.toggle('hidden', mode !== 'wallpaper');
+
+    renderGameState(currentGameState);
+
+    try {
+      await window.mannisBoxAPI.setGameMode(mode);
+    } catch (e) {
+      console.warn('Mode backend switch error:', e);
+    }
+  }
+
+  btnModeSong.addEventListener('click', () => switchGameMode('song'));
+  btnModeHitster.addEventListener('click', () => switchGameMode('hitster'));
+  btnModeWallpaper.addEventListener('click', () => switchGameMode('wallpaper'));
+
+  // 3D Startup Gate Card Selection
+  if (cardSelectSong) cardSelectSong.addEventListener('click', () => switchGameMode('song'));
+  if (cardSelectHitster) cardSelectHitster.addEventListener('click', () => switchGameMode('hitster'));
+  if (cardSelectWallpaper) cardSelectWallpaper.addEventListener('click', () => switchGameMode('wallpaper'));
+
+  if (btnOpenGamePicker) {
+    btnOpenGamePicker.addEventListener('click', () => {
+      if (startupGateModal) {
+        startupGateModal.dataset.manualOpen = 'true';
+        startupGateModal.classList.remove('hidden');
+      }
+    });
+  }
+
+  // Toggle 2X Boost Mode (/boost)
+  if (btnToggleBoost) {
+    btnToggleBoost.addEventListener('click', async () => {
+      try {
+        const willBeActive = !currentGameState?.isBoostActive;
+        if (willBeActive && window.ue5StageInstance) {
+          window.ue5StageInstance.triggerBoostSupercharge();
+          document.body.classList.add('screen-shake-boost');
+          setTimeout(() => document.body.classList.remove('screen-shake-boost'), 650);
+          screenFlashLayer.className = 'screen-flash-layer flash-glow-boost';
+          setTimeout(() => { screenFlashLayer.className = 'screen-flash-layer'; }, 850);
+        }
+        await window.mannisBoxAPI.toggleBoost();
+      } catch (err) {
+        console.error('Failed to toggle boost:', err);
+      }
+    });
+  }
+
+  // Set Target Goal (/goal)
+  if (goalBadgeContainer) {
+    goalBadgeContainer.addEventListener('click', async () => {
+      const cur = currentGameState?.goal || (currentGameState?.gameMode === 'hitster' ? 10 : 50);
+      const ans = await showCustomPrompt(`Neues Spielziel eingeben (aktuell: ${cur}):`, cur, 'Spielziel festlegen');
+      if (ans !== null && ans.trim() !== '') {
+        const val = parseInt(ans.trim(), 10);
+        if (!isNaN(val) && val > 0) {
+          await window.mannisBoxAPI.setGoal(val);
+        }
+      }
+    });
+  }
+
+  // Grand Champion Victory Modal Actions
+  if (btnVictoryClose) {
+    btnVictoryClose.addEventListener('click', () => {
+      if (victoryModal) victoryModal.classList.add('hidden');
+    });
+  }
+
+  if (btnVictoryNewGame) {
+    btnVictoryNewGame.addEventListener('click', async () => {
+      if (victoryModal) victoryModal.classList.add('hidden');
+      await window.mannisBoxAPI.resetScores();
+    });
+  }
+
+  // Physical 3D Arcade Dome Buzzer Click
+  if (btnPhysicalBuzzer) {
+    btnPhysicalBuzzer.addEventListener('click', async () => {
+      btnPhysicalBuzzer.classList.add('pressed');
+      setTimeout(() => btnPhysicalBuzzer.classList.remove('pressed'), 250);
+      playLocalSound('buzzer');
+      if (window.ue5StageInstance) window.ue5StageInstance.triggerBuzzerShockwave();
+      screenFlashLayer.className = 'screen-flash-layer flash-glow-red';
+      setTimeout(() => { screenFlashLayer.className = 'screen-flash-layer'; }, 400);
+
+      const regieName = hostDisplayName || 'Regie (Dome)';
+      await window.mannisBoxAPI.manualBuzzPlayer('host-regie-buzzer', regieName);
+    });
+  }
+
+  // 3D Hitster Flippable Card Click (Quick Year Reveal)
+  if (sceneHitsterCard) {
+    sceneHitsterCard.addEventListener('click', async () => {
+      await window.mannisBoxAPI.resolveHitsterCard();
+    });
+  }
+
+  // Seamless Drag & Drop for Folders and Media Files
+  window.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+
+  window.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      const filePath = file.path;
+      if (!filePath) return;
+
+      if (/\.(jpe?g|png|webp|bmp)$/i.test(filePath)) {
+        await switchGameMode('wallpaper');
+        const filename = file.name.replace(/\.[^/.]+$/, '');
+        const res = await window.mannisBoxAPI.uploadWallpaper(filePath, filename);
+        if (res && res.success) {
+          await showCustomAlert('Wallpaper erfolgreich per Drag & Drop geladen:\n' + filename, 'Wallpaper geladen');
+        }
+      } else {
+        // Direct audio folder scan
+        await switchGameMode('song');
+        const res = await window.mannisBoxAPI.scanMusicFolderDirect(filePath);
+        if (res && res.success) {
+          loadedMusicFiles = res.files || [];
+          lblMusicFolderStatus.textContent = `${res.totalFiles} Songs gefunden (${res.folder})`;
+          btnPickRandomSong.disabled = false;
+          selMusicGenre.innerHTML = '<option value="">Alle Genres</option>' + 
+            res.genres.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+          await showCustomAlert(`Musik-Ordner erfolgreich geladen: ${res.totalFiles} Songs!`, 'Musik-Ordner');
+        }
+      }
+    }
+  });
+
+  // 2. Stream View & OBS Link
+  btnToggleStreamView.addEventListener('click', () => {
+    inAppStreamContainer.classList.remove('hidden');
+    inAppStreamContainer.style.display = 'flex';
+  });
+  btnCloseStreamView.addEventListener('click', () => {
+    inAppStreamContainer.classList.add('hidden');
+    inAppStreamContainer.style.display = 'none';
+  });
+  btnCopyObsLink.addEventListener('click', async () => {
+    const url = await window.mannisBoxAPI.getStreamUrl();
+    await navigator.clipboard.writeText(url);
+    await showCustomAlert('OBS Browser-Source Link in Zwischenablage kopiert:\n' + url, 'OBS Browser-Source');
+  });
+
+  // 3. Song Quiz Controls
+  async function handleMusicFolderSelection() {
+    const res = await window.mannisBoxAPI.selectMusicFolder();
+    if (res && res.success) {
+      loadedMusicFiles = res.files || [];
+      const statusText = `${res.totalFiles} Songs gefunden (${res.folder})`;
+      if (lblMusicFolderStatus) lblMusicFolderStatus.textContent = statusText;
+      if (lblHitsterFolderStatus) lblHitsterFolderStatus.textContent = statusText;
+      btnPickRandomSong.disabled = false;
+      selMusicGenre.innerHTML = '<option value="">Alle Genres</option>' + 
+        res.genres.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+    }
+  }
+
+  btnSelectMusicFolder.addEventListener('click', handleMusicFolderSelection);
+  if (btnSelectHitsterFolder) {
+    btnSelectHitsterFolder.addEventListener('click', handleMusicFolderSelection);
+  }
+
+  btnPickRandomSong.addEventListener('click', async () => {
+    const genre = selMusicGenre.value || null;
+    const res = await window.mannisBoxAPI.pickRandomSong(genre);
+    if (res && res.success && res.song) {
+      lblAudioTrackTitle.textContent = res.song.fullTitle;
+      const streamUrl = `http://localhost:8888/api/audio?path=${encodeURIComponent(res.song.filePath)}`;
+      localAudioPlayer.src = streamUrl;
+      localAudioPlayer.volume = parseFloat(rngAudioPlayerVolume.value);
+      try {
+        await localAudioPlayer.play();
+        btnAudioPlayPause.textContent = '⏸️';
+      } catch (e) {
+        console.warn('Auto-play error:', e);
+      }
+    }
+  });
+
+  btnAudioPlayPause.addEventListener('click', () => {
+    if (localAudioPlayer.paused) {
+      localAudioPlayer.play();
+      btnAudioPlayPause.textContent = '⏸️';
+    } else {
+      localAudioPlayer.pause();
+      btnAudioPlayPause.textContent = '▶️';
+    }
+  });
+
+  rngAudioPlayerVolume.addEventListener('input', () => {
+    localAudioPlayer.volume = parseFloat(rngAudioPlayerVolume.value);
+  });
+
+  if (localAudioPlayer) {
+    localAudioPlayer.addEventListener('play', () => {
+      btnAudioPlayPause.textContent = '⏸️';
+      if (window.ue5StageInstance) window.ue5StageInstance.setAudioPulse(1.0);
+    });
+    localAudioPlayer.addEventListener('pause', () => {
+      btnAudioPlayPause.textContent = '▶️';
+      if (window.ue5StageInstance) window.ue5StageInstance.setAudioPulse(0.0);
+    });
+    localAudioPlayer.addEventListener('timeupdate', () => {
+      if (window.ue5StageInstance && !localAudioPlayer.paused) {
+        const pulse = 0.7 + 0.3 * Math.sin(localAudioPlayer.currentTime * 7);
+        window.ue5StageInstance.setAudioPulse(pulse);
+      }
+    });
+  }
+
+  // Smart Excel Copy-Paste auto-split
+  function handleExcelPaste(e) {
+    const text = (e.clipboardData || window.clipboardData)?.getData('text');
+    if (!text) return;
+    if (text.includes('\t') || text.includes(' - ') || text.includes(';') || text.includes(',')) {
+      e.preventDefault();
+      let parts = [];
+      if (text.includes('\t')) parts = text.split('\t');
+      else if (text.includes(' - ')) parts = text.split(' - ');
+      else if (text.includes(';')) parts = text.split(';');
+      else if (text.includes(',')) parts = text.split(',');
+
+      if (parts.length >= 2) {
+        txtExcelArtist.value = parts[0].trim();
+        txtExcelTitle.value = parts.slice(1).join(' - ').trim();
+      }
+    }
+  }
+
+  if (txtExcelArtist) txtExcelArtist.addEventListener('paste', handleExcelPaste);
+  if (txtExcelTitle) txtExcelTitle.addEventListener('paste', handleExcelPaste);
+
+  btnApplyExcelSong.addEventListener('click', async () => {
+    const artist = txtExcelArtist.value.trim();
+    const title = txtExcelTitle.value.trim();
+    if (!artist && !title) {
+      await showCustomAlert('Bitte Titel oder Interpret eingeben!', 'Song fehlt');
+      return;
+    }
+    const res = await window.mannisBoxAPI.setManualSong(artist, title);
+    if (res && res.success) {
+      lblAudioTrackTitle.textContent = res.song.fullTitle;
+      await showCustomAlert(`Song für Runde übernommen:\n${res.song.fullTitle}`, 'Song übernommen');
+    }
+  });
+
+  // 4. Wallpaper Quiz Controls
+  btnSelectWpFolder.addEventListener('click', async () => {
+    const res = await window.mannisBoxAPI.selectWallpaperFolder();
+    if (res && res.success) {
+      loadedWallpaperRounds = res.rounds || [];
+      lblWpFolderStatus.textContent = `${res.count} Film-Runden geladen`;
+    }
+  });
+
+  btnSelectWpImage.addEventListener('click', async () => {
+    const filePath = await window.mannisBoxAPI.selectWallpaperFile();
+    if (filePath) {
+      selectedWpImagePath = filePath;
+      btnUploadWp.disabled = false;
+      btnSelectWpImage.textContent = '✓ Bild gewählt';
+    }
+  });
+
+  btnUploadWp.addEventListener('click', async () => {
+    if (!selectedWpImagePath) return;
+    const title = txtWpMovieTitle.value.trim() || 'Film Aufgelöst';
+    const res = await window.mannisBoxAPI.uploadWallpaper(selectedWpImagePath, title);
+    if (res && res.success) {
+      await showCustomAlert(`Wallpaper für Film "${title}" erfolgreich in die Box geladen!`, 'Wallpaper geladen');
+    }
+  });
+
+  btnResolveWp.addEventListener('click', async () => {
+    await window.mannisBoxAPI.resolveWallpaper();
+  });
+
+  // 5. Hitster Controls & Ratings
+  btnPickHitsterSong.addEventListener('click', async () => {
+    const res = await window.mannisBoxAPI.pickHitsterSong();
+    if (res && res.success && res.card) {
+      txtHitsterYear.value = res.card.year || '';
+      txtHitsterArtist.value = res.card.artist || '';
+      txtHitsterTitle.value = res.card.title || '';
+      if (res.card.filePath) {
+        const streamUrl = `http://localhost:8888/api/audio?path=${encodeURIComponent(res.card.filePath)}`;
+        localAudioPlayer.src = streamUrl;
+        localAudioPlayer.volume = parseFloat(rngAudioPlayerVolume.value);
+        try {
+          await localAudioPlayer.play();
+          btnAudioPlayPause.textContent = '⏸️';
+        } catch (e) {
+          console.warn('Auto-play error:', e);
+        }
+      }
+    } else {
+      await showCustomAlert(res?.error || 'Bitte wähle zuerst links einen Ordner mit Musik aus.', 'Hitster Musik');
+    }
+  });
+
+  btnApplyHitsterCard.addEventListener('click', async () => {
+    const year = txtHitsterYear.value.trim();
+    const artist = txtHitsterArtist.value.trim();
+    const title = txtHitsterTitle.value.trim();
+    if (!year) {
+      await showCustomAlert('Bitte mindestens das Erscheinungsjahr angeben!', 'Hitster Karte');
+      return;
+    }
+    const res = await window.mannisBoxAPI.setManualHitsterCard(year, artist, title);
+    if (res && res.success) {
+      await showCustomAlert(`Hitster-Karte aktiviert: ${res.card.artist} - ${res.card.title} (Jahr: ${res.card.year})`, 'Hitster Karte');
+    }
+  });
+
+  btnResolveHitster.addEventListener('click', async () => {
+    await window.mannisBoxAPI.resolveHitsterCard();
+  });
+
+  btnHitsterCorrect.addEventListener('click', async () => {
+    if (currentGameState?.isEvaluating) return;
+    playLocalSound('correct');
+
+    // Add card to active player's shelf
+    const card = currentGameState?.hitsterState?.currentCard;
+    const targetPlayer = selHitsterActivePlayer?.value || currentGameState?.activePlayer?.username || 'Host';
+    if (card && card.year) {
+      if (!playerHitsterCards[targetPlayer]) {
+        playerHitsterCards[targetPlayer] = [];
+      }
+      playerHitsterCards[targetPlayer].push({
+        year: card.year,
+        title: card.title || 'Song',
+        artist: card.artist || ''
+      });
+      // Sort chronologically
+      playerHitsterCards[targetPlayer].sort((a, b) => parseInt(a.year, 10) - parseInt(b.year, 10));
+      renderHitsterPlayerShelves(currentGameState);
+    }
+
+    await window.mannisBoxAPI.evaluatePlayer('correct');
+  });
+
+  btnHitsterWrong.addEventListener('click', async () => {
+    if (currentGameState?.isEvaluating) return;
+    playLocalSound('wrong');
+    await window.mannisBoxAPI.evaluatePlayer('wrong');
+  });
+
+  btnHitsterSkip.addEventListener('click', async () => {
+    if (currentGameState?.isEvaluating) return;
+    await window.mannisBoxAPI.evaluatePlayer('skip');
+  });
+
+  btnHitsterRevealCenter.addEventListener('click', async () => {
+    await window.mannisBoxAPI.resolveHitsterCard();
+  });
+
+  // Quick 3D Flip Reveal in Hitster Board
+  if (btnHitsterQuickReveal) {
+    btnHitsterQuickReveal.addEventListener('click', async () => {
+      await window.mannisBoxAPI.resolveHitsterCard();
+    });
+  }
+
+  // 3D Turntable Play & Next Controls
+  if (btnHitsterDeckPlay) {
+    btnHitsterDeckPlay.addEventListener('click', () => {
+      if (localAudioPlayer.paused) {
+        localAudioPlayer.play();
+        btnHitsterDeckPlay.textContent = '⏸️ Pause';
+      } else {
+        localAudioPlayer.pause();
+        btnHitsterDeckPlay.textContent = '▶️ Play';
+      }
+    });
+  }
+
+  if (btnHitsterDeckNext) {
+    btnHitsterDeckNext.addEventListener('click', () => {
+      btnPickHitsterSong.click();
+    });
+  }
+
+  // Master Decades Bar Chip Selection
+  if (hitsterDecadesBar) {
+    hitsterDecadesBar.querySelectorAll('.decade-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        hitsterDecadesBar.querySelectorAll('.decade-chip').forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+  }
+
+  // 6. Wallpaper Evaluation Buttons
+  btnWpCorrect.addEventListener('click', async () => {
+    if (currentGameState?.isEvaluating) return;
+    playLocalSound('correct');
+    await window.mannisBoxAPI.evaluatePlayer('correct');
+  });
+
+  btnWpWrong.addEventListener('click', async () => {
+    if (currentGameState?.isEvaluating) return;
+    playLocalSound('wrong');
+    await window.mannisBoxAPI.evaluatePlayer('wrong');
+  });
+
+  btnWpSkip.addEventListener('click', async () => {
+    if (currentGameState?.isEvaluating) return;
+    await window.mannisBoxAPI.evaluatePlayer('skip');
+  });
+
+  btnWpResolveCenter.addEventListener('click', async () => {
+    await window.mannisBoxAPI.resolveWallpaper();
+  });
+
+  // 7. Resume & Abort Round
+  btnResumeRound.addEventListener('click', async () => {
+    await window.mannisBoxAPI.resumeRound();
+  });
+
+  btnAbortRound.addEventListener('click', async () => {
+    if (await showCustomConfirm('Möchtest du diese Runde vorzeitig abbrechen und auflösen?', 'Runde abbrechen')) {
+      await window.mannisBoxAPI.abortRound();
+    }
+  });
+
+  // 8. Custom Titlebar Controls (Frameless Window)
+  if (titlebarMin) {
+    titlebarMin.addEventListener('click', () => {
+      window.mannisBoxAPI.minimizeWindow();
+    });
+  }
+
+  if (titlebarMax) {
+    titlebarMax.addEventListener('click', async () => {
+      const isMax = await window.mannisBoxAPI.maximizeWindow();
+      titlebarIconMax?.classList.toggle('hidden', isMax);
+      titlebarIconRestore?.classList.toggle('hidden', !isMax);
+    });
+  }
+
+  if (titlebarClose) {
+    titlebarClose.addEventListener('click', () => {
+      window.mannisBoxAPI.closeWindow();
+    });
+  }
+
+  if (window.mannisBoxAPI.onMaximizeChange) {
+    window.mannisBoxAPI.onMaximizeChange((isMax) => {
+      titlebarIconMax?.classList.toggle('hidden', isMax);
+      titlebarIconRestore?.classList.toggle('hidden', !isMax);
+    });
+  }
+
+  // 9. 10s Buzzer Answer Countdown Actions
+  if (btnExpiredEndRound) {
+    btnExpiredEndRound.addEventListener('click', async () => {
+      await window.mannisBoxAPI.abortRound();
+    });
+  }
+
+  if (btnExpiredRelease) {
+    btnExpiredRelease.addEventListener('click', async () => {
+      await window.mannisBoxAPI.resumeRound();
+    });
+  }
+
+  // 10. Wallpaper Next Round Button
+  if (btnPickNextWallpaper) {
+    btnPickNextWallpaper.addEventListener('click', async () => {
+      const res = await window.mannisBoxAPI.pickNextWallpaper();
+      if (res && res.error) {
+        await showCustomAlert(res.error, 'Wallpaper Fehler');
+      }
+    });
+  }
+
+  // 11. Hitster Dispute & Chip Adjustment Handlers
+  if (hitsterPlayerShelvesContainer) {
+    hitsterPlayerShelvesContainer.addEventListener('click', async (e) => {
+      const throwBtn = e.target.closest('.btn-throw-chip');
+      if (throwBtn) {
+        e.stopPropagation();
+        const player = throwBtn.getAttribute('data-player');
+        if (player) {
+          await window.mannisBoxAPI.challengeHitsterChip(player);
+        }
+        return;
+      }
+      const adjustBtn = e.target.closest('.btn-chip-adjust');
+      if (adjustBtn) {
+        e.stopPropagation();
+        const player = adjustBtn.getAttribute('data-player');
+        const delta = parseInt(adjustBtn.getAttribute('data-delta'), 10) || 0;
+        if (player && delta) {
+          await window.mannisBoxAPI.adjustPlayerChips(player, delta);
+        }
+        return;
+      }
+    });
+  }
+
+  // 12. Live Folder Search & Autocomplete
+  function getCleanFileName(filePath) {
+    if (!filePath) return '';
+    const base = filePath.split(/[\\/]/).pop() || '';
+    return base.replace(/\.[^/.]+$/, '');
+  }
+
+  // Song Quiz Live Search
+  if (txtSearchSong && songSearchResults) {
+    txtSearchSong.addEventListener('input', () => {
+      const q = txtSearchSong.value.trim().toLowerCase();
+      if (!q) {
+        songSearchResults.classList.add('hidden');
+        songSearchResults.innerHTML = '';
+        return;
+      }
+
+      if (loadedMusicFiles.length === 0) {
+        songSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8;">⚠️ Noch kein Musik-Ordner geladen. Wähle zuerst einen Ordner!</div>';
+        songSearchResults.classList.remove('hidden');
+        return;
+      }
+
+      const matches = loadedMusicFiles.filter(f => f.toLowerCase().includes(q)).slice(0, 20);
+      if (matches.length === 0) {
+        songSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8;">Keine Treffer gefunden.</div>';
+        songSearchResults.classList.remove('hidden');
+        return;
+      }
+
+      songSearchResults.innerHTML = matches.map(filePath => {
+        const title = getCleanFileName(filePath);
+        return `
+          <div class="folder-search-item" data-path="${escapeHtml(filePath)}">
+            <span class="folder-search-item-title" title="${escapeHtml(title)}">🎵 ${escapeHtml(title)}</span>
+            <span style="font-size: 10px; color: #818cf8; font-weight: 700; flex-shrink: 0;">Wählen ➔</span>
+          </div>
+        `;
+      }).join('');
+      songSearchResults.classList.remove('hidden');
+
+      songSearchResults.querySelectorAll('.folder-search-item').forEach(item => {
+        item.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const chosenPath = item.getAttribute('data-path');
+          songSearchResults.classList.add('hidden');
+          txtSearchSong.value = '';
+
+          const res = await window.mannisBoxAPI.selectSpecificSong(chosenPath);
+          if (res && res.success && res.song) {
+            lblAudioTrackTitle.textContent = res.song.fullTitle;
+            const streamUrl = `http://localhost:8888/api/audio?path=${encodeURIComponent(res.song.filePath)}`;
+            localAudioPlayer.src = streamUrl;
+            localAudioPlayer.volume = parseFloat(rngAudioPlayerVolume.value);
+            try {
+              await localAudioPlayer.play();
+              btnAudioPlayPause.textContent = '⏸️';
+            } catch (err) {
+              console.warn('Auto-play error:', err);
+            }
+          }
+        });
+      });
+    });
+  }
+
+  // Hitster Quiz Live Search
+  if (txtSearchHitster && hitsterSearchResults) {
+    txtSearchHitster.addEventListener('input', () => {
+      const q = txtSearchHitster.value.trim().toLowerCase();
+      if (!q) {
+        hitsterSearchResults.classList.add('hidden');
+        hitsterSearchResults.innerHTML = '';
+        return;
+      }
+
+      if (loadedMusicFiles.length === 0) {
+        hitsterSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8;">⚠️ Noch kein Musik-Ordner geladen. Wähle zuerst einen Ordner!</div>';
+        hitsterSearchResults.classList.remove('hidden');
+        return;
+      }
+
+      const matches = loadedMusicFiles.filter(f => f.toLowerCase().includes(q)).slice(0, 20);
+      if (matches.length === 0) {
+        hitsterSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8;">Keine Treffer gefunden.</div>';
+        hitsterSearchResults.classList.remove('hidden');
+        return;
+      }
+
+      hitsterSearchResults.innerHTML = matches.map(filePath => {
+        const title = getCleanFileName(filePath);
+        return `
+          <div class="folder-search-item" data-path="${escapeHtml(filePath)}">
+            <span class="folder-search-item-title" title="${escapeHtml(title)}">📻 ${escapeHtml(title)}</span>
+            <span style="font-size: 10px; color: #f59e0b; font-weight: 700; flex-shrink: 0;">Karte ➔</span>
+          </div>
+        `;
+      }).join('');
+      hitsterSearchResults.classList.remove('hidden');
+
+      hitsterSearchResults.querySelectorAll('.folder-search-item').forEach(item => {
+        item.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const chosenPath = item.getAttribute('data-path');
+          hitsterSearchResults.classList.add('hidden');
+          txtSearchHitster.value = '';
+
+          const res = await window.mannisBoxAPI.selectSpecificHitster(chosenPath);
+          if (res && res.success && res.card) {
+            txtHitsterYear.value = res.card.year || '';
+            txtHitsterArtist.value = res.card.artist || '';
+            txtHitsterTitle.value = res.card.title || '';
+            if (res.card.filePath) {
+              const streamUrl = `http://localhost:8888/api/audio?path=${encodeURIComponent(res.card.filePath)}`;
+              localAudioPlayer.src = streamUrl;
+              localAudioPlayer.volume = parseFloat(rngAudioPlayerVolume.value);
+              try {
+                await localAudioPlayer.play();
+                btnAudioPlayPause.textContent = '⏸️';
+              } catch (err) {
+                console.warn('Auto-play error:', err);
+              }
+            }
+          }
+        });
+      });
+    });
+  }
+
+  // Wallpaper Quiz Live Search
+  if (txtSearchWallpaper && wpSearchResults) {
+    txtSearchWallpaper.addEventListener('input', () => {
+      const q = txtSearchWallpaper.value.trim().toLowerCase();
+      if (!q) {
+        wpSearchResults.classList.add('hidden');
+        wpSearchResults.innerHTML = '';
+        return;
+      }
+
+      if (loadedWallpaperRounds.length === 0) {
+        wpSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8;">⚠️ Noch kein Wallpaper-Ordner geladen. Wähle zuerst einen Ordner!</div>';
+        wpSearchResults.classList.remove('hidden');
+        return;
+      }
+
+      const matches = loadedWallpaperRounds.filter(r => r.movieTitle && r.movieTitle.toLowerCase().includes(q)).slice(0, 20);
+      if (matches.length === 0) {
+        wpSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8;">Keine Treffer gefunden.</div>';
+        wpSearchResults.classList.remove('hidden');
+        return;
+      }
+
+      wpSearchResults.innerHTML = matches.map(r => {
+        return `
+          <div class="folder-search-item" data-title="${escapeHtml(r.movieTitle)}">
+            <span class="folder-search-item-title" title="${escapeHtml(r.movieTitle)}">🎬 ${escapeHtml(r.movieTitle)}</span>
+            <span style="font-size: 10px; color: #fbbf24; font-weight: 700; flex-shrink: 0;">Laden ➔</span>
+          </div>
+        `;
+      }).join('');
+      wpSearchResults.classList.remove('hidden');
+
+      wpSearchResults.querySelectorAll('.folder-search-item').forEach(item => {
+        item.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const chosenTitle = item.getAttribute('data-title');
+          wpSearchResults.classList.add('hidden');
+          txtSearchWallpaper.value = '';
+
+          await window.mannisBoxAPI.selectSpecificWallpaper(chosenTitle);
+        });
+      });
+    });
+  }
+
+  // 13. Interactive Animated Score Editor ("Links unten auf die Punkte" & Scoreboard)
+  let editingScoreStage = null;
+
+  function openQuickScorePopup(target, targetElement, isStage = false) {
+    if (!quickScoreEditorPopup || !target) return;
+    if (isStage) {
+      editingScorePlayer = null;
+      editingScoreStage = target;
+      if (quickScorePlayerName) quickScorePlayerName.textContent = `Schärfe-Stufe ${target.stage} (${target.label})`;
+      if (txtQuickScoreValue) {
+        txtQuickScoreValue.value = target.points !== undefined ? target.points : 4;
+      }
+    } else {
+      editingScoreStage = null;
+      editingScorePlayer = target;
+      if (quickScorePlayerName) quickScorePlayerName.textContent = target.name || 'Unbekannt';
+      if (txtQuickScoreValue) {
+        txtQuickScoreValue.value = target.points !== undefined ? target.points : 0;
+      }
+    }
+
+    if (targetElement) {
+      const rect = targetElement.getBoundingClientRect();
+      let left = Math.max(12, Math.min(window.innerWidth - 250, rect.left));
+      let top = rect.top - 150;
+      if (top < 10) {
+        top = rect.bottom + 10;
+      }
+      quickScoreEditorPopup.style.left = `${left}px`;
+      quickScoreEditorPopup.style.top = `${top}px`;
+    }
+
+    quickScoreEditorPopup.classList.remove('hidden');
+    if (txtQuickScoreValue) {
+      txtQuickScoreValue.focus();
+      txtQuickScoreValue.select();
+    }
+  }
+
+  function closeQuickScorePopup() {
+    if (quickScoreEditorPopup) {
+      quickScoreEditorPopup.classList.add('hidden');
+      editingScorePlayer = null;
+      editingScoreStage = null;
+    }
+  }
+
+  if (btnQuickScoreClose) {
+    btnQuickScoreClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeQuickScorePopup();
+    });
+  }
+
+  document.querySelectorAll('.btn-score-quick').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const delta = parseInt(btn.getAttribute('data-delta'), 10) || 0;
+      const cur = parseInt(txtQuickScoreValue.value, 10) || 0;
+      txtQuickScoreValue.value = Math.max(0, cur + delta);
+    });
+  });
+
+  if (btnQuickScoreSave) {
+    btnQuickScoreSave.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (editingScorePlayer) {
+        const val = Math.max(0, parseInt(txtQuickScoreValue.value, 10) || 0);
+        await window.mannisBoxAPI.setPlayerScore(editingScorePlayer.id, val);
+      } else if (editingScoreStage) {
+        const val = Math.max(0, parseInt(txtQuickScoreValue.value, 10) || 0);
+        customWallpaperStagePoints[editingScoreStage.stage] = val;
+        const el = document.getElementById(`lblWpStage${editingScoreStage.stage}Pts`);
+        if (el) el.textContent = `${val} Pkt`;
+        await window.mannisBoxAPI.setWallpaperStagePoints(customWallpaperStagePoints);
+      }
+      closeQuickScorePopup();
+    });
+  }
+
+  if (txtQuickScoreValue) {
+    txtQuickScoreValue.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        btnQuickScoreSave?.click();
+      } else if (e.key === 'Escape') {
+        closeQuickScorePopup();
+      }
+    });
+  }
+
+  // Interactive Stage Cards in Wallpaper Quiz ("Unten links bei Schärfestufen")
+  document.querySelectorAll('.wp-stage-card.tag-score-interactive').forEach((card) => {
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const stage = parseInt(card.getAttribute('data-stage'), 10) || 1;
+      const label = card.getAttribute('data-label') || '';
+      const curPts = customWallpaperStagePoints[stage] ?? (5 - stage);
+      openQuickScorePopup({ stage, label, points: curPts }, card, true);
+    });
+  });
+
+  if (lblHostScore) {
+    lblHostScore.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const hostId = config.hostId || '327863089796087809';
+      const hostEntry = currentGameState?.scores?.[hostId] || Object.values(currentGameState?.scores || {}).find(p => /manni/i.test(p.username) || p.id === hostId);
+      const hostPts = hostEntry ? hostEntry.points : 0;
+      openQuickScorePopup({ id: hostId, name: `${hostDisplayName || 'Manni'} (Host)`, points: hostPts }, lblHostScore);
+    });
+  }
+
+  if (activePlayerScore) {
+    activePlayerScore.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!currentGameState?.activePlayer) return;
+      const ap = currentGameState.activePlayer;
+      const pScore = currentGameState.scores?.[ap.id]?.points || 0;
+      openQuickScorePopup({ id: ap.id, name: ap.username, points: pScore }, activePlayerScore);
+    });
+  }
+
+  // Global click outside to dismiss popups and search dropdowns
+  document.addEventListener('click', (e) => {
+    if (quickScoreEditorPopup && !quickScoreEditorPopup.classList.contains('hidden')) {
+      if (!quickScoreEditorPopup.contains(e.target) && !e.target.closest('.tag-score-interactive')) {
+        closeQuickScorePopup();
+      }
+    }
+    if (songSearchResults && !songSearchResults.classList.contains('hidden')) {
+      if (!songSearchResults.contains(e.target) && e.target !== txtSearchSong) {
+        songSearchResults.classList.add('hidden');
+      }
+    }
+    if (hitsterSearchResults && !hitsterSearchResults.classList.contains('hidden')) {
+      if (!hitsterSearchResults.contains(e.target) && e.target !== txtSearchHitster) {
+        hitsterSearchResults.classList.add('hidden');
+      }
+    }
+    if (wpSearchResults && !wpSearchResults.classList.contains('hidden')) {
+      if (!wpSearchResults.contains(e.target) && e.target !== txtSearchWallpaper) {
+        wpSearchResults.classList.add('hidden');
+      }
+    }
   });
 
   // Helper

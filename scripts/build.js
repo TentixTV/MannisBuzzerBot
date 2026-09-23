@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const packager = require('@electron/packager');
-const { ZipArchive } = require('archiver');
+const archiver = require('archiver');
 const pngToIco = require('png-to-ico').default || require('png-to-ico');
 
 async function ensureIcon() {
@@ -18,7 +18,7 @@ async function ensureIcon() {
 async function zipFolder(sourceDir, outPath) {
   return new Promise((resolve, reject) => {
     const output = fs.createWriteStream(outPath);
-    const archive = new ZipArchive({ zlib: { level: 9 } });
+    const archive = archiver('zip', { zlib: { level: 9 } });
 
     output.on('close', () => {
       const stats = fs.statSync(outPath);
@@ -76,7 +76,7 @@ async function build() {
   console.log(`  ➔ Executable: ${path.join(packagedAppDir, 'MannisBox.exe')}`);
 
   // 2. Create ZIP Archives (both in dist/ and at project root for easy access)
-  console.log('\n[2/2] Creating Distribution ZIP Archives (for sending)...');
+  console.log('\n[2/2] Creating Distribution ZIP & RAR Archives (for sending)...');
   const distZipPath = path.join(distDir, 'MannisBox-Windows-x64.zip');
   const rootZipPath = path.join(rootDir, 'MannisBox-Windows-x64.zip');
 
@@ -86,11 +86,25 @@ async function build() {
   fs.copyFileSync(distZipPath, rootZipPath);
   console.log(`✓ Also available at root: ${rootZipPath}`);
 
+  // Also build .rar archive if WinRAR is installed
+  const rarExe = 'C:\\Program Files\\WinRAR\\Rar.exe';
+  if (fs.existsSync(rarExe)) {
+    const rootRarPath = path.join(rootDir, 'MannisBox-Windows-x64.rar');
+    if (fs.existsSync(rootRarPath)) {
+      try { fs.unlinkSync(rootRarPath); } catch (e) {}
+    }
+    const { execSync } = require('child_process');
+    console.log('Packaging .rar archive using WinRAR...');
+    execSync(`"${rarExe}" a -r -ep1 -m5 "${rootRarPath}" "${packagedAppDir}"`, { stdio: 'inherit' });
+    console.log(`✓ Created RAR at root: ${rootRarPath}`);
+  }
+
   console.log('\n====================================================');
   console.log('🎉 BUILD SUCCESSFUL!');
   console.log(`📁 Standalone App Ordner : ${packagedAppDir}`);
   console.log(`🚀 Direkt starten         : ${path.join(packagedAppDir, 'MannisBox.exe')}`);
-  console.log(`📦 Zum Verschicken (ZIP)  : ${distZipPath}`);
+  console.log(`📦 Zum Verschicken (ZIP)  : ${rootZipPath}`);
+  console.log(`📦 Zum Verschicken (RAR)  : ${path.join(rootDir, 'MannisBox-Windows-x64.rar')}`);
   console.log('====================================================\n');
 }
 

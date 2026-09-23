@@ -1,9 +1,18 @@
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+let nativeImage = null;
+try {
+  const electron = require('electron');
+  nativeImage = electron.nativeImage;
+} catch (e) {}
 const {
   Client,
   GatewayIntentBits,
   ChannelType,
   ActivityType,
-  PermissionsBitField
+  PermissionsBitField,
+  AttachmentBuilder
 } = require('discord.js');
 const {
   joinVoiceChannel,
@@ -15,8 +24,19 @@ const audioManager = require('./audioManager');
 const {
   createBuzzerEmbed,
   createBuzzerComponents,
-  createFinalGameEndEmbed
+  createFinalGameEndEmbed,
+  createVictoryEmbed,
+  createHelpEmbed
 } = require('./embeds');
+const {
+  cleanMetadata,
+  censorText,
+  calculateWallpaperPoints,
+  getWallpaperStage,
+  scanAudioFolder,
+  extractAudioTags,
+  scanWallpaperFolder
+} = require('./gameModes');
 const { loadConfig, saveConfig } = require('../config/configManager');
 const EventEmitter = require('events');
 
@@ -28,7 +48,15 @@ class BotManager extends EventEmitter {
     this.isReady = false;
     this.currentVoiceConnection = null;
     this.cooldownTimer = null;
+    this.roundTicker = null;
     this.hostName = '';
+
+    // Music & Wallpaper storage
+    this.availableMusicFiles = [];
+    this.currentMusicFolder = '';
+    this.availableWallpaperRounds = [];
+    this.currentWallpaperRound = null;
+    this.answerCountdownInterval = null;
 
     // Game state
     this.gameState = {
@@ -50,7 +78,52 @@ class BotManager extends EventEmitter {
       bannedPlayers: {}, // playerId -> { id, username, timestamp }
       voiceMembers: [], // List of { id, username, avatar, isBanned }
       hostName: '',
-      actionHistory: []
+      actionHistory: [],
+
+      // Big Big Update States:
+      gameMode: null, // null (standby on startup), 'song', 'hitster', 'wallpaper'
+      screenFlash: null, // 'green' | 'red' | null
+      roundTimer: {
+        active: false,
+        paused: false,
+        elapsed: 0,
+        remaining: 30,
+        duration: 30
+      },
+      answerTimer: null, // { total: 10, remaining: 10, expired: false, activePlayerId: null }
+      songState: {
+        title: '',
+        artist: '',
+        fullTitle: '',
+        censoredTitle: '',
+        revealed: false,
+        filePath: ''
+      },
+      wallpaperState: {
+        currentImage: '',
+        stage: 1,
+        points: 4,
+        movieTitle: '',
+        sharpImage: '',
+        resolved: false,
+        stages: {}
+      },
+      wallpaperStagePoints: { 1: 4, 2: 3, 3: 2, 4: 1 },
+      hitsterState: {
+        currentCard: {
+          title: '',
+          artist: '',
+          year: '',
+          revealed: false,
+          filePath: ''
+        },
+        timeline: [],
+        playerShelves: {}
+      },
+      goal: 50,
+      isBoostActive: false,
+      boostPlayerId: null,
+      winner: null
     };
   }
 
@@ -78,15 +151,168 @@ class BotManager extends EventEmitter {
     this.emitState();
   }
 
+  startStandbyPresence() {
+    if (this.standbyInterval) {
+      clearInterval(this.standbyInterval);
+      this.standbyInterval = null;
+    }
+    this.standbyDots = 1;
+
+    const tick = () => {
+      if (!this.client || !this.isReady || !this.client.user) return;
+      if (this.gameState.gameMode && this.gameState.gameMode !== 'standby') {
+        clearInterval(this.standbyInterval);
+        this.standbyInterval = null;
+        return;
+      }
+
+      const dots = '.'.repeat(this.standbyDots);
+      this.standbyDots = (this.standbyDots % 3) + 1;
+
+      try {
+        this.client.user.setPresence({
+          activities: [{
+            name: `Wählt das Spiel aus${dots}`,
+            type: ActivityType.Watching,
+            state: `🎮 Standby — Wählt das Spiel aus${dots}`
+          }],
+          status: 'idle'
+        });
+      } catch (err) {
+        console.error('[Bot] Standby presence error:', err);
+      }
+    };
+
+    tick();
+    this.standbyInterval = setInterval(tick, 1500);
+  }
+
+  setGameMode(mode) {
+    if (!mode || mode === 'standby') {
+      this.gameState.gameMode = null;
+      this.gameState.isLocked = true;
+      this.gameState.activePlayer = null;
+      this.gameState.queue = [];
+      this.stopRoundTimer();
+      this.startStandbyPresence();
+      this.updateDiscordMessage();
+      this.emitState();
+      return { success: true, mode: 'standby' };
+    }
+
+    if (this.standbyInterval) {
+      clearInterval(this.standbyInterval);
+      this.standbyInterval = null;
+    }
+
+    this.gameState.gameMode = mode;
+    if (mode === 'hitster' && this.gameState.goal === 50) {
+      this.gameState.goal = 10;
+    } else if ((mode === 'song' || mode === 'wallpaper') && this.gameState.goal === 10) {
+      this.gameState.goal = 50;
+    }
+    this.gameState.isLocked = false;
+    this.gameState.activePlayer = null;
+    this.gameState.queue = [];
+    this.gameState.winner = null;
+    this.stopRoundTimer();
+    this.updateRichPresence();
+    this.updateDiscordMessage();
+    this.emitState();
+    return { success: true, mode };
+  }
+
+  toggleBoost(forcedState) {
+    const next = (forcedState !== undefined) ? !!forcedState : !this.gameState.isBoostActive;
+    this.gameState.isBoostActive = next;
+    if (next) {
+      this.gameState.statusText = '🔥 **BOOST-RUNDE AKTIVIERT!** Die Punkte der nächsten richtigen Antwort zählen DOPPELT (2x)!';
+      audioManager.playSound('buzzer');
+      this.gameState.screenFlash = 'green';
+      setTimeout(() => { if (this.gameState.screenFlash === 'green') this.gameState.screenFlash = null; this.emitState(); }, 1000);
+    } else {
+      this.gameState.statusText = '❄️ Boost-Runde beendet.';
+    }
+    this.updateDiscordMessage();
+    this.emitState();
+    return { success: true, isBoostActive: this.gameState.isBoostActive };
+  }
+
+  setGoal(target) {
+    const num = Math.max(1, parseInt(target, 10) || 50);
+    this.gameState.goal = num;
+    this.gameState.statusText = `🎯 Spielziel wurde auf ${num} ${this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte'} gesetzt!`;
+    this.updateDiscordMessage();
+    this.emitState();
+    return { success: true, goal: num };
+  }
+
+  checkVictory(player) {
+    if (!player) return false;
+    const isHitster = this.gameState.gameMode === 'hitster';
+    const target = this.gameState.goal || (isHitster ? 10 : 50);
+    const cardCount = (player.cards && Array.isArray(player.cards)) ? player.cards.length : (player.cards || 0);
+    const current = isHitster ? Math.max(cardCount, player.points || 0) : (player.points || 0);
+
+    if (current >= target && !this.gameState.winner) {
+      this.gameState.winner = {
+        ...player,
+        cards: cardCount,
+        points: player.points || 0
+      };
+      const scoreUnit = isHitster ? 'Karten' : 'Punkte';
+      this.gameState.statusText = `👑 **${player.username}** hat das Spielziel von ${target} ${scoreUnit} erreicht und das Quiz GEWONNEN! 🏆`;
+      this.gameState.isLocked = true;
+      this.gameState.screenFlash = 'green';
+      audioManager.playPerfect();
+
+      if (this.gameState.currentMessage && this.gameState.currentMessage.channel) {
+        try {
+          const victoryEmbed = createVictoryEmbed(this.gameState.winner, {
+            roundNumber: this.gameState.roundNumber,
+            scores: this.gameState.scores,
+            gameMode: this.gameState.gameMode,
+            goal: target
+          });
+          this.gameState.currentMessage.channel.send({ embeds: [victoryEmbed] });
+        } catch (err) {
+          console.error('[Bot] Failed to send victory embed:', err);
+        }
+      }
+
+      this.emitState();
+      return true;
+    }
+    return false;
+  }
+
   async updateRichPresence() {
     if (!this.client || !this.isReady || !this.client.user) return;
+    if (!this.gameState.gameMode || this.gameState.gameMode === 'standby') {
+      this.startStandbyPresence();
+      return;
+    }
+
+    if (this.standbyInterval) {
+      clearInterval(this.standbyInterval);
+      this.standbyInterval = null;
+    }
+
     try {
       const playersInVoice = this.gameState.voiceMembers.length;
       const round = this.gameState.roundNumber;
+      const mode = this.gameState.gameMode;
       
+      let activityName = `SongQuiz 🎵 | Runde ${round}`;
+      if (mode === 'wallpaper') {
+        activityName = `Filme / Wallpaper erkennen 🎬 | Runde ${round}`;
+      } else if (mode === 'hitster') {
+        activityName = `Hitster Zeitstrahl 📻 | Runde ${round}`;
+      }
+
       this.client.user.setPresence({
         activities: [{
-          name: `SongQuiz 🎵 | Runde ${round}`,
+          name: activityName,
           type: ActivityType.Playing,
           state: `👥 ${playersInVoice} Mitspieler`
         }],
@@ -109,26 +335,38 @@ class BotManager extends EventEmitter {
       if (!guild) return;
 
       const voiceChannel = await guild.channels.fetch(this.gameState.currentVoiceChannelId);
-      if (!voiceChannel || !voiceChannel.members) return;
+      if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) return;
 
-      const membersList = [];
-      for (const [id, member] of voiceChannel.members) {
-        // Exclude bot itself and Host from regular players list
-        if (member.user.bot || id === this.client.user.id || id === this.config.hostId) continue;
-        
-        membersList.push({
-          id: member.id,
-          username: member.displayName || member.user.username,
-          avatar: member.user.displayAvatarURL({ size: 64 }),
-          isBanned: !!this.gameState.bannedPlayers[member.id]
-        });
-      }
+      const members = [];
+      voiceChannel.members.forEach((member) => {
+        if (!member.user.bot) {
+          const uid = member.id;
+          const uname = member.displayName || member.user.displayName || member.user.username;
+          const avatar = member.user.displayAvatarURL({ size: 128 });
+          const isBanned = !!this.gameState.bannedPlayers[uid];
 
-      this.gameState.voiceMembers = membersList;
-      this.updateRichPresence();
+          members.push({ id: uid, username: uname, avatar, isBanned });
+
+          if (!this.gameState.scores[uid]) {
+            this.gameState.scores[uid] = {
+              id: uid,
+              username: uname,
+              avatar,
+              points: 0,
+              correct: 0,
+              wrong: 0
+            };
+          } else {
+            this.gameState.scores[uid].username = uname;
+            this.gameState.scores[uid].avatar = avatar;
+          }
+        }
+      });
+
+      this.gameState.voiceMembers = members;
       this.emitState();
     } catch (err) {
-      console.error('[Bot] Error updating voice members:', err);
+      console.error('[Bot] Error fetching voice members:', err);
     }
   }
 
@@ -137,49 +375,306 @@ class BotManager extends EventEmitter {
       await this.stop();
     }
 
-    this.client = new Client({
-      intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildVoiceStates
-      ]
-    });
+    if (!this.config.token || this.config.token.trim().length < 20) {
+      this.emit('status-changed', { connected: false, error: 'Ungültiger oder fehlender Bot-Token.' });
+      return { success: false, error: 'Ungültiger Token' };
+    }
+
+    // Non-privileged intents: 100% reliable without 'Used disallowed intents' error
+    const intents = [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildVoiceStates
+    ];
+
+    this.client = new Client({ intents });
 
     this.client.on('ready', async () => {
-      this.isReady = true;
       console.log(`[Bot] Logged in as ${this.client.user.tag}`);
+      this.isReady = true;
+
+      // Register Slash Commands
+      try {
+        const commands = [
+          {
+            name: 'buzzer',
+            description: '🔔 Betätige den MannisBox Buzzer!'
+          },
+          {
+            name: 'goal',
+            description: '🎯 Zeige oder setze das Punkte-Spielziel für den Sieg',
+            options: [
+              {
+                name: 'target',
+                type: 4, // Integer
+                description: 'Punkte-Ziel (z.B. 30, 50, 100)',
+                required: false
+              }
+            ]
+          },
+          {
+            name: 'boost',
+            description: '🔥 Aktiviere den 2x Multiplikator (Doppelte Punkte auf nächste Antwort)!'
+          },
+          {
+            name: 'score',
+            description: '📊 Zeige die aktuelle Live-Rangliste an'
+          },
+          {
+            name: 'help',
+            description: '📖 Zeige alle Spielregeln und Befehle an'
+          }
+        ];
+        if (this.client.application) {
+          await this.client.application.commands.set(commands);
+        }
+        if (this.config.guildId) {
+          try {
+            const g = await this.client.guilds.fetch(this.config.guildId).catch(() => null);
+            if (g) await g.commands.set(commands).catch(() => null);
+          } catch (e) {}
+        }
+        console.log('[Bot] Registered slash commands (global + guild): /buzzer, /goal, /boost, /score, /help');
+      } catch (cmdErr) {
+        console.warn('[Bot] Slash command registration notice:', cmdErr.message);
+      }
+
+      // Automatically fetch and recognize existing guilds the bot is on
+      try {
+        await this.client.guilds.fetch();
+      } catch (err) {
+        console.warn('[Bot] Failed to pre-fetch guilds:', err.message);
+      }
+
+      // Auto-select existing server if none configured or invalid
+      if (!this.config.guildId || !this.client.guilds.cache.has(this.config.guildId)) {
+        const firstGuild = this.client.guilds.cache.first();
+        if (firstGuild) {
+          this.config.guildId = firstGuild.id;
+          saveConfig(this.config);
+          console.log(`[Bot] Auto-selected existing guild: ${firstGuild.name} (${firstGuild.id})`);
+        }
+      }
+
+      // Auto-select channels if missing
+      if (this.config.guildId) {
+        try {
+          const guild = await this.client.guilds.fetch(this.config.guildId);
+          const channels = await guild.channels.fetch();
+          if (!this.config.textChannelId) {
+            const firstText = channels.find(c => c && c.type === ChannelType.GuildText);
+            if (firstText) {
+              this.config.textChannelId = firstText.id;
+              saveConfig(this.config);
+            }
+          }
+          if (!this.config.voiceChannelId) {
+            const firstVoice = channels.find(c => c && c.type === ChannelType.GuildVoice);
+            if (firstVoice) {
+              this.config.voiceChannelId = firstVoice.id;
+              saveConfig(this.config);
+            }
+          }
+        } catch (e) {}
+      }
+
       await this.resolveHostName();
-      this.updateRichPresence();
+      await this.updateRichPresence();
 
       this.emit('status-changed', {
         online: true,
-        user: {
-          id: this.client.user.id,
-          tag: this.client.user.tag,
-          username: this.client.user.username,
-          avatar: this.client.user.displayAvatarURL()
-        },
-        hostName: this.hostName,
-        inviteUrl: this.getInviteUrl()
+        connected: true,
+        tag: this.client.user.tag,
+        id: this.client.user.id,
+        user: { tag: this.client.user.tag, id: this.client.user.id },
+        inviteUrl: `https://discord.com/oauth2/authorize?client_id=${this.client.user.id}&permissions=8&integration_type=0&scope=bot+applications.commands`,
+        hostName: this.hostName
       });
+
       this.emitState();
+
+      if (this.config.guildId && this.config.voiceChannelId) {
+        await this.joinVoice(this.config.guildId, this.config.voiceChannelId);
+      }
     });
 
-    this.client.on('voiceStateUpdate', async () => {
-      await this.updateVoiceMembers();
+    this.client.on('voiceStateUpdate', async (oldState, newState) => {
+      const channelId = this.gameState.currentVoiceChannelId;
+      if (!channelId) return;
+
+      if (oldState.channelId === channelId || newState.channelId === channelId) {
+        await this.updateVoiceMembers();
+        await this.updateRichPresence();
+      }
     });
 
     this.client.on('interactionCreate', async (interaction) => {
       try {
-        if (interaction.isButton() && interaction.customId === 'mannisbox_buzzer') {
-          await this.handleBuzzerInteraction(interaction);
+        if (interaction.isButton()) {
+          if (interaction.customId === 'mannisbox_buzzer') {
+            await this.handleBuzzerInteraction(interaction);
+          } else if (interaction.customId === 'mannisbox_boost') {
+            const isHost = !this.config.hostId || interaction.user.id === this.config.hostId || interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
+            if (!isHost) {
+              await interaction.reply({
+                content: '⛔ Nur der Spielleiter (Host) kann den 2X Boost aktivieren oder deaktivieren!',
+                ephemeral: true
+              });
+              return;
+            }
+            const res = this.toggleBoost();
+            const standbyNote = (!this.gameState.gameMode || this.gameState.gameMode === 'standby') 
+              ? '\n*(Hinweis: Aktuell im Standby. Bitte wähle in der App ein Spiel aus!)*' : '';
+            await interaction.reply({
+              content: (res.isBoostActive 
+                ? '🔥 **BOOST AKTIVIERT!** Die Punkte der nächsten korrekten Antwort zählen DOPPELT (2x)!' 
+                : '❄️ Boost wurde deaktiviert.') + standbyNote,
+              ephemeral: true
+            });
+          } else if (interaction.customId === 'mannisbox_goal') {
+            const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
+            await interaction.reply({
+              content: `🎯 **Aktuelles Spielziel:** \`${this.gameState.goal} ${unit}\`\nWer dieses Ziel zuerst erreicht, holt sich den Champion-Sieg!`,
+              ephemeral: true
+            });
+          } else if (interaction.customId === 'mannisbox_score') {
+            const { formatDiscordLeaderboard } = require('./embeds');
+            const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
+            await interaction.reply({
+              content: `📊 **Live-Rangliste (Ziel: ${this.gameState.goal} ${unit}):**\n${formatDiscordLeaderboard(this.gameState.scores, this.gameState.goal)}`,
+              ephemeral: true
+            });
+          } else if (interaction.customId === 'mannisbox_hitster_chip') {
+            const userId = interaction.user.id;
+            const username = interaction.member?.displayName || interaction.user.username;
+            const avatar = interaction.user.displayAvatarURL({ extension: 'png', size: 128 });
+            const res = this.challengeHitsterChip(userId, username, avatar);
+            if (res.success) {
+              await interaction.reply({
+                content: `⚔️ **[CHIP GEWORFEN]** <@${userId}> hat als ERSTER den Spielchip geworfen und fechtet an!\n⏱️ Zeit: \`${res.challenge.timeFormatted}\` | Verbleibende Chips: **${res.challenge.remainingChips}**`,
+                ephemeral: false
+              });
+            } else {
+              await interaction.reply({
+                content: `⚠️ ${res.error || 'Aktion nicht möglich.'}`,
+                ephemeral: true
+              });
+            }
+          }
+        } else if (interaction.isChatInputCommand()) {
+          const { commandName } = interaction;
+          if (commandName === 'buzzer') {
+            await this.handleBuzzerInteraction(interaction);
+          } else if (commandName === 'boost') {
+            const isHost = !this.config.hostId || interaction.user.id === this.config.hostId || interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
+            if (!isHost) {
+              await interaction.reply({
+                content: '⛔ Nur der Spielleiter (Host) kann den 2X Boost steuern!',
+                ephemeral: true
+              });
+              return;
+            }
+            const res = this.toggleBoost();
+            const standbyNote = (!this.gameState.gameMode || this.gameState.gameMode === 'standby') 
+              ? '\n*(Hinweis: Aktuell im Standby. Bitte wähle in der App ein Spiel aus!)*' : '';
+            await interaction.reply({
+              content: (res.isBoostActive 
+                ? '🔥 **BOOST-RUNDE AKTIVIERT!** Alle Punkte auf die nächste richtige Antwort zählen DOPPELT (2x)!' 
+                : '❄️ Boost deaktiviert.') + standbyNote,
+              ephemeral: false
+            });
+          } else if (commandName === 'goal') {
+            const target = interaction.options.getInteger('target');
+            if (target && target > 0) {
+              const isHost = !this.config.hostId || interaction.user.id === this.config.hostId || interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
+              if (!isHost) {
+                await interaction.reply({
+                  content: '⛔ Nur der Spielleiter (Host) kann das Spielziel verändern!',
+                  ephemeral: true
+                });
+                return;
+              }
+              this.setGoal(target);
+              const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
+              const standbyNote = (!this.gameState.gameMode || this.gameState.gameMode === 'standby') 
+                ? ' *(Hinweis: MannisBox befindet sich im Standby)*' : '';
+              await interaction.reply({
+                content: `🎯 **Neues Spielziel gesetzt:** \`${target} ${unit}\`! Möge der Beste gewinnen!${standbyNote}`,
+                ephemeral: false
+              });
+            } else {
+              const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
+              await interaction.reply({
+                content: `🎯 **Aktuelles Spielziel:** \`${this.gameState.goal} ${unit}\``,
+                ephemeral: true
+              });
+            }
+          } else if (commandName === 'score') {
+            const { formatDiscordLeaderboard } = require('./embeds');
+            await interaction.reply({
+              content: `🏆 **Aktuelle Rangliste (Ziel: ${this.gameState.goal}):**\n${formatDiscordLeaderboard(this.gameState.scores, this.gameState.goal)}`,
+              ephemeral: false
+            });
+          } else if (commandName === 'help') {
+            await interaction.reply({ embeds: [createHelpEmbed(this.gameState)], ephemeral: true });
+          }
         }
       } catch (err) {
-        console.error('[Bot] Interaction Error:', err);
+        console.error('[Bot] Interaction error:', err);
+      }
+    });
+
+    this.client.on('messageCreate', async (msg) => {
+      if (!msg.guild || msg.author.bot) return;
+      const content = msg.content.trim();
+      if (!content.startsWith('!')) return;
+
+      const [cmd, ...args] = content.slice(1).split(/\s+/);
+      const lower = (cmd || '').toLowerCase();
+
+      try {
+        if (lower === 'buzzer' || lower === 'buzz') {
+          await this.handleUserBuzz({
+            userId: msg.author.id,
+            username: msg.member?.displayName || msg.author.displayName || msg.author.username,
+            avatar: msg.author.displayAvatarURL({ size: 128 }),
+            replyFn: (opts) => msg.reply(typeof opts === 'string' ? opts : opts.content)
+          });
+        } else if (lower === 'boost') {
+          const isHost = !this.config.hostId || msg.author.id === this.config.hostId || msg.member?.permissions.has(PermissionsBitField.Flags.Administrator);
+          if (!isHost) {
+            await msg.reply('⛔ Nur der Spielleiter kann den Boost steuern!');
+            return;
+          }
+          const res = this.toggleBoost();
+          await msg.reply(res.isBoostActive ? '🔥 **BOOST AKTIV! (2x Punkte auf nächste richtige Antwort)**' : '❄️ Boost deaktiviert.');
+        } else if (lower === 'goal') {
+          const target = parseInt(args[0], 10);
+          if (target > 0) {
+            const isHost = !this.config.hostId || msg.author.id === this.config.hostId || msg.member?.permissions.has(PermissionsBitField.Flags.Administrator);
+            if (!isHost) {
+              await msg.reply('⛔ Nur der Spielleiter kann das Spielziel anpassen!');
+              return;
+            }
+            this.setGoal(target);
+            const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
+            await msg.reply(`🎯 **Neues Spielziel gesetzt:** \`${target} ${unit}\`!`);
+          } else {
+            const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
+            await msg.reply(`🎯 **Aktuelles Spielziel:** \`${this.gameState.goal} ${unit}\``);
+          }
+        } else if (lower === 'score' || lower === 'punkte') {
+          const { formatDiscordLeaderboard } = require('./embeds');
+          await msg.reply(`🏆 **Live-Rangliste:**\n${formatDiscordLeaderboard(this.gameState.scores, this.gameState.goal)}`);
+        } else if (lower === 'help') {
+          await msg.reply({ embeds: [createHelpEmbed(this.gameState)] });
+        }
+      } catch (mErr) {
+        console.error('[Bot] Message command error:', mErr);
       }
     });
 
     this.client.on('error', (err) => {
-      console.error('[Bot] Client Error:', err);
+      console.error('[Bot] Client error:', err);
       this.emit('error', err.message);
     });
 
@@ -189,51 +684,48 @@ class BotManager extends EventEmitter {
     } catch (err) {
       console.error('[Bot] Login failed:', err);
       this.isReady = false;
-      this.emit('status-changed', { online: false, error: err.message });
+      this.emit('status-changed', { connected: false, error: err.message });
       return { success: false, error: err.message };
     }
   }
 
   async stop() {
-    this.leaveVoice();
+    this.stopRoundTimer();
     if (this.cooldownTimer) {
       clearInterval(this.cooldownTimer);
       this.cooldownTimer = null;
     }
+    this.leaveVoice();
+
     if (this.client) {
       try {
-        this.client.destroy();
-      } catch (err) {
-        console.error('[Bot] Error destroying client:', err);
-      }
+        await this.client.destroy();
+      } catch (err) {}
       this.client = null;
     }
     this.isReady = false;
-    this.emit('status-changed', { online: false });
-  }
-
-  getInviteUrl() {
-    const clientId = (this.client && this.client.user) ? this.client.user.id : '1530938008532946985';
-    return `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=8&integration_type=0&scope=bot+applications.commands`;
+    this.emit('status-changed', { connected: false });
   }
 
   async getGuilds() {
     if (!this.client || !this.isReady) return [];
     try {
-      const guilds = await this.client.guilds.fetch();
+      const fetched = await this.client.guilds.fetch();
       const list = [];
-      for (const [id, oauthGuild] of guilds) {
-        const fullGuild = await oauthGuild.fetch();
+      for (const [id, g] of fetched) {
         list.push({
-          id: fullGuild.id,
-          name: fullGuild.name,
-          icon: fullGuild.iconURL()
+          id: g.id,
+          name: g.name,
+          icon: typeof g.iconURL === 'function' ? g.iconURL() : (g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : null)
         });
       }
       return list;
-    } catch (err) {
-      console.error('[Bot] Error fetching guilds:', err);
-      return [];
+    } catch (e) {
+      return this.client.guilds.cache.map((g) => ({
+        id: g.id,
+        name: g.name,
+        icon: typeof g.iconURL === 'function' ? g.iconURL() : null
+      }));
     }
   }
 
@@ -247,56 +739,54 @@ class BotManager extends EventEmitter {
       const textChannels = [];
       const voiceChannels = [];
 
-      for (const [id, ch] of channels) {
-        if (!ch) continue;
-        if (ch.type === ChannelType.GuildText || ch.type === ChannelType.GuildAnnouncement) {
+      channels.forEach((ch) => {
+        if (!ch) return;
+        if (ch.type === ChannelType.GuildText) {
           textChannels.push({ id: ch.id, name: ch.name });
-        } else if (ch.type === ChannelType.GuildVoice || ch.type === ChannelType.GuildStageVoice) {
+        } else if (ch.type === ChannelType.GuildVoice) {
           voiceChannels.push({ id: ch.id, name: ch.name });
         }
-      }
+      });
 
-      textChannels.sort((a, b) => a.name.localeCompare(b.name));
-      voiceChannels.sort((a, b) => a.name.localeCompare(b.name));
-
-      return { text: textChannels, voice: voiceChannels };
+      return {
+        text: textChannels.sort((a, b) => a.name.localeCompare(b.name)),
+        voice: voiceChannels.sort((a, b) => a.name.localeCompare(b.name))
+      };
     } catch (err) {
-      console.error(`[Bot] Error fetching channels for guild ${guildId}:`, err);
+      console.error('[Bot] Get channels error:', err);
       return { text: [], voice: [] };
     }
   }
 
   async joinVoice(guildId, channelId) {
-    if (!this.client || !this.isReady) return { success: false, error: 'Bot is not ready' };
+    if (!this.client || !this.isReady) {
+      return { success: false, error: 'Bot nicht bereit' };
+    }
+
     try {
       const guild = await this.client.guilds.fetch(guildId);
-      if (!guild) return { success: false, error: 'Guild not found' };
+      const voiceChannel = await guild.channels.fetch(channelId);
+      if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
+        return { success: false, error: 'Voice-Kanal nicht gefunden' };
+      }
 
       const connection = joinVoiceChannel({
-        channelId: channelId,
+        channelId: voiceChannel.id,
         guildId: guild.id,
         adapterCreator: guild.voiceAdapterCreator,
-        selfDeaf: true,
+        selfDeaf: false,
         selfMute: false
       });
 
       this.currentVoiceConnection = connection;
       audioManager.setConnection(connection);
-      this.gameState.currentGuildId = guildId;
       this.gameState.currentVoiceChannelId = channelId;
+      this.gameState.currentGuildId = guildId;
 
-      connection.on(VoiceConnectionStatus.Disconnected, async () => {
-        try {
-          await Promise.race([
-            entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
-            entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
-          ]);
-        } catch {
-          this.leaveVoice();
-        }
-      });
-
+      await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
       await this.updateVoiceMembers();
+      await this.updateRichPresence();
+
       this.emit('voice-status', { connected: true, guildId, channelId });
       return { success: true };
     } catch (err) {
@@ -309,9 +799,7 @@ class BotManager extends EventEmitter {
     if (this.currentVoiceConnection) {
       try {
         this.currentVoiceConnection.destroy();
-      } catch (err) {
-        console.error('[Bot] Error leaving voice:', err);
-      }
+      } catch (err) {}
       this.currentVoiceConnection = null;
       audioManager.setConnection(null);
       this.gameState.currentVoiceChannelId = null;
@@ -320,164 +808,96 @@ class BotManager extends EventEmitter {
     }
   }
 
-  // --- PLAYER BANNING & UNBANNING ---
-  banPlayer(playerId, username) {
-    this.gameState.bannedPlayers[playerId] = {
-      id: playerId,
-      username: username || this.gameState.scores[playerId]?.username || 'Unbekannt',
-      timestamp: Date.now()
+  // --- ROUND TIMER SYSTEM ---
+  startRoundTimer(durationSeconds = 30) {
+    this.stopRoundTimer();
+
+    this.gameState.roundTimer = {
+      active: true,
+      paused: false,
+      elapsed: 0,
+      remaining: durationSeconds,
+      duration: durationSeconds
     };
 
-    // Remove from active player if currently active
-    if (this.gameState.activePlayer && this.gameState.activePlayer.id === playerId) {
-      if (this.gameState.queue.length > 0) {
-        this.gameState.activePlayer = this.gameState.queue.shift();
-      } else {
-        this.gameState.activePlayer = null;
-        this.gameState.isLocked = false;
+    this.roundTicker = setInterval(() => {
+      const t = this.gameState.roundTimer;
+      if (!t.active || t.paused || this.gameState.isEvaluating || this.gameState.activePlayer) {
+        return;
       }
-    }
 
-    // Remove from queue
-    this.gameState.queue = this.gameState.queue.filter((p) => p.id !== playerId);
+      t.elapsed += 0.5;
+      t.remaining = Math.max(0, t.duration - t.elapsed);
 
-    this.gameState.statusText = `⛔ **${this.gameState.bannedPlayers[playerId].username}** wurde für das Quiz gebannt!`;
-    this.updateVoiceMembers();
-    this.updateDiscordMessage();
-    this.emitState();
-    return { success: true };
-  }
+      // Wallpaper stage progression
+      if (this.gameState.gameMode === 'wallpaper') {
+        const prevStage = this.gameState.wallpaperState.stage;
+        const stage = getWallpaperStage(t.elapsed);
+        const points = this.getWallpaperPoints(t.elapsed);
+        this.gameState.wallpaperState.stage = stage;
+        this.gameState.wallpaperState.points = points;
 
-  unbanPlayer(playerId) {
-    if (this.gameState.bannedPlayers[playerId]) {
-      const name = this.gameState.bannedPlayers[playerId].username;
-      delete this.gameState.bannedPlayers[playerId];
-      this.gameState.statusText = `✅ **${name}** wurde entbannt.`;
-      this.updateVoiceMembers();
+        if (this.currentWallpaperRound?.stages) {
+          this.gameState.wallpaperState.currentImage = this.currentWallpaperRound.stages[stage] || this.currentWallpaperRound.sharpImage;
+        }
+
+        if (stage !== prevStage) {
+          this.updateDiscordMessage();
+        }
+
+        // Auto resolve at 40s
+        if (t.elapsed >= 40 && !this.gameState.wallpaperState.resolved) {
+          this.resolveWallpaper();
+          this.setBuzzerLocked(true);
+        }
+      }
+
+      if (t.remaining <= 0) {
+        this.setBuzzerLocked(true);
+        this.stopRoundTimer();
+      }
+
       this.emitState();
-      return { success: true };
-    }
-    return { success: false, error: 'Spieler nicht gebannt' };
+    }, 500);
   }
 
-  // --- SCORE ADJUSTMENT ON HOVER ---
-  adjustPlayerScore(playerId, delta) {
-    if (!this.gameState.scores[playerId]) {
-      // Create player entry if from voice list
-      const voiceUser = this.gameState.voiceMembers.find(m => m.id === playerId);
-      if (voiceUser) {
-        this.gameState.scores[playerId] = {
-          id: playerId,
-          username: voiceUser.username,
-          avatar: voiceUser.avatar,
-          points: 0,
-          correct: 0,
-          wrong: 0
-        };
-      } else {
-        return { success: false, error: 'Spieler nicht gefunden' };
-      }
+  stopRoundTimer() {
+    if (this.roundTicker) {
+      clearInterval(this.roundTicker);
+      this.roundTicker = null;
     }
-
-    this.gameState.scores[playerId].points += delta;
-    this.gameState.actionHistory.push({
-      type: 'manual_adjust',
-      roundNumber: this.gameState.roundNumber,
-      playerId,
-      scoreDelta: delta,
-      wrongDelta: 0,
-      correctDelta: 0,
-      prevStatus: this.gameState.statusText
-    });
-
-    this.gameState.statusText = `✏️ Punkte für **${this.gameState.scores[playerId].username}** angepasst (${delta >= 0 ? '+' : ''}${delta} Pkt.)!`;
-    this.updateDiscordMessage();
-    this.emitState();
-    return { success: true, newPoints: this.gameState.scores[playerId].points };
+    if (this.gameState.roundTimer) {
+      this.gameState.roundTimer.active = false;
+    }
   }
 
-  // --- UNDO LAST ACTION / ROUND ROLLBACK ---
-  undoLastAction() {
-    if (this.gameState.actionHistory.length === 0) {
-      return { success: false, error: 'Keine vorherige Aktion zum Rückgängigmachen vorhanden.' };
-    }
-
-    const lastAction = this.gameState.actionHistory.pop();
-    const { playerId, scoreDelta, wrongDelta, correctDelta, prevStatus } = lastAction;
-
-    if (this.gameState.scores[playerId]) {
-      this.gameState.scores[playerId].points -= scoreDelta;
-      this.gameState.scores[playerId].wrong = Math.max(0, (this.gameState.scores[playerId].wrong || 0) - wrongDelta);
-      this.gameState.scores[playerId].correct = Math.max(0, (this.gameState.scores[playerId].correct || 0) - correctDelta);
-    }
-
-    if (wrongDelta > 0 && this.gameState.roundWrongAttempts[playerId]) {
-      this.gameState.roundWrongAttempts[playerId] = Math.max(0, this.gameState.roundWrongAttempts[playerId] - 1);
-    }
-
-    this.gameState.statusText = `↩️ Letzte Punktevergabe rückgängig gemacht (${scoreDelta >= 0 ? '-' : '+'}${Math.abs(scoreDelta)} Pkt.)!`;
-    this.updateDiscordMessage();
-    this.emitState();
-    return { success: true };
-  }
-
-  async handleBuzzerInteraction(interaction) {
-    const userId = interaction.user.id;
-    const username = interaction.member?.displayName || interaction.user.displayName || interaction.user.username;
-    const avatar = interaction.user.displayAvatarURL({ size: 128 });
-
-    // Ban check
+  // --- BUZZER INTERACTION ---
+  async handleUserBuzz({ userId, username, avatar, replyFn }) {
     if (this.gameState.bannedPlayers[userId]) {
-      return interaction.reply({
-        content: '⛔ Du wurdest vom Spielleiter für dieses Quiz gesperrt!',
-        ephemeral: true
-      });
+      return replyFn({ content: '⛔ Du wurdest vom Spielleiter gesperrt!', ephemeral: true });
     }
-
-    // Host check
     if (userId === this.config.hostId) {
-      return interaction.reply({
-        content: `👑 Du bist als Host eingetragen und kannst nicht selbst mitbuzzern!`,
-        ephemeral: true
-      });
+      return replyFn({ content: `👑 Du bist als Host eingetragen und kannst nicht selbst mitbuzzern!`, ephemeral: true });
     }
-
-    // Check if buzzer is locked or round inactive or in evaluation cooldown
     if (!this.gameState.isRoundActive || this.gameState.isLocked || this.gameState.isEvaluating) {
-      return interaction.reply({
-        content: '🔒 Der Buzzer ist derzeit gesperrt!',
-        ephemeral: true
-      });
+      return replyFn({ content: '🔒 Der Buzzer ist derzeit gesperrt!', ephemeral: true });
     }
 
-    // Check if already in queue or active
     const alreadyInQueue =
       (this.gameState.activePlayer && this.gameState.activePlayer.id === userId) ||
       this.gameState.queue.some((p) => p.id === userId);
 
     if (alreadyInQueue) {
-      return interaction.reply({
-        content: '⚠️ Du bist bereits im Buzzer-Ablauf!',
-        ephemeral: true
-      });
+      return replyFn({ content: '⚠️ Du bist bereits im Buzzer-Ablauf!', ephemeral: true });
     }
 
-    // Ensure player score entry exists
     if (!this.gameState.scores[userId]) {
-      this.gameState.scores[userId] = {
-        id: userId,
-        username,
-        avatar,
-        points: 0,
-        correct: 0,
-        wrong: 0
-      };
+      this.gameState.scores[userId] = { id: userId, username, avatar, points: 0, correct: 0, wrong: 0 };
     } else {
       this.gameState.scores[userId].username = username;
       this.gameState.scores[userId].avatar = avatar;
     }
 
-    // Timing calculation
     const now = Date.now();
     let timeOffset = '1. Platz (0.00s)';
     if (!this.gameState.roundFirstBuzzTime) {
@@ -487,128 +907,375 @@ class BotManager extends EventEmitter {
       timeOffset = `+${(diffMs / 1000).toFixed(2)}s`;
     }
 
-    const player = {
-      id: userId,
-      username,
-      avatar,
-      timeOffset,
-      timestamp: now
-    };
+    // Calculate potential points for Wallpaper mode
+    let potentialPoints = 20;
+    if (this.gameState.gameMode === 'wallpaper') {
+      const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
+      potentialPoints = this.getWallpaperPoints(elapsed);
+    } else if (this.gameState.gameMode === 'song') {
+      potentialPoints = 3;
+    } else if (this.gameState.gameMode === 'hitster') {
+      potentialPoints = 1;
+    }
+
+    if (this.gameState.isBoostActive) {
+      potentialPoints *= 2;
+    }
+
+    const player = { id: userId, username, avatar, timeOffset, timestamp: now, potentialPoints };
 
     if (!this.gameState.activePlayer) {
       this.gameState.activePlayer = player;
-      this.gameState.statusText = `🔔 **${username}** hat zuerst gebuzzert und antwortet jetzt!`;
+      const boostBadge = this.gameState.isBoostActive ? ' 🔥 (2X BOOST)' : '';
+      this.gameState.statusText = `🔔 **${username}** hat zuerst gebuzzert!${boostBadge}`;
+      this.gameState.isLocked = true;
+      if (this.gameState.roundTimer) {
+        this.gameState.roundTimer.paused = true;
+      }
       audioManager.playBuzzer();
-      await interaction.reply({
-        content: `🎉 **Buzzer ausgelöst!** Du bist als 1. dran! Antworte jetzt im Voice-Chat!`,
-        ephemeral: true
-      });
+      this.startAnswerCountdown(10);
+      await replyFn({ content: `🎉 **GEBUZZERT!** Du bist dran! Antworte jetzt im Voice-Chat!${boostBadge}`, ephemeral: true });
     } else {
       this.gameState.queue.push(player);
       const pos = this.gameState.queue.length + 1;
-      await interaction.reply({
-        content: `⏱️ Gebuzzert! Du bist auf **Platz #${pos}** in der Warteschlange (${timeOffset}).`,
-        ephemeral: true
-      });
+      await replyFn({ content: `⏱️ Gebuzzert! Du bist auf **Platz #${pos}** in der Warteschlange.`, ephemeral: true });
     }
 
     this.updateDiscordMessage();
     this.emitState();
   }
 
-  async startRound({ textChannelId, voiceChannelId, guildId }) {
-    if (!this.client || !this.isReady) {
-      return { success: false, error: 'Discord-Bot ist nicht verbunden.' };
-    }
+  async handleBuzzerInteraction(interaction) {
+    const userId = interaction.user.id;
+    const username = interaction.member?.displayName || interaction.user.displayName || interaction.user.username;
+    const avatar = interaction.user.displayAvatarURL({ size: 128 });
+    await this.handleUserBuzz({
+      userId,
+      username,
+      avatar,
+      replyFn: (opts) => interaction.reply(opts)
+    });
+  }
 
+  // --- ROUND LIFECYCLE ---
+  async startRound({ textChannelId, voiceChannelId, guildId, duration = 30 } = {}) {
     const targetGuildId = guildId || this.config.guildId;
     const targetTextChannelId = textChannelId || this.config.textChannelId;
     const targetVoiceChannelId = voiceChannelId || this.config.voiceChannelId;
 
-    if (!targetTextChannelId) {
-      return { success: false, error: 'Kein Text-Channel für den Buzzer ausgewählt!' };
-    }
+    this.gameState.isRoundActive = true;
+    this.gameState.isLocked = false;
+    this.gameState.isEvaluating = false;
+    this.gameState.activePlayer = null;
+    this.gameState.queue = [];
+    this.gameState.roundWrongAttempts = {};
+    this.gameState.roundFirstBuzzTime = null;
+    this.gameState.statusText = 'Drücke den Buzzer, wenn du die Antwort kennst!';
+    this.gameState.currentTextChannelId = targetTextChannelId;
+    this.gameState.currentGuildId = targetGuildId;
+    this.gameState.cooldownSeconds = 0;
 
-    // Auto connect voice if not connected
-    if (targetGuildId && targetVoiceChannelId && (!this.currentVoiceConnection || this.gameState.currentVoiceChannelId !== targetVoiceChannelId)) {
-      await this.joinVoice(targetGuildId, targetVoiceChannelId);
-    }
-
-    try {
-      const channel = await this.client.channels.fetch(targetTextChannelId);
-      if (!channel) {
-        return { success: false, error: 'Textkanal konnte nicht gefunden werden.' };
+    // Mode-specific reset
+    if (this.gameState.gameMode === 'wallpaper') {
+      duration = 40;
+      this.gameState.wallpaperState.resolved = false;
+      this.gameState.wallpaperState.stage = 1;
+      this.gameState.wallpaperState.points = 4;
+      if (this.currentWallpaperRound?.stages) {
+        this.gameState.wallpaperState.currentImage = this.currentWallpaperRound.stages[1] || this.currentWallpaperRound.sharpImage;
       }
-
-      this.gameState.isRoundActive = true;
-      this.gameState.isLocked = false;
-      this.gameState.isEvaluating = false;
-      this.gameState.activePlayer = null;
-      this.gameState.queue = [];
-      this.gameState.roundWrongAttempts = {};
-      this.gameState.roundFirstBuzzTime = null;
-      this.gameState.statusText = 'Drücke den Buzzer, wenn du die Antwort kennst!';
-      this.gameState.currentTextChannelId = targetTextChannelId;
-      this.gameState.currentGuildId = targetGuildId;
-      this.gameState.cooldownSeconds = 0;
-
-      await this.resolveHostName();
-      await this.updateVoiceMembers();
-
-      const embed = createBuzzerEmbed({
-        roundNumber: this.gameState.roundNumber,
-        hostId: this.config.hostId,
-        hostName: this.hostName,
-        isLocked: false,
-        activePlayer: null,
-        queue: [],
-        scores: this.gameState.scores,
-        statusText: this.gameState.statusText,
-        channelPlayerCount: this.gameState.voiceMembers.length
-      });
-
-      const components = createBuzzerComponents(false, false);
-      const msg = await channel.send({ embeds: [embed], components });
-      this.gameState.currentMessage = msg;
-
-      this.updateRichPresence();
-      this.emitState();
-      return { success: true, messageId: msg.id };
-    } catch (err) {
-      console.error('[Bot] Start round error:', err);
-      return { success: false, error: err.message };
+    } else if (this.gameState.gameMode === 'song') {
+      this.gameState.songState.revealed = false;
+    } else if (this.gameState.gameMode === 'hitster') {
+      if (this.gameState.hitsterState.currentCard) {
+        this.gameState.hitsterState.currentCard.revealed = false;
+      }
+      this.gameState.hitsterState.lastChallenge = null;
     }
+
+    // Always start timer & update local state
+    this.startRoundTimer(duration);
+    this.emitState();
+
+    // If Discord is connected and configured, dispatch to channel
+    let messageId = null;
+    if (this.client && this.isReady && targetTextChannelId) {
+      try {
+        if (targetGuildId && targetVoiceChannelId && (!this.currentVoiceConnection || this.gameState.currentVoiceChannelId !== targetVoiceChannelId)) {
+          await this.joinVoice(targetGuildId, targetVoiceChannelId).catch(() => {});
+        }
+
+        const channel = await this.client.channels.fetch(targetTextChannelId).catch(() => null);
+        if (channel) {
+          await this.resolveHostName();
+          await this.updateVoiceMembers();
+
+          let files = [];
+          let imageAttachmentName = null;
+          if (this.gameState.gameMode === 'wallpaper' && this.gameState.wallpaperState) {
+            const imgPath = this.gameState.wallpaperState.currentImage || this.gameState.wallpaperState.sharpImage;
+            if (imgPath && fs.existsSync(imgPath)) {
+              imageAttachmentName = `wallpaper_${Date.now()}${path.extname(imgPath) || '.jpg'}`;
+              files.push(new AttachmentBuilder(imgPath, { name: imageAttachmentName }));
+            }
+          }
+
+          const embed = createBuzzerEmbed({
+            roundNumber: this.gameState.roundNumber,
+            hostId: this.config.hostId,
+            hostName: this.hostName,
+            isLocked: false,
+            activePlayer: null,
+            queue: [],
+            scores: this.gameState.scores,
+            statusText: this.gameState.statusText,
+            channelPlayerCount: this.gameState.voiceMembers.length,
+            gameMode: this.gameState.gameMode,
+            wallpaperState: this.gameState.wallpaperState,
+            songState: this.gameState.songState,
+            hitsterState: this.gameState.hitsterState,
+            goal: this.gameState.goal,
+            isBoostActive: this.gameState.isBoostActive,
+            imageAttachmentName
+          });
+
+          const components = createBuzzerComponents(false, false, this.gameState.gameMode, this.gameState.isBoostActive, this.gameState.goal);
+          const sendOpts = { embeds: [embed], components };
+          if (files.length > 0) sendOpts.files = files;
+          const msg = await channel.send(sendOpts);
+          this.gameState.currentMessage = msg;
+          messageId = msg.id;
+          this.updateRichPresence();
+        }
+      } catch (err) {
+        console.warn('[Bot] Discord dispatch warning in startRound:', err.message);
+      }
+    }
+
+    this.emitState();
+    return { success: true, messageId };
   }
 
   async setBuzzerLocked(locked) {
     this.gameState.isLocked = locked;
     this.gameState.statusText = locked ? 'Buzzer wurde vorübergehend gesperrt.' : 'Buzzer ist freigegeben!';
+    if (this.gameState.roundTimer) {
+      this.gameState.roundTimer.paused = locked;
+    }
     await this.updateDiscordMessage();
     this.emitState();
     return { success: true };
   }
 
-  async selectQueuePlayer(playerId) {
-    const idx = this.gameState.queue.findIndex((p) => p.id === playerId);
-    if (idx === -1) return { success: false, error: 'Spieler nicht in der Queue gefunden.' };
-
-    const selectedPlayer = this.gameState.queue.splice(idx, 1)[0];
-    if (this.gameState.activePlayer) {
-      this.gameState.queue.unshift(this.gameState.activePlayer);
-    }
-    this.gameState.activePlayer = selectedPlayer;
-    this.gameState.statusText = `👉 **${selectedPlayer.username}** wurde ausgewählt und ist jetzt am Zug!`;
-    
-    await this.updateDiscordMessage();
+  // --- 10-SECOND BUZZER ANSWER TIMER ---
+  startAnswerCountdown(seconds = 10) {
+    this.stopAnswerCountdown();
+    this.gameState.answerTimer = {
+      total: seconds,
+      remaining: seconds,
+      expired: false,
+      activePlayerId: this.gameState.activePlayer ? this.gameState.activePlayer.id : null
+    };
     this.emitState();
+
+    this.answerCountdownInterval = setInterval(() => {
+      if (!this.gameState.activePlayer || !this.gameState.answerTimer) {
+        this.stopAnswerCountdown();
+        return;
+      }
+      this.gameState.answerTimer.remaining -= 1;
+      if (this.gameState.answerTimer.remaining <= 0) {
+        this.gameState.answerTimer.remaining = 0;
+        this.gameState.answerTimer.expired = true;
+        this.gameState.statusText = '⚠️ 10 Sekunden Antwortzeit abgelaufen! Bitte Runde auflösen oder freigeben.';
+        clearInterval(this.answerCountdownInterval);
+        this.answerCountdownInterval = null;
+      }
+      this.emitState();
+    }, 1000);
+  }
+
+  stopAnswerCountdown() {
+    if (this.answerCountdownInterval) {
+      clearInterval(this.answerCountdownInterval);
+      this.answerCountdownInterval = null;
+    }
+    if (this.gameState.answerTimer) {
+      this.gameState.answerTimer = null;
+      this.emitState();
+    }
+  }
+
+  resumeRound() {
+    this.stopAnswerCountdown();
+    this.gameState.activePlayer = null;
+    this.gameState.isLocked = false;
+    this.gameState.isEvaluating = false;
+    if (this.gameState.roundTimer) {
+      this.gameState.roundTimer.paused = false;
+    }
+    this.gameState.statusText = 'Buzzer ist wieder frei!';
+    this.updateDiscordMessage();
+    this.emitState();
+    return { success: true };
+  }
+
+  abortRound() {
+    this.stopAnswerCountdown();
+    this.stopRoundTimer();
+    this.gameState.isLocked = true;
+    this.gameState.activePlayer = null;
+    this.gameState.queue = [];
+
+    if (this.gameState.gameMode === 'wallpaper') {
+      this.resolveWallpaper();
+    } else if (this.gameState.gameMode === 'song') {
+      this.gameState.songState.revealed = true;
+    } else if (this.gameState.gameMode === 'hitster') {
+      this.resolveHitsterCard();
+    }
+
+    this.gameState.statusText = '⏹️ Runde wurde vom Spielleiter aufgelöst.';
+    this.updateDiscordMessage();
+    this.emitState();
+    return { success: true };
+  }
+
+  // --- EVALUATION ---
+  async evaluateActivePlayer(action, targetPlayerName = null) {
+    let player = this.gameState.activePlayer;
+    if (!player && targetPlayerName) {
+      player = this.gameState.scores[targetPlayerName] ||
+        Object.values(this.gameState.scores).find(p => p.username === targetPlayerName || p.id === targetPlayerName);
+    }
+    if (this.gameState.isEvaluating || !player) {
+      return { success: false, error: 'Kein Spieler zum Bewerten.' };
+    }
+
+    this.stopAnswerCountdown();
+
+    const userId = player.id;
+    const playerScore = this.gameState.scores[userId] || {
+      id: userId,
+      username: player.username,
+      avatar: player.avatar,
+      points: 0,
+      correct: 0,
+      wrong: 0,
+      cards: []
+    };
+
+    if (action === 'wrong') {
+      const attempts = this.gameState.roundWrongAttempts[userId] || 0;
+      let penalty = attempts >= 1 ? (this.config.points.wrongRepeat || -2) : (this.config.points.wrongFirst || -1);
+      if (this.gameState.gameMode === 'hitster') {
+        penalty = 0; // Bei Hitster keine Minuspunkte, nur falsche Platzierung
+      }
+
+      this.gameState.roundWrongAttempts[userId] = attempts + 1;
+      playerScore.points += penalty;
+      playerScore.wrong = (playerScore.wrong || 0) + 1;
+      this.gameState.scores[userId] = playerScore;
+
+      // Screen Flash RED
+      this.gameState.screenFlash = 'red';
+      setTimeout(() => { this.gameState.screenFlash = null; this.emitState(); }, 1500);
+
+      audioManager.playWrong();
+      this.gameState.statusText = `❌ **${player.username}** lag falsch (${penalty} Pkt.)!`;
+      await this.updateDiscordMessage();
+      this.emitState();
+
+      // 3-second animated countdown
+      this.start3SecondCooldown(async () => {
+        if (this.gameState.queue.length > 0) {
+          const nextPlayer = this.gameState.queue.shift();
+          this.gameState.activePlayer = nextPlayer;
+          this.gameState.statusText = `➔ **${nextPlayer.username}** ist jetzt an der Reihe!`;
+          this.gameState.isLocked = false;
+          this.startAnswerCountdown(10);
+        } else {
+          this.gameState.activePlayer = null;
+          this.gameState.statusText = `Buzzer ist wieder frei für alle!`;
+          this.gameState.isLocked = false;
+          if (this.gameState.roundTimer) {
+            this.gameState.roundTimer.paused = false;
+          }
+        }
+        await this.updateDiscordMessage();
+        this.emitState();
+      });
+
+    } else if (action === 'correct' || action === 'perfect') {
+      let gain = this.config.points.correct || 3;
+      if (this.gameState.gameMode === 'wallpaper') {
+        gain = player.potentialPoints || 4;
+        this.resolveWallpaper();
+      } else if (this.gameState.gameMode === 'song') {
+        this.gameState.songState.revealed = true;
+        if (action === 'perfect') gain = this.config.points.perfect || 4;
+      } else if (this.gameState.gameMode === 'hitster') {
+        gain = (typeof action === 'number') ? action : (action === 'perfect' ? 4 : 1);
+        this.resolveHitsterCard(playerScore);
+      }
+
+      let wasBoosted = false;
+      if (this.gameState.isBoostActive) {
+        gain *= 2;
+        wasBoosted = true;
+        this.gameState.isBoostActive = false;
+      }
+
+      playerScore.points += gain;
+      playerScore.correct = (playerScore.correct || 0) + 1;
+      this.gameState.scores[userId] = playerScore;
+
+      // Screen Flash GREEN
+      this.gameState.screenFlash = 'green';
+      setTimeout(() => { this.gameState.screenFlash = null; this.emitState(); }, 1500);
+
+      this.stopRoundTimer();
+      audioManager.playCorrect();
+
+      const boostTag = wasBoosted ? ' 🔥 (2X BOOST!)' : '';
+      this.gameState.statusText = `✅ **${player.username}** hat richtig geantwortet (+${gain} Pkt.${boostTag})! 🎉`;
+      await this.updateDiscordMessage();
+      this.emitState();
+
+      const hasWon = this.checkVictory(playerScore);
+
+      this.start3SecondCooldown(async () => {
+        this.gameState.queue = [];
+        this.gameState.activePlayer = null;
+        if (!hasWon) {
+          this.gameState.statusText = `✅ Gelöst von **${player.username}**! Starte nächste Runde.`;
+          this.gameState.isLocked = false;
+        }
+        await this.updateDiscordMessage();
+        this.emitState();
+      });
+
+    } else if (action === 'skip') {
+      this.gameState.statusText = `⏭️ **${player.username}** wurde übersprungen.`;
+      if (this.gameState.queue.length > 0) {
+        this.gameState.activePlayer = this.gameState.queue.shift();
+        this.startAnswerCountdown(10);
+      } else {
+        this.gameState.activePlayer = null;
+        this.gameState.isLocked = false;
+        if (this.gameState.roundTimer) {
+          this.gameState.roundTimer.paused = false;
+        }
+      }
+      await this.updateDiscordMessage();
+      this.emitState();
+    }
+
     return { success: true };
   }
 
   start3SecondCooldown(nextActionCallback) {
-    if (this.cooldownTimer) {
-      clearInterval(this.cooldownTimer);
-    }
-
+    if (this.cooldownTimer) clearInterval(this.cooldownTimer);
     this.gameState.cooldownSeconds = 3;
     this.gameState.isEvaluating = true;
     this.gameState.isLocked = true;
@@ -620,217 +1287,454 @@ class BotManager extends EventEmitter {
         clearInterval(this.cooldownTimer);
         this.cooldownTimer = null;
         this.gameState.isEvaluating = false;
-        if (nextActionCallback) {
-          await nextActionCallback();
-        }
+        if (nextActionCallback) await nextActionCallback();
       }
       this.emitState();
     }, 1000);
   }
 
-  async evaluateActivePlayer(action) {
-    // Prevent double clicking while evaluating
-    if (this.gameState.isEvaluating) {
-      return { success: false, error: 'Bereits in der Auswertung.' };
+  // --- SONG MODE HELPERS ---
+  async scanMusicFolder(folderPath) {
+    const res = await scanAudioFolder(folderPath);
+    if (res.success) {
+      this.currentMusicFolder = folderPath;
+      this.availableMusicFiles = res.files;
+    }
+    return res;
+  }
+
+  async pickRandomSong(genre = null) {
+    let pool = this.availableMusicFiles;
+    if (genre && this.currentMusicFolder) {
+      const genrePath = path.join(this.currentMusicFolder, genre);
+      pool = this.availableMusicFiles.filter(f => f.startsWith(genrePath));
     }
 
-    if (!this.gameState.activePlayer) {
-      return { success: false, error: 'Kein aktiver Spieler vorhanden.' };
+    if (!pool || pool.length === 0) {
+      return { success: false, error: 'Keine Songs gefunden' };
     }
 
-    const player = this.gameState.activePlayer;
-    const userId = player.id;
-    const playerScore = this.gameState.scores[userId] || {
-      id: userId,
-      username: player.username,
-      avatar: player.avatar,
-      points: 0,
-      correct: 0,
-      wrong: 0
+    const chosen = pool[Math.floor(Math.random() * pool.length)];
+    const tags = await extractAudioTags(chosen);
+
+    this.gameState.songState = {
+      title: tags.title,
+      artist: tags.artist,
+      fullTitle: tags.fullTitle,
+      censoredTitle: tags.censoredTitle,
+      revealed: false,
+      filePath: chosen
     };
 
-    if (action === 'wrong') {
-      const attempts = this.gameState.roundWrongAttempts[userId] || 0;
-      const penalty = attempts >= 1 ? (this.config.points.wrongRepeat || -2) : (this.config.points.wrongFirst || -1);
+    this.emitState();
+    return { success: true, song: this.gameState.songState };
+  }
 
-      this.gameState.roundWrongAttempts[userId] = attempts + 1;
-      playerScore.points += penalty;
-      playerScore.wrong = (playerScore.wrong || 0) + 1;
-      this.gameState.scores[userId] = playerScore;
+  setManualSong(artist, title) {
+    const cleanArt = cleanMetadata(artist) || 'Unbekannt';
+    const cleanTit = cleanMetadata(title) || 'Unbekannter Song';
 
-      this.gameState.actionHistory.push({
-        type: 'wrong',
-        roundNumber: this.gameState.roundNumber,
-        playerId: userId,
-        scoreDelta: penalty,
-        wrongDelta: 1,
-        correctDelta: 0,
-        prevStatus: this.gameState.statusText
-      });
+    this.gameState.songState = {
+      title: cleanTit,
+      artist: cleanArt,
+      fullTitle: `${cleanArt} - ${cleanTit}`,
+      censoredTitle: `${censorText(cleanArt)} - ${censorText(cleanTit)}`,
+      revealed: false,
+      filePath: ''
+    };
 
-      audioManager.playWrong();
+    this.emitState();
+    return { success: true, song: this.gameState.songState };
+  }
 
-      this.gameState.statusText = `❌ **${player.username}** lag falsch (${penalty} Pkt.)! Zug beendet.`;
-      await this.updateDiscordMessage();
-      this.emitState();
+  generatePixelatedStages(imagePath) {
+    if (!imagePath || !fs.existsSync(imagePath)) {
+      return { 1: imagePath, 2: imagePath, 3: imagePath, 4: imagePath, 5: imagePath };
+    }
+    if (!nativeImage) {
+      return { 1: imagePath, 2: imagePath, 3: imagePath, 4: imagePath, 5: imagePath };
+    }
+    try {
+      const cacheDir = path.join(os.tmpdir(), 'mannisbox_wp_stages');
+      if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
 
-      // 3-second animated countdown
-      this.start3SecondCooldown(async () => {
-        if (this.gameState.queue.length > 0) {
-          // Next player in queue slides up
-          const nextPlayer = this.gameState.queue.shift();
-          this.gameState.activePlayer = nextPlayer;
-          this.gameState.statusText = `➔ **${nextPlayer.username}** ist jetzt an der Reihe!`;
-          this.gameState.isLocked = false;
-        } else {
-          this.gameState.activePlayer = null;
-          this.gameState.statusText = `Buzzer ist wieder frei für alle!`;
-          this.gameState.isLocked = false;
+      const img = nativeImage.createFromPath(imagePath);
+      const size = img.getSize();
+      if (size.width === 0 || size.height === 0) {
+        return { 1: imagePath, 2: imagePath, 3: imagePath, 4: imagePath, 5: imagePath };
+      }
+
+      const fileBase = path.basename(imagePath, path.extname(imagePath)).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const hash = `${fileBase}_${size.width}x${size.height}`;
+
+      const s1Path = path.join(cacheDir, `${hash}_stage1.jpg`);
+      const s2Path = path.join(cacheDir, `${hash}_stage2.jpg`);
+      const s3Path = path.join(cacheDir, `${hash}_stage3.jpg`);
+      const s4Path = path.join(cacheDir, `${hash}_stage4.jpg`);
+
+      // Stage 1 (0-10s): Extreme pixelation
+      if (!fs.existsSync(s1Path)) {
+        const p1 = img.resize({ width: 24, height: Math.max(14, Math.round(24 * (size.height / size.width))), quality: 'low' })
+                      .resize({ width: 640, height: 360, quality: 'low' });
+        fs.writeFileSync(s1Path, p1.toJPEG(85));
+      }
+      // Stage 2 (10-20s): Heavy pixelation
+      if (!fs.existsSync(s2Path)) {
+        const p2 = img.resize({ width: 48, height: Math.max(27, Math.round(48 * (size.height / size.width))), quality: 'low' })
+                      .resize({ width: 640, height: 360, quality: 'low' });
+        fs.writeFileSync(s2Path, p2.toJPEG(85));
+      }
+      // Stage 3 (20-30s): Medium pixelation
+      if (!fs.existsSync(s3Path)) {
+        const p3 = img.resize({ width: 96, height: Math.max(54, Math.round(96 * (size.height / size.width))), quality: 'low' })
+                      .resize({ width: 640, height: 360, quality: 'low' });
+        fs.writeFileSync(s3Path, p3.toJPEG(88));
+      }
+      // Stage 4 (30-40s): Light pixelation
+      if (!fs.existsSync(s4Path)) {
+        const p4 = img.resize({ width: 200, height: Math.max(112, Math.round(200 * (size.height / size.width))), quality: 'low' })
+                      .resize({ width: 640, height: 360, quality: 'low' });
+        fs.writeFileSync(s4Path, p4.toJPEG(90));
+      }
+
+      return {
+        1: s1Path,
+        2: s2Path,
+        3: s3Path,
+        4: s4Path,
+        5: imagePath
+      };
+    } catch (err) {
+      console.warn('[Bot] generatePixelatedStages error:', err.message);
+      return { 1: imagePath, 2: imagePath, 3: imagePath, 4: imagePath, 5: imagePath };
+    }
+  }
+
+  // --- WALLPAPER MODE HELPERS ---
+  scanWallpaperFolder(folderPath) {
+    const res = scanWallpaperFolder(folderPath);
+    if (res.success && res.rounds.length > 0) {
+      this.availableWallpaperRounds = res.rounds;
+      this.setWallpaperRound(res.rounds[0]);
+    }
+    return res;
+  }
+
+  setWallpaperRound(roundData) {
+    if (!roundData.stages || roundData.stages[1] === roundData.sharpImage) {
+      roundData.stages = this.generatePixelatedStages(roundData.sharpImage);
+    }
+    this.currentWallpaperRound = roundData;
+    this.gameState.wallpaperState = {
+      currentImage: roundData.stages[1] || roundData.sharpImage,
+      stage: 1,
+      points: 4,
+      movieTitle: roundData.movieTitle,
+      sharpImage: roundData.sharpImage,
+      resolved: false,
+      stages: roundData.stages
+    };
+    this.emitState();
+  }
+
+  pickNextWallpaper() {
+    if (!this.availableWallpaperRounds || this.availableWallpaperRounds.length === 0) {
+      return { success: false, error: 'Keine Wallpaper-Runden im Ordner geladen.' };
+    }
+    const curIdx = this.availableWallpaperRounds.findIndex(r => r === this.currentWallpaperRound);
+    const nextIdx = (curIdx + 1) % this.availableWallpaperRounds.length;
+    this.setWallpaperRound(this.availableWallpaperRounds[nextIdx]);
+    return { success: true, round: this.gameState.wallpaperState };
+  }
+
+  pickRandomWallpaper() {
+    if (!this.availableWallpaperRounds || this.availableWallpaperRounds.length === 0) {
+      return { success: false, error: 'Keine Wallpaper-Runden im Ordner geladen.' };
+    }
+    const idx = Math.floor(Math.random() * this.availableWallpaperRounds.length);
+    this.setWallpaperRound(this.availableWallpaperRounds[idx]);
+    return { success: true, round: this.gameState.wallpaperState };
+  }
+
+  uploadWallpaper(imagePath, movieTitle) {
+    const stages = this.generatePixelatedStages(imagePath);
+    const round = {
+      movieTitle: movieTitle || 'Unbekannter Film',
+      stages,
+      sharpImage: imagePath
+    };
+    this.setWallpaperRound(round);
+    return { success: true, round: this.gameState.wallpaperState };
+  }
+
+  resolveWallpaper() {
+    this.gameState.wallpaperState.resolved = true;
+    if (this.currentWallpaperRound?.sharpImage) {
+      this.gameState.wallpaperState.currentImage = this.currentWallpaperRound.sharpImage;
+    }
+    this.emitState();
+  }
+
+  getWallpaperPoints(elapsedSeconds) {
+    const pts = this.gameState.wallpaperStagePoints || { 1: 4, 2: 3, 3: 2, 4: 1 };
+    if (elapsedSeconds < 10) return pts[1] !== undefined ? pts[1] : 4;
+    if (elapsedSeconds < 20) return pts[2] !== undefined ? pts[2] : 3;
+    if (elapsedSeconds < 30) return pts[3] !== undefined ? pts[3] : 2;
+    return pts[4] !== undefined ? pts[4] : 1;
+  }
+
+  setWallpaperStagePoints(pointsObj) {
+    if (!this.gameState.wallpaperStagePoints) {
+      this.gameState.wallpaperStagePoints = { 1: 4, 2: 3, 3: 2, 4: 1 };
+    }
+    if (pointsObj && typeof pointsObj === 'object') {
+      this.gameState.wallpaperStagePoints = { ...this.gameState.wallpaperStagePoints, ...pointsObj };
+      if (this.gameState.gameMode === 'wallpaper') {
+        const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
+        this.gameState.wallpaperState.points = this.getWallpaperPoints(elapsed);
+        if (this.gameState.activePlayer) {
+          this.gameState.activePlayer.potentialPoints = this.gameState.wallpaperState.points;
         }
-        await this.updateDiscordMessage();
-        this.emitState();
-      });
-
-    } else if (action === 'correct') {
-      const gain = this.config.points.correct || 3;
-      playerScore.points += gain;
-      playerScore.correct = (playerScore.correct || 0) + 1;
-      this.gameState.scores[userId] = playerScore;
-
-      this.gameState.actionHistory.push({
-        type: 'correct',
-        roundNumber: this.gameState.roundNumber,
-        playerId: userId,
-        scoreDelta: gain,
-        wrongDelta: 0,
-        correctDelta: 1,
-        prevStatus: this.gameState.statusText
-      });
-
-      audioManager.playCorrect();
-
-      this.gameState.statusText = `✅ **${player.username}** hat richtig geantwortet (+${gain} Pkt.)! 🎉`;
-      await this.updateDiscordMessage();
-      this.emitState();
-
-      // Reset queue on correct answer and start 3s countdown
-      this.start3SecondCooldown(async () => {
-        this.gameState.queue = []; // Clear queue on correct
-        this.gameState.activePlayer = null;
-        this.gameState.statusText = `✅ Frage gelöst von **${player.username}**! Starte nächste Runde für den nächsten Song.`;
-        this.gameState.isLocked = false;
-        await this.updateDiscordMessage();
-        this.emitState();
-      });
-
-    } else if (action === 'perfect') {
-      const gain = this.config.points.perfect || 4;
-      playerScore.points += gain;
-      playerScore.correct = (playerScore.correct || 0) + 1;
-      this.gameState.scores[userId] = playerScore;
-
-      this.gameState.actionHistory.push({
-        type: 'perfect',
-        roundNumber: this.gameState.roundNumber,
-        playerId: userId,
-        scoreDelta: gain,
-        wrongDelta: 0,
-        correctDelta: 1,
-        prevStatus: this.gameState.statusText
-      });
-
-      audioManager.playPerfect();
-
-      this.gameState.statusText = `🌟 **${player.username}** hat VOLLSTÄNDIG RICHTIG mit Songname geantwortet (+${gain} Pkt.)! 🏆`;
-      await this.updateDiscordMessage();
-      this.emitState();
-
-      // Reset queue on perfect answer
-      this.start3SecondCooldown(async () => {
-        this.gameState.queue = []; // Clear queue
-        this.gameState.activePlayer = null;
-        this.gameState.statusText = `🌟 Perfekter Treffer von **${player.username}**! Starte nächste Runde für den nächsten Song.`;
-        this.gameState.isLocked = false;
-        await this.updateDiscordMessage();
-        this.emitState();
-      });
-
-    } else if (action === 'skip') {
-      if (this.gameState.queue.length > 0) {
-        const nextPlayer = this.gameState.queue.shift();
-        this.gameState.activePlayer = nextPlayer;
-        this.gameState.statusText = `⏭️ **${player.username}** übersprungen. ➔ **${nextPlayer.username}** ist jetzt an der Reihe!`;
-      } else {
-        this.gameState.activePlayer = null;
-        this.gameState.statusText = `⏭️ **${player.username}** übersprungen. Buzzer ist wieder frei!`;
       }
-      await this.updateDiscordMessage();
       this.emitState();
+      return { success: true, points: this.gameState.wallpaperStagePoints };
     }
-
-    return { success: true };
+    return { success: false };
   }
 
-  async endRound() {
-    if (this.cooldownTimer) {
-      clearInterval(this.cooldownTimer);
-      this.cooldownTimer = null;
+  // --- HITSTER CHIPS & DISPUTE HELPERS ---
+  challengeHitsterChip(userIdOrName, displayName = null, avatarUrl = null) {
+    if (this.gameState.gameMode !== 'hitster') return { success: false, error: 'Nicht im Hitster-Modus aktiv.' };
+
+    let player = this.gameState.scores[userIdOrName] ||
+      Object.values(this.gameState.scores).find(p => p.username.toLowerCase() === String(userIdOrName).toLowerCase() || p.id === userIdOrName);
+
+    if (!player) {
+      player = {
+        id: userIdOrName,
+        username: displayName || userIdOrName,
+        avatar: avatarUrl || '../../App.png',
+        points: 0,
+        chips: 3,
+        correct: 0,
+        wrong: 0,
+        cards: []
+      };
+      this.gameState.scores[player.id] = player;
     }
 
-    this.gameState.isRoundActive = false;
-    this.gameState.isLocked = true;
-    this.gameState.isEvaluating = false;
-    this.gameState.cooldownSeconds = 0;
+    if (player.chips === undefined) player.chips = 3;
 
-    if (this.gameState.currentMessage) {
-      try {
-        const endEmbed = createFinalGameEndEmbed({
-          roundNumber: this.gameState.roundNumber,
-          scores: this.gameState.scores,
-          hostId: this.config.hostId,
-          hostName: this.hostName,
-          totalRounds: this.gameState.roundNumber
-        });
-        const components = createBuzzerComponents(true, true);
-        await this.gameState.currentMessage.edit({ embeds: [endEmbed], components });
-      } catch (err) {
-        console.error('[Bot] Error editing end round message:', err);
-      }
+    if (player.chips <= 0) {
+      return { success: false, error: `${player.username} hat keine Hitster-Chips mehr!` };
     }
 
-    this.gameState.roundNumber += 1;
-    this.gameState.activePlayer = null;
-    this.gameState.queue = [];
-    this.gameState.statusText = `Quiz-Runde offiziell beendet! Endstand in Discord gesendet.`;
+    player.chips = Math.max(0, player.chips - 1);
+    const now = new Date();
+    const timeFormatted = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
 
-    this.updateRichPresence();
+    this.gameState.hitsterState.lastChallenge = {
+      userId: player.id,
+      username: player.username,
+      avatar: player.avatar,
+      remainingChips: player.chips,
+      timeFormatted,
+      timestamp: Date.now()
+    };
+
+    audioManager.playBuzzer();
+    this.gameState.screenFlash = 'yellow';
+    setTimeout(() => { this.gameState.screenFlash = null; this.emitState(); }, 1500);
+
+    this.gameState.statusText = `⚔️ **${player.username}** hat als ERSTER den Hitster-Chip geworfen! (Verbleibend: ${player.chips} Chips)`;
+
     this.emitState();
-    return { success: true, nextRound: this.gameState.roundNumber };
-  }
-
-  resetScores() {
-    if (this.cooldownTimer) {
-      clearInterval(this.cooldownTimer);
-      this.cooldownTimer = null;
-    }
-    this.gameState.scores = {};
-    this.gameState.roundWrongAttempts = {};
-    this.gameState.roundNumber = 1;
-    this.gameState.activePlayer = null;
-    this.gameState.queue = [];
-    this.gameState.cooldownSeconds = 0;
-    this.gameState.isEvaluating = false;
-    this.gameState.actionHistory = [];
-    this.gameState.statusText = 'Punktestand wurde auf 0 zurückgesetzt!';
     this.updateDiscordMessage();
-    this.updateRichPresence();
-    this.emitState();
-    return { success: true };
+    return { success: true, challenge: this.gameState.hitsterState.lastChallenge };
   }
 
+  adjustPlayerChips(userIdOrName, delta) {
+    if (!userIdOrName) return { success: false };
+    let player = this.gameState.scores[userIdOrName] ||
+      Object.values(this.gameState.scores).find(p => p.username.toLowerCase() === String(userIdOrName).toLowerCase() || p.id === userIdOrName);
+    if (!player) {
+      player = {
+        id: userIdOrName,
+        username: userIdOrName,
+        avatar: '../../App.png',
+        points: 0,
+        chips: 3,
+        correct: 0,
+        wrong: 0,
+        cards: []
+      };
+      this.gameState.scores[player.id] = player;
+    }
+    if (player.chips === undefined) player.chips = 3;
+    player.chips = Math.max(0, player.chips + delta);
+
+    if (!this.gameState.hitsterState.playerShelves) {
+      this.gameState.hitsterState.playerShelves = {};
+    }
+    if (!this.gameState.hitsterState.playerShelves[player.username]) {
+      this.gameState.hitsterState.playerShelves[player.username] = { cards: player.cards || [], chips: player.chips };
+    } else {
+      this.gameState.hitsterState.playerShelves[player.username].chips = player.chips;
+    }
+
+    this.emitState();
+    return { success: true, chips: player.chips };
+  }
+
+  async selectSpecificSong(filePath) {
+    if (!filePath || !fs.existsSync(filePath)) {
+      return { success: false, error: 'Datei nicht gefunden.' };
+    }
+    const tags = await extractAudioTags(filePath);
+    this.gameState.songState = {
+      title: tags.title,
+      artist: tags.artist,
+      fullTitle: tags.fullTitle,
+      censoredTitle: tags.censoredTitle,
+      revealed: false,
+      filePath: tags.filePath
+    };
+    audioManager.playSong(filePath);
+    this.emitState();
+    return { success: true, song: this.gameState.songState };
+  }
+
+  async selectSpecificHitster(filePath) {
+    if (!filePath || !fs.existsSync(filePath)) {
+      return { success: false, error: 'Datei nicht gefunden.' };
+    }
+    const tags = await extractAudioTags(filePath);
+    this.gameState.hitsterState.currentCard = {
+      title: tags.title,
+      artist: tags.artist,
+      year: tags.year,
+      revealed: false,
+      filePath: tags.filePath
+    };
+    audioManager.playSong(filePath);
+    this.emitState();
+    return { success: true, card: this.gameState.hitsterState.currentCard };
+  }
+
+  selectSpecificWallpaper(titleOrIndex) {
+    if (!this.availableWallpaperRounds || this.availableWallpaperRounds.length === 0) {
+      return { success: false, error: 'Keine Wallpaper geladen.' };
+    }
+    let round = null;
+    if (typeof titleOrIndex === 'number') {
+      round = this.availableWallpaperRounds[titleOrIndex];
+    } else {
+      round = this.availableWallpaperRounds.find(r => r.movieTitle.toLowerCase() === String(titleOrIndex).toLowerCase()) ||
+              this.availableWallpaperRounds.find(r => r.movieTitle.toLowerCase().includes(String(titleOrIndex).toLowerCase()));
+    }
+    if (round) {
+      this.setWallpaperRound(round);
+      return { success: true, round: this.gameState.wallpaperState };
+    }
+    return { success: false, error: 'Wallpaper nicht gefunden.' };
+  }
+
+  // --- HITSTER MODE HELPERS ---
+  async pickHitsterSong(genre = null) {
+    let pool = this.availableMusicFiles;
+    if (genre && this.currentMusicFolder) {
+      const genrePath = path.join(this.currentMusicFolder, genre);
+      pool = this.availableMusicFiles.filter(f => f.startsWith(genrePath));
+    }
+
+    if (!pool || pool.length === 0) {
+      return { success: false, error: 'Keine Musikdateien geladen. Bitte wähle zuerst einen Ordner mit Musik aus.' };
+    }
+
+    const chosen = pool[Math.floor(Math.random() * pool.length)];
+    const tags = await extractAudioTags(chosen);
+
+    this.gameState.hitsterState.currentCard = {
+      title: tags.title,
+      artist: tags.artist,
+      year: tags.year !== 'Unbekannt' ? tags.year : '1995',
+      revealed: false,
+      filePath: chosen
+    };
+
+    this.emitState();
+    return { success: true, card: this.gameState.hitsterState.currentCard };
+  }
+
+  setManualHitsterCard(year, artist, title) {
+    this.gameState.hitsterState.currentCard = {
+      title: cleanMetadata(title) || 'Unbekannter Song',
+      artist: cleanMetadata(artist) || 'Unbekannter Interpret',
+      year: String(year || '1990').trim(),
+      revealed: false,
+      filePath: ''
+    };
+    this.emitState();
+    return { success: true, card: this.gameState.hitsterState.currentCard };
+  }
+
+  resolveHitsterCard(targetPlayer = null) {
+    const card = this.gameState.hitsterState.currentCard;
+    if (!card || !card.year) return { success: false };
+    card.revealed = true;
+    const year = parseInt(card.year, 10) || 1990;
+    const exists = this.gameState.hitsterState.timeline.some(c => c.title === card.title && c.year === card.year);
+    if (!exists) {
+      this.gameState.hitsterState.timeline.push({
+        year,
+        title: card.title,
+        artist: card.artist || '',
+        revealed: true
+      });
+      this.gameState.hitsterState.timeline.sort((a, b) => a.year - b.year);
+    }
+
+    if (targetPlayer) {
+      if (!Array.isArray(targetPlayer.cards)) {
+        const count = typeof targetPlayer.cards === 'number' ? targetPlayer.cards : 0;
+        targetPlayer.cards = [];
+        for (let i = 0; i < count; i++) {
+          targetPlayer.cards.push({ year: 1970 + i * 5, title: `Karte ${i + 1}`, artist: '' });
+        }
+      }
+      const hasCard = targetPlayer.cards.some(c => c.title === card.title && c.year === year);
+      if (!hasCard) {
+        targetPlayer.cards.push({ year, title: card.title, artist: card.artist || '' });
+        targetPlayer.cards.sort((a, b) => a.year - b.year);
+      }
+      if (!this.gameState.hitsterState.playerShelves) this.gameState.hitsterState.playerShelves = {};
+      this.gameState.hitsterState.playerShelves[targetPlayer.username] = {
+        id: targetPlayer.id,
+        username: targetPlayer.username,
+        avatar: targetPlayer.avatar,
+        cards: [...targetPlayer.cards]
+      };
+      this.checkVictory(targetPlayer);
+    }
+
+    this.emitState();
+    return { success: true, timeline: this.gameState.hitsterState.timeline };
+  }
+
+  // --- DISCORD EMBED SYNC ---
   async updateDiscordMessage() {
     if (!this.gameState.currentMessage) return;
     try {
+      let files = [];
+      let imageAttachmentName = null;
+      if (this.gameState.gameMode === 'wallpaper' && this.gameState.wallpaperState) {
+        const imgPath = this.gameState.wallpaperState.currentImage || this.gameState.wallpaperState.sharpImage;
+        if (imgPath && fs.existsSync(imgPath)) {
+          imageAttachmentName = `wallpaper_${Date.now()}${path.extname(imgPath) || '.jpg'}`;
+          files.push(new AttachmentBuilder(imgPath, { name: imageAttachmentName }));
+        }
+      }
+
       const embed = createBuzzerEmbed({
         roundNumber: this.gameState.roundNumber,
         hostId: this.config.hostId,
@@ -840,64 +1744,428 @@ class BotManager extends EventEmitter {
         queue: this.gameState.queue,
         scores: this.gameState.scores,
         statusText: this.gameState.statusText,
-        channelPlayerCount: this.gameState.voiceMembers.length
+        channelPlayerCount: this.gameState.voiceMembers.length,
+        gameMode: this.gameState.gameMode,
+        wallpaperState: this.gameState.wallpaperState,
+        songState: this.gameState.songState,
+        hitsterState: this.gameState.hitsterState,
+        goal: this.gameState.goal,
+        isBoostActive: this.gameState.isBoostActive,
+        imageAttachmentName
       });
-      const components = createBuzzerComponents(this.gameState.isLocked, !this.gameState.isRoundActive);
-      await this.gameState.currentMessage.edit({ embeds: [embed], components });
+
+      const components = createBuzzerComponents(
+        this.gameState.isLocked,
+        false,
+        this.gameState.gameMode,
+        this.gameState.isBoostActive,
+        this.gameState.goal
+      );
+
+      const editOpts = { embeds: [embed], components };
+      if (files.length > 0) editOpts.files = files;
+      await this.gameState.currentMessage.edit(editOpts);
     } catch (err) {
-      // Message may have expired
+      console.error('[Bot] Failed to update Discord message:', err.message);
     }
   }
 
-  emitState() {
-    const payload = {
-      roundNumber: this.gameState.roundNumber,
-      isRoundActive: this.gameState.isRoundActive,
-      isLocked: this.gameState.isLocked,
-      isEvaluating: this.gameState.isEvaluating,
-      activePlayer: this.gameState.activePlayer,
-      queue: this.gameState.queue,
-      scores: this.gameState.scores,
-      statusText: this.gameState.statusText,
-      voiceConnected: !!this.currentVoiceConnection,
-      currentGuildId: this.gameState.currentGuildId,
-      currentVoiceChannelId: this.gameState.currentVoiceChannelId,
-      currentTextChannelId: this.gameState.currentTextChannelId,
-      cooldownSeconds: this.gameState.cooldownSeconds,
-      bannedPlayers: this.gameState.bannedPlayers,
-      voiceMembers: this.gameState.voiceMembers,
-      hostName: this.hostName,
-      canUndo: this.gameState.actionHistory.length > 0,
-      config: this.config
+  async endRound() {
+    this.stopAnswerCountdown();
+    this.stopRoundTimer();
+    this.gameState.isRoundActive = false;
+    this.gameState.isLocked = true;
+    this.gameState.activePlayer = null;
+    this.gameState.queue = [];
+
+    if (this.gameState.currentMessage) {
+      try {
+        const finalEmbed = createFinalGameEndEmbed({
+          roundNumber: this.gameState.roundNumber,
+          scores: this.gameState.scores,
+          hostId: this.config.hostId,
+          hostName: this.hostName,
+          gameMode: this.gameState.gameMode
+        });
+        await this.gameState.currentMessage.edit({ embeds: [finalEmbed], components: [] });
+      } catch (err) {}
+    }
+
+    this.gameState.roundNumber += 1;
+    this.gameState.statusText = '🏁 Die Runde wurde beendet!';
+    this.emitState();
+    return { success: true };
+  }
+
+  resetScores() {
+    this.stopAnswerCountdown();
+    this.gameState.scores = {};
+    this.gameState.actionHistory = [];
+    this.gameState.roundNumber = 1;
+    this.gameState.roundWrongAttempts = {};
+    this.gameState.statusText = '🔄 Alle Punkte und Runden wurden zurückgesetzt.';
+    this.gameState.winner = null;
+    this.gameState.activePlayer = null;
+    this.gameState.queue = [];
+    this.gameState.isLocked = false;
+    this.gameState.isEvaluating = false;
+    this.gameState.isBoostActive = false;
+    this.gameState.hitsterState.timeline = [];
+    this.gameState.hitsterState.playerShelves = {};
+    this.gameState.hitsterState.currentCard = {
+      title: '',
+      artist: '',
+      year: '',
+      revealed: false,
+      filePath: ''
     };
-    this.emit('game-state', payload);
+    this.gameState.wallpaperState.resolved = false;
+    this.gameState.wallpaperState.stage = 1;
+    this.gameState.wallpaperState.points = 4;
+    this.gameState.songState.revealed = false;
+    this.stopRoundTimer();
+    this.updateVoiceMembers();
+    this.updateDiscordMessage();
+    this.emitState();
+    return { success: true };
+  }
+
+  // --- PLAYER & SCOREBOARD MANAGEMENT ---
+  adjustPlayerScore(playerId, delta) {
+    if (!playerId) return { success: false, error: 'Keine Spieler-ID angegeben' };
+    if (!this.gameState.scores[playerId]) {
+      this.gameState.scores[playerId] = {
+        id: playerId,
+        username: 'Spieler',
+        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(playerId)}`,
+        points: 0,
+        correct: 0,
+        wrong: 0
+      };
+    }
+    const oldPoints = this.gameState.scores[playerId].points || 0;
+    this.gameState.scores[playerId].points = Math.max(0, oldPoints + delta);
+
+    if (!this.gameState.actionHistory) this.gameState.actionHistory = [];
+    this.gameState.actionHistory.push({
+      type: 'score_adjust',
+      playerId,
+      oldPoints,
+      delta
+    });
+    this.gameState.canUndo = true;
+    this.checkVictory(this.gameState.scores[playerId]);
+    this.emitState();
+    return { success: true, score: this.gameState.scores[playerId] };
+  }
+
+  setPlayerScore(playerId, newPoints) {
+    if (!playerId) return { success: false, error: 'Keine Spieler-ID angegeben' };
+    let player = this.gameState.scores[playerId] ||
+      Object.values(this.gameState.scores).find(p => p.username.toLowerCase() === String(playerId).toLowerCase() || p.id === playerId);
+    if (!player) {
+      const isManni = playerId === this.config.hostId || /manni/i.test(String(playerId));
+      player = {
+        id: playerId,
+        username: isManni ? (this.hostName || 'Manni') : String(playerId),
+        avatar: '../../App.png',
+        points: 0,
+        correct: 0,
+        wrong: 0
+      };
+      this.gameState.scores[player.id] = player;
+    }
+    const oldPoints = player.points || 0;
+    player.points = Math.max(0, parseInt(newPoints, 10) || 0);
+
+    if (!this.gameState.actionHistory) this.gameState.actionHistory = [];
+    this.gameState.actionHistory.push({
+      type: 'score_adjust',
+      playerId: player.id,
+      oldPoints,
+      delta: player.points - oldPoints
+    });
+    this.gameState.canUndo = true;
+    this.checkVictory(player);
+    this.emitState();
+    return { success: true, score: player };
+  }
+
+  addCustomPlayer(username) {
+    const cleanName = (username || '').trim() || `Spieler ${Object.keys(this.gameState.scores).length + 1}`;
+    const id = `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const avatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanName)}`;
+
+    this.gameState.scores[id] = {
+      id,
+      username: cleanName,
+      avatar,
+      points: 0,
+      correct: 0,
+      wrong: 0,
+      isCustom: true
+    };
+
+    this.emitState();
+    return { success: true, player: this.gameState.scores[id] };
+  }
+
+  removePlayer(playerId) {
+    if (this.gameState.scores[playerId]) {
+      delete this.gameState.scores[playerId];
+    }
+    if (this.gameState.activePlayer && this.gameState.activePlayer.id === playerId) {
+      this.gameState.activePlayer = null;
+    }
+    this.gameState.queue = this.gameState.queue.filter(p => p.id !== playerId);
+    this.emitState();
+    return { success: true };
+  }
+
+  renamePlayer(playerId, newName) {
+    const clean = (newName || '').trim();
+    if (clean && this.gameState.scores[playerId]) {
+      this.gameState.scores[playerId].username = clean;
+      if (this.gameState.activePlayer && this.gameState.activePlayer.id === playerId) {
+        this.gameState.activePlayer.username = clean;
+      }
+      this.emitState();
+      return { success: true };
+    }
+    return { success: false, error: 'Ungültiger Name' };
+  }
+
+  manualBuzzPlayer(playerId, username = null) {
+    let player = this.gameState.scores[playerId];
+    if (!player) {
+      const displayName = username || (playerId === 'host-regie-buzzer' ? (this.hostName || 'Regie (Dome)') : 'Spieler');
+      player = {
+        id: playerId || 'host-regie-buzzer',
+        username: displayName,
+        avatar: '../../App.png',
+        points: 0,
+        correct: 0,
+        wrong: 0,
+        cards: [],
+        isCustom: true
+      };
+      this.gameState.scores[player.id] = player;
+    }
+
+    if (this.gameState.roundTimer) {
+      this.gameState.roundTimer.paused = true;
+    }
+    const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
+    let potentialPoints = 3;
+    if (this.gameState.gameMode === 'wallpaper') {
+      potentialPoints = this.getWallpaperPoints(elapsed);
+    } else if (this.gameState.gameMode === 'hitster') {
+      potentialPoints = 1;
+    }
+    if (this.gameState.isBoostActive) {
+      potentialPoints *= 2;
+    }
+
+    this.gameState.activePlayer = {
+      id: player.id,
+      username: player.username,
+      avatar: player.avatar,
+      buzzedAt: Date.now(),
+      potentialPoints,
+      timeOffset: `nach ${elapsed.toFixed(1)}s`
+    };
+    this.gameState.isLocked = true;
+    const boostTag = this.gameState.isBoostActive ? ' 🔥 (2X BOOST)' : '';
+    this.gameState.statusText = `🚨 **${player.username}** hat gebuzzert!${boostTag}`;
+
+    audioManager.playSound('buzzer');
+    this.startAnswerCountdown(10);
+    this.emitState();
+    this.updateDiscordMessage();
+    return { success: true, player: this.gameState.activePlayer };
+  }
+
+  banPlayer(playerId, username) {
+    if (!this.gameState.bannedPlayers) this.gameState.bannedPlayers = {};
+    this.gameState.bannedPlayers[playerId] = {
+      id: playerId,
+      username: username || 'Unbekannt',
+      bannedAt: Date.now()
+    };
+    if (this.gameState.activePlayer && this.gameState.activePlayer.id === playerId) {
+      this.gameState.activePlayer = null;
+    }
+    this.gameState.queue = this.gameState.queue.filter(p => p.id !== playerId);
+    this.emitState();
+    return { success: true };
+  }
+
+  unbanPlayer(playerId) {
+    if (this.gameState.bannedPlayers && this.gameState.bannedPlayers[playerId]) {
+      delete this.gameState.bannedPlayers[playerId];
+    }
+    this.emitState();
+    return { success: true };
+  }
+
+  selectQueuePlayer(playerId) {
+    const idx = this.gameState.queue.findIndex(p => p.id === playerId);
+    if (idx !== -1) {
+      const player = this.gameState.queue.splice(idx, 1)[0];
+      this.gameState.activePlayer = player;
+      this.startAnswerCountdown(10);
+      this.emitState();
+      return { success: true, player };
+    }
+    return { success: false, error: 'Spieler nicht in Queue' };
+  }
+
+  undoLastAction() {
+    if (!this.gameState.actionHistory || this.gameState.actionHistory.length === 0) {
+      return { success: false, error: 'Keine Aktionen zum Rückgängigmachen' };
+    }
+    const last = this.gameState.actionHistory.pop();
+    if (last.type === 'score_adjust' && this.gameState.scores[last.playerId]) {
+      this.gameState.scores[last.playerId].points = last.oldPoints;
+    }
+    this.gameState.canUndo = this.gameState.actionHistory.length > 0;
+    this.emitState();
+    return { success: true };
+  }
+
+  playTestSound(type) {
+    try {
+      if (audioManager) {
+        audioManager.playSound(type);
+      }
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  placeHitsterCard(targetSlot, targetPlayerIdOrName = null) {
+    const card = this.gameState.hitsterState.currentCard;
+    if (!card || !card.year) return { success: false, error: 'Keine aktive Hitster-Karte' };
+
+    const year = parseInt(card.year, 10);
+    const timeline = this.gameState.hitsterState.timeline || [];
+
+    const prevYear = targetSlot > 0 ? timeline[targetSlot - 1].year : -Infinity;
+    const nextYear = targetSlot < timeline.length ? timeline[targetSlot].year : Infinity;
+
+    const isCorrect = year >= prevYear && year <= nextYear;
+
+    // Resolve target player
+    let targetPlayer = null;
+    if (targetPlayerIdOrName) {
+      targetPlayer = this.gameState.scores[targetPlayerIdOrName] ||
+        Object.values(this.gameState.scores).find(p => p.username.toLowerCase() === String(targetPlayerIdOrName).toLowerCase() || p.id === targetPlayerIdOrName);
+    }
+    if (!targetPlayer && this.gameState.activePlayer) {
+      targetPlayer = this.gameState.scores[this.gameState.activePlayer.id];
+    }
+    if (!targetPlayer && Object.keys(this.gameState.scores).length > 0) {
+      targetPlayer = Object.values(this.gameState.scores)[0];
+    }
+    if (!targetPlayer) {
+      const defName = typeof targetPlayerIdOrName === 'string' && targetPlayerIdOrName ? targetPlayerIdOrName : 'Spieler 1';
+      targetPlayer = {
+        id: `hitster_p_${Date.now()}`,
+        username: defName,
+        avatar: '../../App.png',
+        points: 0,
+        chips: 3,
+        correct: 0,
+        wrong: 0,
+        cards: []
+      };
+      this.gameState.scores[targetPlayer.id] = targetPlayer;
+    }
+
+    if (targetPlayer.chips === undefined) targetPlayer.chips = 3;
+
+    if (!Array.isArray(targetPlayer.cards)) {
+      const count = typeof targetPlayer.cards === 'number' ? targetPlayer.cards : 0;
+      targetPlayer.cards = [];
+      for (let i = 0; i < count; i++) {
+        targetPlayer.cards.push({ year: 1970 + i * 5, title: `Karte ${i + 1}`, artist: '' });
+      }
+    }
+    if (!this.gameState.hitsterState.playerShelves) this.gameState.hitsterState.playerShelves = {};
+    if (!this.gameState.hitsterState.playerShelves[targetPlayer.username]) {
+      this.gameState.hitsterState.playerShelves[targetPlayer.username] = {
+        id: targetPlayer.id,
+        username: targetPlayer.username,
+        avatar: targetPlayer.avatar,
+        chips: targetPlayer.chips,
+        cards: []
+      };
+    } else {
+      this.gameState.hitsterState.playerShelves[targetPlayer.username].chips = targetPlayer.chips;
+    }
+
+    if (isCorrect) {
+      card.revealed = true;
+      timeline.splice(targetSlot, 0, {
+        year,
+        title: card.title,
+        artist: card.artist || '',
+        revealed: true
+      });
+      timeline.sort((a, b) => a.year - b.year);
+      this.gameState.hitsterState.timeline = timeline;
+
+      let ptsGain = 1;
+      let wasBoosted = false;
+      if (this.gameState.isBoostActive) {
+        ptsGain = 2;
+        wasBoosted = true;
+        this.gameState.isBoostActive = false;
+      }
+
+      targetPlayer.points += ptsGain;
+      targetPlayer.correct = (targetPlayer.correct || 0) + 1;
+      
+      const newCardItem = { year, title: card.title, artist: card.artist || '' };
+      targetPlayer.cards.push(newCardItem);
+      targetPlayer.cards.sort((a, b) => a.year - b.year);
+      this.gameState.hitsterState.playerShelves[targetPlayer.username].cards = [...targetPlayer.cards];
+
+      this.gameState.screenFlash = 'green';
+      setTimeout(() => { this.gameState.screenFlash = null; this.emitState(); }, 1500);
+      audioManager.playCorrect();
+      const boostBadge = wasBoosted ? ' 🔥 (2X BOOST!)' : '';
+      this.gameState.statusText = `✅ Richtig! **${card.title}** erschien **${year}**! (${targetPlayer.username}: +${ptsGain} Karte/Pkt${boostBadge})`;
+
+      this.checkVictory(targetPlayer);
+    } else {
+      this.gameState.screenFlash = 'red';
+      setTimeout(() => { this.gameState.screenFlash = null; this.emitState(); }, 1500);
+      audioManager.playWrong();
+      this.gameState.statusText = `❌ Falsch platziert! **${card.title}** erschien im Jahr **${year}**.`;
+    }
+
+    this.emitState();
+    this.updateDiscordMessage();
+    return { success: true, correct: isCorrect, year, timeline, player: targetPlayer };
   }
 
   getState() {
     return {
-      roundNumber: this.gameState.roundNumber,
-      isRoundActive: this.gameState.isRoundActive,
-      isLocked: this.gameState.isLocked,
-      isEvaluating: this.gameState.isEvaluating,
-      activePlayer: this.gameState.activePlayer,
-      queue: this.gameState.queue,
-      scores: this.gameState.scores,
-      statusText: this.gameState.statusText,
-      voiceConnected: !!this.currentVoiceConnection,
-      currentGuildId: this.gameState.currentGuildId,
-      currentVoiceChannelId: this.gameState.currentVoiceChannelId,
-      currentTextChannelId: this.gameState.currentTextChannelId,
-      cooldownSeconds: this.gameState.cooldownSeconds,
-      bannedPlayers: this.gameState.bannedPlayers,
-      voiceMembers: this.gameState.voiceMembers,
-      hostName: this.hostName,
-      canUndo: this.gameState.actionHistory.length > 0,
-      config: this.config
+      ...this.gameState,
+      config: {
+        hostId: this.config.hostId,
+        guildId: this.config.guildId,
+        textChannelId: this.config.textChannelId,
+        voiceChannelId: this.config.voiceChannelId,
+        points: this.config.points
+      }
     };
   }
 
-  playTestSound(type) {
-    return audioManager.playSound(type);
+  emitState() {
+    this.emit('game-state', this.getState());
   }
 }
 

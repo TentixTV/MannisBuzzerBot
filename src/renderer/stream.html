@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:8888 http://127.0.0.1:8888 https://cdn.discordapp.com https://fonts.googleapis.com https://fonts.gstatic.com data: blob:;" />
+  <title>MannisBox - OBS Stream Overlay</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: transparent !important;
+      margin: 0;
+      padding: 20px;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      user-select: none;
+    }
+
+    .stream-glass-card {
+      background: rgba(18, 19, 26, 0.92);
+      backdrop-filter: blur(12px);
+      border: 2px solid #2a2c3d;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      color: #fff;
+    }
+
+    .flash-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+    }
+
+    .flash-green {
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.6) 0%, rgba(16, 185, 129, 0.85) 100%);
+      opacity: 1 !important;
+      animation: flashAnim 1.4s ease-out forwards;
+    }
+
+    .flash-red {
+      background: radial-gradient(circle, rgba(239, 68, 68, 0.6) 0%, rgba(239, 68, 68, 0.85) 100%);
+      opacity: 1 !important;
+      animation: flashAnim 1.4s ease-out forwards;
+    }
+
+    @keyframes flashAnim {
+      0% { opacity: 0.85; }
+      50% { opacity: 0.5; }
+      100% { opacity: 0; }
+    }
+
+    .buzzer-popup {
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.7); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .censored-title {
+      font-family: monospace;
+      letter-spacing: 2px;
+      background: #0f1016;
+      color: #f59e0b;
+      padding: 10px 24px;
+      border-radius: 10px;
+      border: 2px solid #3b3e55;
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fullscreen Flash Overlay -->
+  <div id="flashLayer" class="flash-overlay"></div>
+
+  <!-- Top Bar -->
+  <header class="w-full flex items-center justify-between z-20" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="stream-glass-card" style="padding: 8px 18px; display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 1.5rem;">🎮</span>
+      <div>
+        <div id="streamGameMode" style="font-size: 1.1rem; font-weight: 800; color: #60a5fa;">
+          Erkennst du den Song?
+        </div>
+        <div id="streamSubStatus" style="font-size: 0.75rem; color: #9ca3af; font-weight: 700;">
+          Warte auf Buzzer...
+        </div>
+      </div>
+    </div>
+
+    <!-- Buzzer Alert Notification -->
+    <div id="streamBuzzerPopup" class="stream-glass-card buzzer-popup hidden" style="padding: 10px 24px; display: flex; align-items: center; gap: 14px; background: rgba(245, 158, 11, 0.95); color: #000; border: 3px solid #ef4444;">
+      <span style="font-size: 2rem; animation: bounce 1s infinite;">🚨</span>
+      <img id="buzzerAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid #000;" />
+      <div>
+        <div style="font-size: 0.75rem; font-weight: 900; text-transform: uppercase; color: #991b1b;">GEBUZZERT!</div>
+        <div id="buzzerName" style="font-size: 1.3rem; font-weight: 900;">Spieler</div>
+      </div>
+      <div id="buzzerPointsTag" style="background: #ef4444; color: #fff; font-weight: 900; padding: 4px 10px; border-radius: 6px; font-size: 1rem;">
+        +50 Pkt
+      </div>
+    </div>
+
+    <!-- Goal Target Badge -->
+    <div id="streamGoalBadge" class="stream-glass-card" style="padding: 8px 18px; display: flex; align-items: center; gap: 8px; border-color: #10b981;">
+      <span style="font-size: 1.2rem;">🎯</span>
+      <div>
+        <div style="font-size: 0.7rem; color: #6ee7b7; font-weight: 800; text-transform: uppercase;">ZIEL</div>
+        <div id="streamGoalVal" style="font-size: 1.2rem; font-weight: 900; color: #fff;">50</div>
+      </div>
+    </div>
+
+    <!-- Timer Box -->
+    <div class="stream-glass-card" style="padding: 8px 20px; display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 0.8rem; color: #9ca3af; font-weight: 800;">TIMER</span>
+      <span id="streamTimer" style="font-family: monospace; font-size: 1.6rem; font-weight: 900; color: #ef4444;">
+        --s
+      </span>
+    </div>
+  </header>
+
+  <!-- 2X Boost Alert Banner in Stream -->
+  <div id="streamBoostBanner" class="stream-glass-card" style="display: none; align-items: center; justify-content: center; gap: 8px; padding: 6px 24px; margin: 8px auto 0 auto; background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(249, 115, 22, 0.95) 100%); border: 2px solid #fde047; box-shadow: 0 0 25px rgba(249, 115, 22, 0.7); z-index: 20;">
+    <span style="font-size: 1.2rem;">🔥</span>
+    <span style="font-size: 1rem; font-weight: 900; color: #fff; letter-spacing: 1px;">2X BOOST AKTIV! PUNKTE ZÄHLEN DOPPELT!</span>
+  </div>
+
+  <!-- Grand Champion Victory Overlay in Stream -->
+  <div id="streamVictoryOverlay" class="stream-glass-card" style="display: none; position: fixed; inset: 40px; z-index: 99990; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 11, 18, 0.96); border: 4px solid #fbbf24; box-shadow: 0 0 60px rgba(251, 191, 36, 0.8);">
+    <div style="font-size: 5rem; animation: bounce 1s infinite;">🏆</div>
+    <div style="font-size: 1.2rem; font-weight: 900; color: #fbbf24; letter-spacing: 2px; text-transform: uppercase; margin-top: 10px;">CHAMPION DER MANNISBOX!</div>
+    <img id="streamWinnerAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" style="width: 100px; height: 100px; border-radius: 50%; border: 4px solid #fbbf24; margin: 14px 0; box-shadow: 0 0 30px rgba(251, 191, 36, 0.7);" />
+    <div id="streamWinnerName" style="font-size: 2.4rem; font-weight: 900; color: #fff;">SpielerName</div>
+    <div id="streamWinnerScore" style="font-size: 1.3rem; font-weight: 900; color: #10b981; margin-top: 6px;">50 Punkte • Offizieller Sieger!</div>
+  </div>
+
+  <!-- Center Stage -->
+  <main style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: auto; z-index: 10;">
+    
+    <!-- 1. Song Quiz Center Stage -->
+    <div id="stageSong" class="stream-glass-card" style="padding: 24px 36px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; min-width: 580px;">
+      <canvas id="waveformCanvas" width="520" height="60" style="background: #0d0e14; border-radius: 8px;"></canvas>
+      
+      <div id="censoredSongBox" class="censored-title">
+        ████████ - ████████
+      </div>
+
+      <div id="songRevealBox" style="display: none; text-align: center;">
+        <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #10b981; letter-spacing: 1px;">Song Aufgelöst</div>
+        <div id="songFullName" style="font-size: 1.8rem; font-weight: 900; color: #fbbf24; margin-top: 4px;">
+          Artist - Title
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Wallpaper Center Stage -->
+    <div id="stageWallpaper" class="stream-glass-card" style="padding: 16px 20px; display: none; flex-direction: column; align-items: center; gap: 10px; max-width: 800px;">
+      <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+        <span id="wpStageTag" style="background: #3b82f6; color: #fff; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 6px;">
+          Stufe 1 (50 Punkte)
+        </span>
+        <span style="font-size: 0.75rem; color: #9ca3af; font-weight: 700;">
+          Schärfung alle 10 Sekunden
+        </span>
+      </div>
+
+      <div style="position: relative; border-radius: 12px; overflow: hidden; border: 2px solid #2a2c3d; max-height: 440px; display: flex; justify-content: center; background: #000;">
+        <img id="wpImage" src="" style="max-height: 440px; max-width: 100%; object-fit: contain; transition: filter 0.4s ease;" />
+        
+        <!-- Reveal Overlay -->
+        <div id="wpRevealOverlay" style="display: none; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.7); flex-direction: column; align-items: center; justify-content: center;">
+          <div style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: #f59e0b; letter-spacing: 2px;">Film Aufgelöst</div>
+          <div id="wpMovieName" style="font-size: 2.4rem; font-weight: 900; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.8); margin-top: 6px;">
+            Filmtitel
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Hitster Center Stage -->
+    <div id="stageHitster" class="stream-glass-card" style="padding: 24px 36px; text-align: center; display: none; flex-direction: column; align-items: center; gap: 16px; min-width: 580px;">
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <div class="vinyl-disc vinyl-spinning" style="width: 70px; height: 70px;"></div>
+        <div style="text-align: left;">
+          <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #a78bfa;">Hitster Track</div>
+          <div id="streamHitsterTrack" style="font-size: 1.6rem; font-weight: 900; color: #fff;">Kein Track aktiv</div>
+        </div>
+      </div>
+      <!-- 3D Flippable Hitster Trading Card in Stream Overlay -->
+      <div class="hitster-card-3d-scene" style="width: 140px; height: 180px;">
+        <div id="streamHitster3DCard" class="hitster-card-3d">
+          <div class="hitster-card-face card-face-front">
+            <div class="card-foil-sheen"></div>
+            <div class="card-corner-star tl">★</div>
+            <div class="card-corner-star tr">★</div>
+            <div class="card-corner-star bl">★</div>
+            <div class="card-corner-star br">★</div>
+            <div class="card-front-emblem">
+              <span class="card-secret-q" style="font-size: 32px;">????</span>
+              <small class="card-secret-sub">GEHEIM</small>
+            </div>
+            <div class="card-bottom-bar">HITSTER STREAM</div>
+          </div>
+          <div class="hitster-card-face card-face-back">
+            <div class="card-gold-sheen"></div>
+            <div class="card-corner-star tl">★</div>
+            <div class="card-corner-star tr">★</div>
+            <div class="card-corner-star bl">★</div>
+            <div class="card-corner-star br">★</div>
+            <div class="card-revealed-wrap">
+              <div class="card-revealed-crown">👑 AUFGEDECKT</div>
+              <div id="streamHitsterCardYear" class="card-year-number" style="font-size: 36px;">????</div>
+              <div class="card-year-sub">ERSCHEINUNGSJAHR</div>
+            </div>
+            <div class="card-bottom-bar gold">GOLD EDITION</div>
+          </div>
+        </div>
+      </div>
+      <div id="streamHitsterYear" class="hitster-year-pill" style="font-size: 1.4rem; padding: 4px 20px;">
+        ???? (Geheim)
+      </div>
+
+      <!-- Hitster Timeline Strip in Stream -->
+      <div style="width: 100%; margin-top: 10px;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #a78bfa; margin-bottom: 6px; letter-spacing: 1px;">
+          ⏱️ Chronologischer Zeitstrahl
+        </div>
+        <div id="streamHitsterTimeline" style="display: flex; gap: 8px; overflow-x: auto; padding: 6px 4px; justify-content: center; align-items: center; min-height: 48px;">
+          <span style="font-size: 0.85rem; color: #64748b;">Noch keine Karten platziert</span>
+        </div>
+      </div>
+
+      <!-- Hitster Player Shelves in Stream -->
+      <div style="width: 100%; margin-top: 10px; border-top: 1px dashed rgba(167, 139, 250, 0.3); padding-top: 8px;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #f59e0b; margin-bottom: 6px; letter-spacing: 1px;">
+          🃏 Spieler-Regale (Ziel: 10 Karten)
+        </div>
+        <div id="streamHitsterShelves" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: stretch; width: 100%;">
+          <span style="font-size: 0.8rem; color: #64748b;">Keine Mitspieler-Karten</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Player Scoreboard -->
+  <footer class="stream-glass-card" style="padding: 12px 16px; width: 100%; box-sizing: border-box;">
+    <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #9ca3af; margin-bottom: 8px;">
+      Mitspieler & Punktestand
+    </div>
+    <div id="streamPlayerList" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+      <!-- Dynamically filled -->
+    </div>
+  </footer>
+
+  <script>
+    let lastFlash = null;
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    async function pollState() {
+      try {
+        const res = await fetch('/api/state');
+        if (!res.ok) return;
+        const state = await res.json();
+        renderOverlay(state);
+      } catch (e) {}
+    }
+
+    function renderOverlay(state) {
+      if (!state) return;
+
+      // 1. Header & Mode
+      const modeLabel = document.getElementById('streamGameMode');
+      const subStatus = document.getElementById('streamSubStatus');
+      if (state.gameMode === 'wallpaper') {
+        modeLabel.innerText = '🎬 Filme / Wallpaper erkennen';
+        subStatus.innerText = state.isLocked ? 'Buzzer gesperrt' : 'Buzzer ist FREI!';
+      } else if (state.gameMode === 'hitster') {
+        modeLabel.innerText = '📻 Hitster Zeitstrahl';
+        subStatus.innerText = 'Welches Erscheinungsjahr?';
+      } else {
+        modeLabel.innerText = '🎵 Erkennst du den Song?';
+        subStatus.innerText = state.isLocked ? 'Buzzer gesperrt' : 'Buzzer ist FREI!';
+      }
+
+      // Goal & Boost State in Stream
+      const goalEl = document.getElementById('streamGoalVal');
+      if (goalEl) {
+        goalEl.innerText = state.goal || (state.gameMode === 'hitster' ? 10 : 50);
+      }
+      const boostBanner = document.getElementById('streamBoostBanner');
+      if (boostBanner) {
+        boostBanner.style.display = state.isBoostActive ? 'flex' : 'none';
+      }
+
+      // Grand Champion Victory Overlay in Stream
+      const victoryOverlay = document.getElementById('streamVictoryOverlay');
+      if (victoryOverlay) {
+        if (state.winner) {
+          victoryOverlay.style.display = 'flex';
+          const winName = document.getElementById('streamWinnerName');
+          const winAvatar = document.getElementById('streamWinnerAvatar');
+          const winScore = document.getElementById('streamWinnerScore');
+          if (winName) winName.innerText = state.winner.username || 'Champion';
+          if (winAvatar) winAvatar.src = state.winner.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
+          if (winScore) winScore.innerText = (state.winner.cards ? `${state.winner.cards} Karten` : `${state.winner.points} Punkte`) + ' • Offizieller Sieger!';
+        } else {
+          victoryOverlay.style.display = 'none';
+        }
+      }
+
+      // 2. Stage Switch
+      const stageSong = document.getElementById('stageSong');
+      const stageWp = document.getElementById('stageWallpaper');
+      const stageHitster = document.getElementById('stageHitster');
+      if (state.gameMode === 'wallpaper') {
+        stageSong.style.display = 'none';
+        stageWp.style.display = 'flex';
+        stageHitster.style.display = 'none';
+      } else if (state.gameMode === 'hitster') {
+        stageSong.style.display = 'none';
+        stageWp.style.display = 'none';
+        stageHitster.style.display = 'flex';
+      } else {
+        stageSong.style.display = 'flex';
+        stageWp.style.display = 'none';
+        stageHitster.style.display = 'none';
+      }
+
+      // 3. Timer
+      const timerEl = document.getElementById('streamTimer');
+      if (state.roundTimer && state.roundTimer.active) {
+        timerEl.innerText = `${Math.ceil(state.roundTimer.remaining)}s`;
+      } else {
+        timerEl.innerText = '--s';
+      }
+
+      // 4. Buzzer Alert
+      const buzzerPopup = document.getElementById('streamBuzzerPopup');
+      if (state.activePlayer) {
+        buzzerPopup.classList.remove('hidden');
+        buzzerPopup.style.display = 'flex';
+        document.getElementById('buzzerName').innerText = state.activePlayer.username || 'Spieler';
+        document.getElementById('buzzerAvatar').src = state.activePlayer.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
+        const pts = state.activePlayer.potentialPoints || 50;
+        document.getElementById('buzzerPointsTag').innerText = `+${pts} Pkt`;
+      } else {
+        buzzerPopup.classList.add('hidden');
+        buzzerPopup.style.display = 'none';
+      }
+
+      // 5. Screen Flash (Green / Red)
+      const flashLayer = document.getElementById('flashLayer');
+      if (state.screenFlash === 'green' && lastFlash !== 'green') {
+        flashLayer.className = 'flash-overlay flash-green';
+        setTimeout(() => { flashLayer.className = 'flash-overlay'; }, 1400);
+      } else if (state.screenFlash === 'red' && lastFlash !== 'red') {
+        flashLayer.className = 'flash-overlay flash-red';
+        setTimeout(() => { flashLayer.className = 'flash-overlay'; }, 1400);
+      }
+      lastFlash = state.screenFlash;
+
+      // 6. Song details
+      if (state.songState) {
+        const censoredBox = document.getElementById('censoredSongBox');
+        const revealBox = document.getElementById('songRevealBox');
+        const fullName = document.getElementById('songFullName');
+
+        if (state.songState.revealed) {
+          censoredBox.style.display = 'none';
+          revealBox.style.display = 'block';
+          fullName.innerText = state.songState.fullTitle || 'Aufgelöst!';
+        } else {
+          censoredBox.style.display = 'block';
+          revealBox.style.display = 'none';
+          censoredBox.innerText = state.songState.censoredTitle || '████████ - ████████';
+        }
+      }
+
+      // 7. Wallpaper details
+      if (state.wallpaperState) {
+        const wp = state.wallpaperState;
+        const img = document.getElementById('wpImage');
+        const stageTag = document.getElementById('wpStageTag');
+        const revealOverlay = document.getElementById('wpRevealOverlay');
+        const movieName = document.getElementById('wpMovieName');
+
+        const imgPath = wp.imagePath || wp.currentImage;
+        if (imgPath) {
+          img.src = `/api/image?path=${encodeURIComponent(imgPath)}`;
+        }
+        const st = Math.min(5, Math.max(1, wp.stage || 1));
+        const blurPixels = [32, 18, 8, 2.5, 0];
+        stageTag.innerText = `Stufe ${st} (${wp.points || 50} Punkte)`;
+
+        if (wp.resolved) {
+          img.style.filter = 'blur(0px)';
+          revealOverlay.style.display = 'flex';
+          movieName.innerText = wp.movieTitle || 'Film Aufgelöst';
+          if (wp.sharpImage) {
+            img.src = `/api/image?path=${encodeURIComponent(wp.sharpImage)}`;
+          }
+        } else {
+          img.style.filter = `blur(${blurPixels[st - 1]}px)`;
+          revealOverlay.style.display = 'none';
+        }
+      }
+
+      // 8. Hitster details
+      if (state.hitsterState) {
+        const card = state.hitsterState.currentCard;
+        const trackEl = document.getElementById('streamHitsterTrack');
+        const yearEl = document.getElementById('streamHitsterYear');
+        const streamCard = document.getElementById('streamHitster3DCard');
+        const streamCardYear = document.getElementById('streamHitsterCardYear');
+
+        if (card && card.title) {
+          trackEl.innerText = `${card.artist || 'Unbekannt'} - ${card.title}`;
+          if (streamCardYear) streamCardYear.innerText = card.year || '????';
+          if (card.revealed) {
+            if (streamCard) streamCard.classList.add('is-flipped');
+            yearEl.innerText = `🎉 ${card.year || '????'}`;
+            yearEl.style.background = '#10b981';
+          } else {
+            if (streamCard) streamCard.classList.remove('is-flipped');
+            yearEl.innerText = '???? (Geheim)';
+            yearEl.style.background = 'linear-gradient(180deg, #8b5cf6, #6d28d9)';
+          }
+        } else {
+          trackEl.innerText = 'Kein Track aktiv';
+          yearEl.innerText = '????';
+          if (streamCardYear) streamCardYear.innerText = '????';
+          if (streamCard) streamCard.classList.remove('is-flipped');
+        }
+
+        const timeline = state.hitsterState.timeline || [];
+        const timelineEl = document.getElementById('streamHitsterTimeline');
+        if (timelineEl) {
+          if (timeline.length > 0) {
+            timelineEl.innerHTML = timeline.map(c => `
+              <div style="background: #1e1b4b; border: 2px solid #fbbf24; border-radius: 8px; padding: 4px 10px; display: flex; flex-direction: column; align-items: center; min-width: 90px;">
+                <span style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; font-family: monospace;">📅 ${escapeHtml(c.year)}</span>
+                <span style="font-size: 0.75rem; font-weight: 800; color: #fff; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(c.title)}</span>
+              </div>
+            `).join('');
+          } else {
+            timelineEl.innerHTML = '<span style="font-size: 0.85rem; color: #64748b;">Noch keine Karten platziert</span>';
+          }
+        }
+
+        // Hitster Player Shelves
+        const shelvesEl = document.getElementById('streamHitsterShelves');
+        if (shelvesEl) {
+          const shelves = state.hitsterState.playerShelves || {};
+          const playerIds = Object.keys(shelves);
+          if (playerIds.length > 0) {
+            const target = state.goal || 10;
+            shelvesEl.innerHTML = playerIds.map(pId => {
+              const shelf = shelves[pId];
+              const pName = shelf.username || (state.scores && state.scores[pId] ? state.scores[pId].username : 'Spieler');
+              const cards = shelf.cards || [];
+              return `
+                <div style="background: rgba(30, 27, 75, 0.9); border: 1.5px solid #a78bfa; border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; align-items: flex-start; min-width: 150px;">
+                  <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 4px; gap: 8px;">
+                    <span style="font-size: 0.8rem; font-weight: 800; color: #fff;">${escapeHtml(pName)}</span>
+                    <span style="font-size: 0.72rem; font-weight: 900; color: #fbbf24; background: rgba(251, 191, 36, 0.2); padding: 1px 6px; border-radius: 4px;">${cards.length} / ${target}</span>
+                  </div>
+                  <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                    ${cards.length > 0 ? cards.map(c => `
+                      <span style="background: #4c1d95; color: #fde047; font-size: 0.7rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid #7c3aed;" title="${escapeHtml(c.title || '')}">
+                        📅 ${escapeHtml(String(c.year || ''))}
+                      </span>
+                    `).join('') : '<span style="font-size: 0.7rem; color: #64748b;">Noch keine Karten</span>'}
+                  </div>
+                </div>
+              `;
+            }).join('');
+          } else {
+            shelvesEl.innerHTML = '<span style="font-size: 0.8rem; color: #64748b;">Keine Mitspieler-Karten</span>';
+          }
+        }
+      }
+
+      // 9. Player Leaderboard
+      const playerList = document.getElementById('streamPlayerList');
+      if (state.scores && Object.keys(state.scores).length > 0) {
+        const sorted = Object.values(state.scores).sort((a, b) => {
+          if (state.gameMode === 'hitster') {
+            const countA = (a.cards && a.cards.length) ? a.cards.length : (a.points || 0);
+            const countB = (b.cards && b.cards.length) ? b.cards.length : (b.points || 0);
+            return countB - countA;
+          }
+          return (b.points || 0) - (a.points || 0);
+        });
+        playerList.innerHTML = sorted.map(p => {
+          const isBuzzed = state.activePlayer && state.activePlayer.id === p.id;
+          const bg = isBuzzed ? 'background: #f59e0b; color: #000;' : 'background: #1e202c; color: #fff;';
+          const scoreDisplay = state.gameMode === 'hitster'
+            ? `${(p.cards && p.cards.length) ? p.cards.length : (p.points || 0)} / ${state.goal || 10} Karten`
+            : `${p.points || 0} Pkt`;
+          return `
+            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 8px; border: 1.5px solid #2a2c3d; ${bg}">
+              <img src="${p.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" style="width: 28px; height: 28px; border-radius: 50%;" />
+              <div>
+                <div style="font-size: 0.8rem; font-weight: 800;">${escapeHtml(p.username)}</div>
+                <div style="font-size: 0.7rem; font-weight: 700; color: ${isBuzzed ? '#000' : '#60a5fa'};">${scoreDisplay}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        playerList.innerHTML = `<span style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">Warte auf Mitspieler...</span>`;
+      }
+    }
+
+    // Audio Visualizer
+    const canvas = document.getElementById('waveformCanvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      function drawWave() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const bars = 26;
+        const w = canvas.width / bars;
+        ctx.fillStyle = '#10B981';
+        for (let i = 0; i < bars; i++) {
+          const h = Math.random() * (canvas.height * 0.7) + 4;
+          ctx.fillRect(i * w + 2, canvas.height - h, w - 4, h);
+        }
+        requestAnimationFrame(drawWave);
+      }
+      drawWave();
+    }
+
+    setInterval(pollState, 200);
+    pollState();
+  </script>
+</body>
+</html>

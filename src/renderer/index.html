@@ -11,14 +11,51 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Unreal Engine 5 Style 3D Background WebGL Canvas -->
+  <canvas id="ue5Canvas" class="ue5-bg-canvas"></canvas>
+
+  <!-- Fullscreen Screen Flash Layer -->
+  <div id="screenFlashLayer" class="screen-flash-layer"></div>
+
   <div class="app-container">
+    <!-- Custom Frameless Window Titlebar (Drag Region & Window Controls) -->
+    <div class="custom-titlebar">
+      <div class="titlebar-drag-region">
+        <img src="../../App.png" alt="Logo" class="titlebar-app-icon">
+        <span class="titlebar-title">Manni's Box — Discord Musik-Quiz, Hitster & Wallpaper Stream Master</span>
+        <span class="titlebar-version-tag">V4.8.024</span>
+      </div>
+      <div class="titlebar-controls no-drag">
+        <button id="titlebarMin" class="titlebar-btn titlebar-min" title="Minimieren">
+          <svg viewBox="0 0 12 12" width="11" height="11">
+            <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button id="titlebarMax" class="titlebar-btn titlebar-max" title="Maximieren / Wiederherstellen">
+          <svg id="titlebarIconMax" viewBox="0 0 12 12" width="11" height="11">
+            <rect x="1.5" y="1.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.4" rx="1.5"/>
+          </svg>
+          <svg id="titlebarIconRestore" class="hidden" viewBox="0 0 12 12" width="11" height="11">
+            <rect x="3.5" y="1.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.2" rx="1"/>
+            <polyline points="1.5,3.5 1.5,10.5 8.5,10.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button id="titlebarClose" class="titlebar-btn titlebar-close" title="Schließen (✕)">
+          <svg viewBox="0 0 12 12" width="11" height="11">
+            <line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
     <!-- Top Header / Navigation -->
     <header class="top-bar">
       <div class="brand-section">
         <img src="../../App.png" alt="MannisBox" class="brand-logo">
         <div class="brand-text">
-          <h1 class="brand-title">MANNI'S BOX <span class="version-tag">v1.1.0</span></h1>
-          <span class="brand-subtitle">Discord Musik-Quiz & Buzzer Arena • Idee von ThisManniGuy</span>
+          <h1 class="brand-title">MANNI'S BOX <span class="version-tag">V4.8.024</span></h1>
+          <span class="brand-subtitle">Discord Musik-Quiz, Hitster & Wallpaper Stream Master</span>
         </div>
       </div>
 
@@ -42,6 +79,23 @@
           <span id="roundNumberBadge" class="round-val">1</span>
         </div>
 
+        <div id="goalBadgeContainer" class="goal-badge" title="Klicke zum Ändern des Spielziels (/goal)">
+          <svg class="badge-svg-icon icon-goal-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="6"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+          </svg>
+          <span class="goal-label">ZIEL</span>
+          <span id="lblGoalValue" class="goal-val">50</span>
+        </div>
+
+        <button id="btnToggleBoost" class="btn-boost-header" title="2x Boost-Modus umschalten (/boost)">
+          <svg class="boost-svg-flame" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+          </svg>
+          <span id="lblBoostStatus">BOOST 2X</span>
+        </button>
+
         <button id="btnOpenBans" class="btn-icon" title="Gebannte Spieler verwalten">
           <svg class="icon-ban-header" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
@@ -59,8 +113,70 @@
       </div>
     </header>
 
+    <!-- 3 Startmodi & Stream Bar -->
+    <div class="mode-selector-bar">
+      <div class="mode-buttons-group">
+        <button id="btnOpenGamePicker" class="btn-mode-tab btn-mode-launcher" title="3D Game-Auswahl & Standby öffnen">
+          <svg class="tab-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="6" width="20" height="12" rx="6"></rect>
+            <line x1="6" y1="12" x2="10" y2="12"></line>
+            <line x1="8" y1="10" x2="8" y2="14"></line>
+            <line x1="15" y1="13" x2="15.01" y2="13" stroke-width="3"></line>
+            <line x1="18" y1="11" x2="18.01" y2="11" stroke-width="3"></line>
+          </svg>
+          <span>Modus wählen</span>
+        </button>
+        <button id="btnModeSong" class="btn-mode-tab active" title="Song-Raten mit ID3 / Excel">
+          <svg class="tab-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+          <span>1. Erkennst du den Song</span>
+        </button>
+        <button id="btnModeHitster" class="btn-mode-tab mode-hit" title="Hitster Zeitstrahl">
+          <svg class="tab-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <span>2. Hitster</span>
+        </button>
+        <button id="btnModeWallpaper" class="btn-mode-tab mode-wp" title="Wallpaper / Filme erkennen mit 10s Blur & Punkten">
+          <svg class="tab-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+            <line x1="7" y1="2" x2="7" y2="22"></line>
+            <line x1="17" y1="2" x2="17" y2="22"></line>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <line x1="2" y1="7" x2="7" y2="7"></line>
+            <line x1="2" y1="17" x2="7" y2="17"></line>
+            <line x1="17" y1="17" x2="22" y2="17"></line>
+            <line x1="17" y1="7" x2="22" y2="7"></line>
+          </svg>
+          <span>3. Filme / Wallpaper</span>
+        </button>
+      </div>
+
+      <div class="mode-actions-group">
+        <button id="btnToggleStreamView" class="btn-stream-toggle" title="Teilnehmer- & Stream-Ansicht umschalten">
+          <svg class="action-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          <span>Stream-Ansicht</span>
+        </button>
+        <button id="btnCopyObsLink" class="btn-obs-link" title="OBS Browser-Source Link kopieren">
+          <svg class="action-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>OBS Link</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Main 3-Column Layout -->
-    <main class="main-content">
+    <main id="mainRegieLayout" class="main-content">
       <!-- Left Column: Host Controls -->
       <section class="panel host-panel">
         <div class="panel-header">
@@ -87,6 +203,13 @@
           <div class="channel-info-row">
             <span class="info-label">Voice-Kanal:</span>
             <span id="lblCurrentVoiceCh" class="info-value">—</span>
+          </div>
+          <div class="channel-info-row" style="margin-top: 2px; padding-top: 4px; border-top: 1px dashed rgba(255, 255, 255, 0.1);">
+            <span class="info-label">Manni Punkte:</span>
+            <span id="lblHostScore" class="tag tag-score tag-score-interactive" title="Klicke hier, um Mannis Punkte direkt zu bearbeiten!">
+              <span class="host-score-val">0 Pkt</span>
+              <svg class="ui-svg-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </span>
           </div>
         </div>
 
@@ -147,6 +270,212 @@
           </button>
         </div>
 
+        <!-- 1. Song Quiz Regie Subpanel -->
+        <div id="songRegiePanel" class="sub-panel-box">
+          <div class="sub-panel-title">
+            <svg class="subpanel-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+            <span>Song Quiz Regie</span>
+          </div>
+
+          <button id="btnSelectMusicFolder" class="btn-chunky btn-secondary" style="padding: 6px 12px; font-size: 12px;">
+            <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <span>Musik-Ordner wählen</span>
+          </button>
+          <div id="lblMusicFolderStatus" style="font-size: 11px; color: #94a3b8; word-break: break-all;">
+            Kein Ordner geladen
+          </div>
+
+          <div style="display: flex; gap: 6px;">
+            <select id="selMusicGenre" class="excel-input" style="flex: 1; min-width: 0;">
+              <option value="">Alle Genres</option>
+            </select>
+            <button id="btnPickRandomSong" class="btn-chunky btn-primary" style="padding: 6px 12px; font-size: 12px; flex-shrink: 0;" disabled>
+              <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>Song spielen</span>
+            </button>
+          </div>
+
+          <!-- Live Folder Track Search & Autocomplete -->
+          <div class="folder-search-wrap">
+            <input type="text" id="txtSearchSong" class="folder-search-input" placeholder="🔍 Song / Interpret im Ordner suchen...">
+            <div id="songSearchResults" class="folder-search-dropdown hidden"></div>
+          </div>
+
+          <!-- Local In-App Audio Player -->
+          <div class="audio-player-hud">
+            <audio id="localAudioPlayer" preload="auto"></audio>
+            <button id="btnAudioPlayPause" class="btn-icon" style="width: 32px; height: 32px;" title="Audio Abspielen / Pausieren">
+              <svg id="svgAudioPlay" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            </button>
+            <div id="lblAudioTrackTitle" style="font-size: 11px; font-weight: 700; color: #60a5fa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">
+              Kein Track
+            </div>
+            <input type="range" id="rngAudioPlayerVolume" min="0" max="1" step="0.05" value="0.8" style="width: 50px;" title="Lautstärke">
+          </div>
+
+          <!-- Excel Copy-Paste Input -->
+          <div style="font-size: 11px; font-weight: 800; color: #cbd5e1; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+            <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>Excel Copy-Paste:</span>
+          </div>
+          <div class="excel-input-grid">
+            <input type="text" id="txtExcelArtist" class="excel-input" placeholder="Interpret">
+            <input type="text" id="txtExcelTitle" class="excel-input" placeholder="Titel">
+          </div>
+          <button id="btnApplyExcelSong" class="btn-chunky btn-voice" style="padding: 6px 10px; font-size: 11px;">
+            <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Song übernehmen</span>
+          </button>
+        </div>
+
+        <!-- 2. Hitster Regie Subpanel -->
+        <div id="hitsterRegiePanel" class="sub-panel-box hidden">
+          <div class="sub-panel-title">
+            <svg class="subpanel-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span>Hitster Zeitstrahl Regie</span>
+          </div>
+
+          <button id="btnSelectHitsterFolder" class="btn-chunky btn-secondary" style="padding: 6px 12px; font-size: 12px;">
+            <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <span>Musik-Ordner wählen</span>
+          </button>
+          <div id="lblHitsterFolderStatus" style="font-size: 11px; color: #94a3b8; word-break: break-all;">
+            Kein Ordner geladen
+          </div>
+
+          <button id="btnPickHitsterSong" class="btn-chunky btn-primary" style="padding: 6px 12px; font-size: 12px; margin-top: 4px;">
+            <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span>Zufälligen Hitster-Song spielen</span>
+          </button>
+
+          <!-- Live Folder Track Search & Autocomplete for Hitster -->
+          <div class="folder-search-wrap">
+            <input type="text" id="txtSearchHitster" class="folder-search-input" placeholder="🔍 Hitster Song im Ordner suchen...">
+            <div id="hitsterSearchResults" class="folder-search-dropdown hidden"></div>
+          </div>
+
+          <!-- Track & Year Info -->
+          <div style="font-size: 11px; font-weight: 800; color: #cbd5e1; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+            <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span>Karte & Erscheinungsjahr:</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="txtHitsterYear" class="excel-input" placeholder="Jahr (z.B. 1984)" style="width: 80px; font-weight: 800; color: #f59e0b; min-width: 0;">
+            <input type="text" id="txtHitsterArtist" class="excel-input" placeholder="Interpret" style="flex: 1; min-width: 0;">
+          </div>
+          <input type="text" id="txtHitsterTitle" class="excel-input" placeholder="Songtitel" style="margin-top: 4px; width: 100%; box-sizing: border-box;">
+          
+          <div style="display: flex; gap: 6px; margin-top: 4px;">
+            <button id="btnApplyHitsterCard" class="btn-chunky btn-voice" style="flex: 1; padding: 6px 10px; font-size: 11px;">
+              <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <span>Karte aktivieren</span>
+            </button>
+            <button id="btnResolveHitster" class="btn-chunky btn-warning" style="flex: 1; padding: 6px 10px; font-size: 11px;">
+              <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <span>Jahr aufdecken</span>
+            </button>
+          </div>
+
+          <!-- Chronological Timeline Preview -->
+          <div style="font-size: 11px; font-weight: 800; color: #cbd5e1; margin-top: 6px; display: flex; align-items: center; gap: 4px;">
+            <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span>Bisheriger Zeitstrahl:</span>
+          </div>
+          <div id="hitsterTimelineRegieList" style="display: flex; flex-direction: column; gap: 4px; max-height: 110px; overflow-y: auto;">
+            <span style="font-size: 10px; color: #64748b;">Noch keine Karten platziert</span>
+          </div>
+        </div>
+
+        <!-- 3. Wallpaper Quiz Regie Subpanel -->
+        <div id="wallpaperRegiePanel" class="sub-panel-box hidden">
+          <div class="sub-panel-title">
+            <svg class="subpanel-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+              <line x1="7" y1="2" x2="7" y2="22"></line>
+              <line x1="17" y1="2" x2="17" y2="22"></line>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <line x1="2" y1="7" x2="7" y2="7"></line>
+              <line x1="2" y1="17" x2="7" y2="17"></line>
+              <line x1="17" y1="17" x2="22" y2="17"></line>
+              <line x1="17" y1="7" x2="22" y2="7"></line>
+            </svg>
+            <span>Wallpaper Quiz Regie</span>
+          </div>
+
+          <div style="display: flex; gap: 6px;">
+            <button id="btnSelectWpFolder" class="btn-chunky btn-secondary" style="flex: 1; padding: 6px 10px; font-size: 11px;">
+              <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              <span>Ordner wählen</span>
+            </button>
+            <button id="btnPickNextWallpaper" class="btn-chunky btn-secondary" style="padding: 6px 10px; font-size: 11px; flex-shrink: 0;" title="Nächstes Wallpaper aus Ordner laden">
+              <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              <span>Nächstes</span>
+            </button>
+          </div>
+          <div id="lblWpFolderStatus" style="font-size: 11px; color: #94a3b8; word-break: break-all;">
+            Kein Ordner gewählt
+          </div>
+
+          <!-- Live Folder Wallpaper Search & Autocomplete -->
+          <div class="folder-search-wrap">
+            <input type="text" id="txtSearchWallpaper" class="folder-search-input" placeholder="🔍 Film / Wallpaper im Ordner suchen...">
+            <div id="wpSearchResults" class="folder-search-dropdown hidden"></div>
+          </div>
+
+          <!-- Image Upload Live -->
+          <div style="font-size: 11px; font-weight: 800; color: #cbd5e1; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+            <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <span>Bild Live hochladen:</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button id="btnSelectWpImage" class="btn-chunky btn-secondary" style="padding: 6px 10px; font-size: 11px; flex-shrink: 0;">
+              <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              <span>Bild wählen</span>
+            </button>
+            <input type="text" id="txtWpMovieTitle" class="excel-input" placeholder="Filmtitel" style="flex: 1; min-width: 0;">
+          </div>
+          <button id="btnUploadWp" class="btn-chunky btn-warning" style="padding: 6px 10px; font-size: 11px;" disabled>
+            <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <span>In Box laden (Live!)</span>
+          </button>
+
+          <!-- 4-Stage Blur Status (1-4 Punkte) -->
+          <div style="font-size: 11px; font-weight: 800; color: #cbd5e1; margin-top: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span>Schärfe-Stufen (alle 10s):</span>
+            <span style="font-size: 10px; color: #fbbf24; font-weight: 700;">(Klicken zum Anpassen)</span>
+          </div>
+          <div class="wallpaper-stages-grid">
+            <div id="wpCard1" class="wp-stage-card tag-score-interactive" data-stage="1" data-label="0-10s" title="Klicke hier, um Punkte für Stufe 1 anzupassen!">
+              <span class="wp-stage-label">0-10s</span>
+              <span id="lblWpStage1Pts" class="wp-stage-points">4 Pkt</span>
+            </div>
+            <div id="wpCard2" class="wp-stage-card tag-score-interactive" data-stage="2" data-label="10-20s" title="Klicke hier, um Punkte für Stufe 2 anzupassen!">
+              <span class="wp-stage-label">10-20s</span>
+              <span id="lblWpStage2Pts" class="wp-stage-points">3 Pkt</span>
+            </div>
+            <div id="wpCard3" class="wp-stage-card tag-score-interactive" data-stage="3" data-label="20-30s" title="Klicke hier, um Punkte für Stufe 3 anzupassen!">
+              <span class="wp-stage-label">20-30s</span>
+              <span id="lblWpStage3Pts" class="wp-stage-points">2 Pkt</span>
+            </div>
+            <div id="wpCard4" class="wp-stage-card tag-score-interactive" data-stage="4" data-label="30-40s" title="Klicke hier, um Punkte für Stufe 4 anzupassen!">
+              <span class="wp-stage-label">30-40s</span>
+              <span id="lblWpStage4Pts" class="wp-stage-points">1 Pkt</span>
+            </div>
+          </div>
+
+          <button id="btnResolveWp" class="btn-chunky btn-danger" style="padding: 6px 10px; font-size: 11px; margin-top: 6px;">
+            <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Film jetzt auflösen</span>
+          </button>
+        </div>
+
         <div class="host-footer">
           <button id="btnInviteBot" class="btn-outline">
             <svg class="btn-svg-icon icon-discord" viewBox="0 0 24 24" fill="currentColor">
@@ -157,17 +486,19 @@
         </div>
       </section>
 
-      <!-- Middle Column: Buzzer Arena & Voice Members -->
-      <section class="panel arena-panel">
+      <!-- Middle Column: Dynamic Game-Faithful 3D Arena -->
+      <section class="panel arena-panel" id="mainArenaPanel">
         <div class="panel-header arena-header">
           <div class="arena-title-wrap">
-            <svg class="header-icon-svg icon-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-            </svg>
-            <h2>Buzzer Arena</h2>
+            <div id="arenaModeIconBadge" class="arena-mode-icon-badge">🎵</div>
+            <div>
+              <h2 id="arenaMainTitle">Erkennst du den Song</h2>
+            </div>
           </div>
           <div class="arena-header-pills">
+            <div id="roundTimerPill" class="cooldown-pill" style="background: rgba(239, 68, 68, 0.2); border: 1.5px solid #ef4444; color: #fca5a5;">
+              ⏱️ <strong id="lblRoundTimerSeconds">--s</strong>
+            </div>
             <div id="cooldownTimerPill" class="cooldown-pill hidden">
               ⏳ Nächster Zug in <strong id="cooldownSecondsText">3</strong>s
             </div>
@@ -181,51 +512,361 @@
           <p id="arenaStatusMessage">Klicke links auf „Runde starten“, um den Buzzer in Discord zu aktivieren!</p>
         </div>
 
-        <!-- Active Buzzer Spotlight -->
-        <div class="buzzer-spotlight-container">
-          <!-- Animated Full-Screen Center Arena Countdown Overlay -->
-          <div id="arenaCountdownOverlay" class="arena-countdown-overlay hidden">
-            <div class="countdown-circle">
-              <span id="countdownBigNumber" class="countdown-number">3</span>
-              <span class="countdown-subtext">NÄCHSTER ZUG...</span>
+        <!-- Glowing Neon Flame Boost Banner -->
+        <div id="arenaBoostBanner" class="arena-boost-active-banner hidden">
+          <span class="boost-banner-fire">🔥</span>
+          <span class="boost-banner-title">2X BOOST-RUNDE AKTIV!</span>
+          <span class="boost-banner-desc">— Alle Punkte für den nächsten richtigen Treffer zählen DOPPELT!</span>
+        </div>
+
+        <!-- ==================================================================== -->
+        <!-- BOARD 1: SONG QUIZ ARENA (Erkennst du den Song)                      -->
+        <!-- ==================================================================== -->
+        <div id="arenaBoardSong" class="arena-game-board">
+          <!-- Active Track Status Banner -->
+          <div id="arenaSongBanner" class="arena-game-banner arena-banner-song">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div class="song-disc-3d">
+                <div class="cassette-tape-3d">
+                  <div class="tape-reel"></div>
+                  <div class="tape-reel"></div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">SONG QUIZ TRACK:</div>
+                <div id="arenaSongTitleText" class="song-title-3d">████████ - ████████</div>
+              </div>
+            </div>
+            <div class="song-mode-badge-3d">
+              🎵 Erkennst du den Song
             </div>
           </div>
 
-          <!-- When a player has buzzed -->
-          <div id="activeBuzzerCard" class="active-buzzer-card hidden">
-            <div class="buzzer-top-badges">
-              <div class="buzzer-crown">
-                <svg class="crown-mini-svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/>
-                </svg>
-                <span>AM ZUG</span>
+          <!-- Buzzer Spotlight Container -->
+          <div class="buzzer-spotlight-container">
+            <!-- Animated Countdown Overlay -->
+            <div id="arenaCountdownOverlay" class="arena-countdown-overlay hidden">
+              <div class="countdown-circle">
+                <span id="countdownBigNumber" class="countdown-number">3</span>
+                <span class="countdown-subtext">NÄCHSTER ZUG...</span>
               </div>
-              
-              <button id="btnBanActivePlayer" class="btn-ban-tag" title="Diesen Spieler vom Quiz sperren">
+            </div>
+
+            <!-- Active Buzzered Player Card -->
+            <div id="activeBuzzerCard" class="active-buzzer-card hidden">
+              <div class="buzzer-top-badges">
+                <div class="buzzer-crown">
+                  <svg class="crown-mini-svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/>
+                  </svg>
+                  <span>AM ZUG</span>
+                </div>
+                <button id="btnBanActivePlayer" class="btn-ban-tag" title="Diesen Spieler vom Quiz sperren">
+                  <svg class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                  </svg>
+                  <span>Sperren</span>
+                </button>
+              </div>
+
+              <div class="avatar-wrapper">
+                <img id="activePlayerAvatar" src="../../App.png" alt="Avatar" class="active-avatar">
+                <div class="avatar-glow-ring"></div>
+              </div>
+
+              <div class="active-player-info">
+                <h3 id="activePlayerName" class="active-name">SpielerName</h3>
+                <div class="active-player-meta">
+                  <span id="activePlayerTime" class="tag tag-time">1. Platz</span>
+                  <span id="activePlayerScore" class="tag tag-score tag-score-interactive" title="Klicke hier, um die Punkte direkt zu bearbeiten!">
+                    <span class="active-score-val">0 Punkte</span>
+                    <svg class="ui-svg-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  </span>
+                </div>
+
+                <!-- 10s Buzzer Answer Countdown Timer -->
+                <div id="answerTimerBox" class="answer-timer-box hidden">
+                  <div class="answer-timer-row">
+                    <div class="answer-timer-info">
+                      <svg class="timer-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                      <span class="timer-label">Antwortzeit:</span>
+                      <strong id="lblAnswerTimerSeconds" class="timer-value">10s</strong>
+                    </div>
+                  </div>
+                  <div class="answer-timer-progress">
+                    <div id="answerTimerBarFill" class="answer-timer-fill"></div>
+                  </div>
+                </div>
+
+                <!-- 10s Answer Expired Host Alert -->
+                <div id="answerExpiredAlert" class="answer-expired-box hidden">
+                  <div class="expired-msg">
+                    <svg class="expired-warn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                      <line x1="12" y1="9" x2="12" y2="13"></line>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <span><strong>10 Sekunden abgelaufen!</strong> Keine Antwort erhalten.</span>
+                  </div>
+                  <div class="expired-actions">
+                    <button id="btnExpiredEndRound" class="btn-expired-action btn-expired-abort" title="Runde auflösen oder beenden">
+                      <svg class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                      <span>Runde beenden</span>
+                    </button>
+                    <button id="btnExpiredRelease" class="btn-expired-action btn-expired-resume" title="Buzzer & Song wieder freigeben">
+                      <svg class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      <span>Wieder freigeben</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mode 1: Song Quiz Rating Buttons -->
+              <div id="evalActionsSong" class="evaluation-actions">
+                <button id="btnEvalWrong" class="eval-btn eval-wrong" title="Antwort war falsch (-1 Pkt.)">
+                  <div class="eval-icon-circle">
+                    <svg class="eval-svg-icon icon-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </div>
+                  <div class="eval-text">
+                    <strong>Falsch</strong>
+                    <small id="lblWrongPenalty">-1 Punkt</small>
+                  </div>
+                </button>
+
+                <button id="btnEvalSkip" class="eval-btn eval-skip" title="Überspringen ohne Punktabzug">
+                  <div class="eval-icon-circle">
+                    <svg class="eval-svg-icon icon-skip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                      <line x1="19" y1="5" x2="19" y2="19"></line>
+                    </svg>
+                  </div>
+                  <div class="eval-text">
+                    <strong>Weiter</strong>
+                    <small>Kein Abzug</small>
+                  </div>
+                </button>
+
+                <button id="btnEvalCorrect" class="eval-btn eval-correct" title="Antwort ist richtig (+3 Punkte)">
+                  <div class="eval-icon-circle">
+                    <svg class="eval-svg-icon icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <div class="eval-text">
+                    <strong>Richtig</strong>
+                    <small>+3 Punkte</small>
+                  </div>
+                </button>
+
+                <button id="btnEvalPerfect" class="eval-btn eval-perfect" title="Vollständig richtig mit Songname & Interpret (+4 Punkte)">
+                  <div class="eval-icon-circle">
+                    <svg class="eval-svg-icon icon-star" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                  </div>
+                  <div class="eval-text">
+                    <strong>100% Vollständig</strong>
+                    <small>+4 Pkt (Songname)</small>
+                  </div>
+                </button>
+              </div>
+
+              <!-- Master Round Controls -->
+              <div style="display: flex; gap: 8px; width: 100%; max-width: 520px; margin-top: 8px;">
+                <button id="btnResumeRound" class="btn-chunky btn-secondary" style="flex: 1; padding: 8px 12px; font-size: 12px;" title="Buzzer freigeben & Timer weiterlaufen lassen">
+                  ▶️ Weiterlaufen lassen
+                </button>
+                <button id="btnAbortRound" class="btn-chunky btn-danger" style="flex: 1; padding: 8px 12px; font-size: 12px;" title="Runde abbrechen & Lösung anzeigen">
+                  ⏹️ Runde abbrechen
+                </button>
+              </div>
+            </div>
+
+            <!-- Supreme 3D Mechanical Arcade Buzzer Centerpiece -->
+            <div id="buzzerPlaceholder" class="buzzer-placeholder-3d">
+              <div class="arcade-buzzer-rig">
+                <!-- Outer Cyber Shockwave Rings -->
+                <div class="buzzer-radar-ring ring-1"></div>
+                <div class="buzzer-radar-ring ring-2"></div>
+                <div class="buzzer-radar-ring ring-3"></div>
+
+                <!-- Supreme Machined CNC Steel Base -->
+                <div class="buzzer-bezel-ring">
+                  <!-- 8 Symmetrical Industrial Torx Screws -->
+                  <div class="bezel-bolt b-0"></div>
+                  <div class="bezel-bolt b-45"></div>
+                  <div class="bezel-bolt b-90"></div>
+                  <div class="bezel-bolt b-135"></div>
+                  <div class="bezel-bolt b-180"></div>
+                  <div class="bezel-bolt b-225"></div>
+                  <div class="bezel-bolt b-270"></div>
+                  <div class="bezel-bolt b-315"></div>
+
+                  <!-- Deep Recessed Pneumatic Collar -->
+                  <div class="buzzer-collar-ring">
+                    <!-- The High-Gloss Ruby Polycarbonate Dome Button -->
+                    <button id="btnPhysicalBuzzer" class="buzzer-dome-btn" title="Klicke zum Testen des 3D-Buzzers!">
+                      <div class="dome-specular-primary"></div>
+                      <div class="dome-specular-secondary"></div>
+                      <div class="dome-fresnel-edge"></div>
+                      <div class="dome-core-glow"></div>
+                      <div class="dome-icon-wrap">
+                        <svg class="dome-bolt-svg" viewBox="0 0 24 24" fill="currentColor">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Holographic HUD Status -->
+              <div class="buzzer-hud-status">
+                <div class="hud-status-badge">
+                  <span class="hud-dot-pulse"></span>
+                  <span id="lblBuzzerStatusTag">BEREIT FÜR DISCORD BUZZER</span>
+                </div>
+                <h3 class="hud-status-title">Song Quiz Arena Bereit</h3>
+                <p class="hud-status-desc">Sobald ein Mitspieler in Discord buzzert oder du den Dome klickst, wird er hier aufgerufen!</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Buzzer Queue -->
+          <div class="queue-section" id="queueSection">
+            <div class="queue-header">
+              <div class="queue-title-wrap">
                 <svg class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                  <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-                <span>Sperren</span>
-              </button>
+                <h4>Warteschlange</h4>
+                <small class="queue-hint">(Klicke auf einen Spieler zum Drannehmen)</small>
+              </div>
+              <span id="queueCountBadge" class="badge-pill">0 Spieler</span>
             </div>
-            
-            <div class="avatar-wrapper">
-              <img id="activePlayerAvatar" src="../../App.png" alt="Avatar" class="active-avatar">
-              <div class="avatar-glow-ring"></div>
+            <div id="queueListContainer" class="queue-list">
+              <div class="queue-empty">Keine weiteren Spieler in der Warteschlange</div>
             </div>
+          </div>
+        </div>
 
-            <div class="active-player-info">
-              <h3 id="activePlayerName" class="active-name">SpielerName</h3>
-              <div class="active-player-meta">
-                <span id="activePlayerTime" class="tag tag-time">⚡ 1. Platz</span>
-                <span id="activePlayerScore" class="tag tag-score">0 Punkte</span>
+        <!-- ==================================================================== -->
+        <!-- BOARD 2: HITSTER ZEITSTRAHL ARENA (Hitster Chronologie)              -->
+        <!-- ==================================================================== -->
+        <div id="arenaBoardHitster" class="arena-game-board hidden">
+          <!-- Top Deck: 3D Turntable & Flippable 3D Trading Card -->
+          <div class="hitster-top-stage">
+            <!-- 3D Turntable Player -->
+            <div class="turntable-3d-rig">
+              <div class="turntable-platter">
+                <div id="arenaVinylDisc" class="vinyl-disc vinyl-spinning vinyl-disc-3d">
+                  <div class="vinyl-center-label">★</div>
+                </div>
+                <div class="turntable-tonearm"></div>
+              </div>
+              <div class="turntable-info">
+                <span class="turntable-badge">📻 HITSTER VINYL DECK</span>
+                <div id="arenaHitsterTrackText" class="turntable-track-title">Warte auf Track...</div>
+                <div class="turntable-controls">
+                  <button id="btnHitsterDeckPlay" class="btn-deck-mini" title="Track anspielen">▶️ Play</button>
+                  <button id="btnHitsterDeckNext" class="btn-deck-mini" title="Nächsten Hitster-Song laden">🎲 Neuer Song</button>
+                </div>
               </div>
             </div>
 
-            <!-- Decision Rating Buttons with Double-Click Protection -->
-            <div class="evaluation-actions">
-              <button id="btnEvalWrong" class="eval-btn eval-wrong" title="Antwort war falsch (-1 Pkt. bzw. -2 bei Folgefehler)">
+            <!-- 3D Flippable Hitster Trading Card -->
+            <div class="hitster-card-3d-scene" id="sceneHitsterCard" title="Klicke zum Umdrehen / Jahr aufdecken!">
+              <div id="hitster3DFlippableCard" class="hitster-card-3d">
+                <!-- Front Face (Mystery Face) -->
+                <div class="hitster-card-face card-face-front">
+                  <div class="card-foil-sheen"></div>
+                  <div class="card-corner-star tl">★</div>
+                  <div class="card-corner-star tr">★</div>
+                  <div class="card-corner-star bl">★</div>
+                  <div class="card-corner-star br">★</div>
+                  <div class="card-front-emblem">
+                    <span class="card-secret-q">????</span>
+                    <small class="card-secret-sub">GEHEIMES JAHR</small>
+                  </div>
+                  <div class="card-bottom-bar">
+                    <span>HITSTER 2026</span>
+                  </div>
+                </div>
+
+                <!-- Back Face (Revealed Year Face) -->
+                <div class="hitster-card-face card-face-back">
+                  <div class="card-gold-sheen"></div>
+                  <div class="card-corner-star tl">★</div>
+                  <div class="card-corner-star tr">★</div>
+                  <div class="card-corner-star bl">★</div>
+                  <div class="card-corner-star br">★</div>
+                  <div class="card-revealed-wrap">
+                    <div class="card-revealed-crown">👑 AUFGEDECKT</div>
+                    <div id="arenaHitsterCardYear" class="card-year-number">????</div>
+                    <div id="arenaHitsterCardTitle" class="card-year-track">Interpret - Titel</div>
+                    <div class="card-year-sub">OFFIZIELLES ERSCHEINUNGSJAHR</div>
+                  </div>
+                  <div class="card-bottom-bar gold">
+                    <span>GOLD EDITION</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="hitster-quick-reveal-panel">
+              <button id="btnHitsterQuickReveal" class="btn-chunky btn-primary btn-hitster-flip-action">
+                <span>🔍 JAHR AUFDECKEN (3D FLIP)</span>
+              </button>
+              <div id="arenaHitsterYearBadge" class="hitster-year-pill hidden">????</div>
+            </div>
+          </div>
+
+          <!-- Master Interactive Year Timeline (1950 - 2026) -->
+          <div class="hitster-master-timeline-card">
+            <div class="hitster-timeline-header">
+              <span class="timeline-title-icon">⏱️</span>
+              <span class="timeline-title-text">MASTER JAHRES-ZEITSTRAHL</span>
+              <span class="timeline-hint">(Wähle das vermutete Jahrzehnt oder den Slot)</span>
+            </div>
+            
+            <div class="hitster-decades-bar" id="hitsterDecadesBar">
+              <div class="decade-chip" data-decade="<1960">&lt; 1960</div>
+              <div class="decade-chip" data-decade="1960">1960er</div>
+              <div class="decade-chip" data-decade="1970">1970er</div>
+              <div class="decade-chip" data-decade="1980">1980er</div>
+              <div class="decade-chip" data-decade="1990">1990er</div>
+              <div class="decade-chip" data-decade="2000">2000er</div>
+              <div class="decade-chip" data-decade="2010">2010er</div>
+              <div class="decade-chip" data-decade="2020">2020+</div>
+            </div>
+
+            <!-- Interactive Slot Placement Strip -->
+            <div id="arenaHitsterTimelineDeck" class="hitster-arena-deck">
+              <div id="hitsterSlotContainer" class="hitster-slots-wrapper">
+                <!-- Dynamically populated placement slots and cards -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Hitster Evaluation Controls -->
+          <div class="hitster-evaluation-bar">
+            <div class="hitster-eval-target-player">
+              <span style="font-size: 11px; font-weight: 800; color: #c4b5fd;">AKTIVER SPIELER:</span>
+              <select id="selHitsterActivePlayer" class="excel-input" style="font-size: 12px; padding: 4px 10px; width: 170px;">
+                <option value="">(Wähle Spieler...)</option>
+              </select>
+            </div>
+
+            <div id="evalActionsHitster" class="evaluation-actions" style="margin: 0;">
+              <button id="btnHitsterWrong" class="eval-btn eval-wrong" title="Karte falsch eingeordnet (0 Punkte)">
                 <div class="eval-icon-circle">
                   <svg class="eval-svg-icon icon-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -234,11 +875,11 @@
                 </div>
                 <div class="eval-text">
                   <strong>Falsch</strong>
-                  <small id="lblWrongPenalty">-1 Punkt</small>
+                  <small>0 Punkte</small>
                 </div>
               </button>
 
-              <button id="btnEvalSkip" class="eval-btn eval-skip" title="Überspringen ohne Punktabzug (Sofort weiter)">
+              <button id="btnHitsterSkip" class="eval-btn eval-skip" title="Weitergeben an nächsten Spieler">
                 <div class="eval-icon-circle">
                   <svg class="eval-svg-icon icon-skip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polygon points="5 4 15 12 5 20 5 4"></polygon>
@@ -247,82 +888,181 @@
                 </div>
                 <div class="eval-text">
                   <strong>Weiter</strong>
-                  <small>Kein Abzug (Sofort)</small>
+                  <small>Nächster</small>
                 </div>
               </button>
 
-              <button id="btnEvalCorrect" class="eval-btn eval-correct" title="Antwort ist richtig (+3 Punkte)">
+              <button id="btnHitsterCorrect" class="eval-btn eval-correct" title="Karte richtig im Zeitstrahl platziert (+1 Punkt & Karte)">
                 <div class="eval-icon-circle">
                   <svg class="eval-svg-icon icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </div>
                 <div class="eval-text">
-                  <strong>Richtig</strong>
-                  <small>+3 Punkte</small>
+                  <strong>Richtig platziert</strong>
+                  <small>+1 Karte & Punkt</small>
                 </div>
               </button>
 
-              <button id="btnEvalPerfect" class="eval-btn eval-perfect" title="Vollständig richtig mit Songname & Interpret (+4 Punkte)">
+              <button id="btnHitsterRevealCenter" class="eval-btn eval-perfect" title="Bonus: Songtitel + Interpret gewusst (+1 Bonuspunkt)">
                 <div class="eval-icon-circle">
                   <svg class="eval-svg-icon icon-star" viewBox="0 0 24 24" fill="currentColor">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
                 </div>
                 <div class="eval-text">
-                  <strong>100% Vollständig</strong>
-                  <small>+4 Pkt (Songname)</small>
+                  <strong>Titel + Künstler</strong>
+                  <small>+1 Bonuspunkt</small>
                 </div>
               </button>
             </div>
           </div>
 
-          <!-- Solid Clean Animated Golden Bell -->
-          <div id="buzzerPlaceholder" class="buzzer-placeholder">
-            <div class="golden-bell-container">
-              <svg class="golden-bell-svg" viewBox="0 0 64 64" fill="none">
-                <!-- Bell Body & Clapper as single unified harmonious SVG -->
-                <path d="M32 6 C29.8 6 28 7.8 28 10 C28 10.5 28.1 11 28.3 11.4 C20.5 13.8 15 21.2 15 30 C15 39 12 43 9 46 C8.4 46.6 8.8 47.6 9.6 47.6 L54.4 47.6 C55.2 47.6 55.6 46.6 55 46 C52 43 49 39 49 30 C49 21.2 43.5 13.8 35.7 11.4 C35.9 11 36 10.5 36 10 C36 7.8 34.2 6 32 6 Z" 
-                      fill="url(#goldBellGrad)" stroke="#fde047" stroke-width="2"/>
-                <!-- Inner clapper visible at bottom -->
-                <circle cx="32" cy="52" r="5" fill="#f59e0b" stroke="#fbbf24" stroke-width="1.5"/>
-                <!-- Bottom rim highlight -->
-                <ellipse cx="32" cy="47.6" rx="22" ry="3.5" fill="#ca8a04" stroke="#fef08a" stroke-width="1"/>
+          <!-- Real Player Timelines Collection (Spieler-Zeitstrahle) -->
+          <div class="hitster-players-collection-card">
+            <div class="hitster-collection-header">
+              <span class="collection-badge-title">
+                <svg class="ui-svg-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+                SPIELER-ZEITSTRAHLE & KARTEN-SAMMLUNG
+              </span>
+              <span class="collection-target-hint">
+                <svg class="ui-svg-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                Ziel: 10 chronologische Karten zum Sieg
+              </span>
+            </div>
+            <div id="hitsterPlayerShelvesContainer" class="hitster-player-shelves">
+              <div class="queue-empty">Keine Spieler angelegt. Starte eine Runde oder lege rechts Spieler an!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================================================================== -->
+        <!-- BOARD 3: KINO & FILM WALLPAPER ARENA                                 -->
+        <!-- ==================================================================== -->
+        <div id="arenaBoardWallpaper" class="arena-game-board hidden">
+          <!-- Clapperboard Header & Stage Points Indicator -->
+          <div class="cinema-clapperboard-header">
+            <div class="clapperboard-stripes"></div>
+            <div class="clapperboard-content">
+              <div class="clapperboard-title-group">
+                <span class="clapperboard-badge">
+                  <svg class="ui-svg-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+                  FILM-QUIZ
+                </span>
+                <span class="clapperboard-film-label" style="font-weight: 800; font-size: 11px; color: #94a3b8; margin-right: 4px;">FILM:</span>
+                <span id="arenaWpClapperTitle" class="clapperboard-film-text film-blurred">Film gesucht...</span>
+              </div>
+              <div class="clapperboard-stage-group">
+                <span id="arenaWpStageBadge" class="clapperboard-points-pill">
+                  <svg class="ui-svg-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  STUFE 1 • 4 PUNKTE
+                </span>
+                <span id="lblWpNextStageTimer" class="clapperboard-timer-hint">Nächste Stufe in 10s</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Giant 16:9 Cinema Projection Screen -->
+          <div class="cinema-theater-screen-rig">
+            <div class="cinema-screen-bezel">
+              <div class="cinema-projector-light"></div>
+              
+              <!-- Wallpaper Image with Dynamic CSS Progressive Blur -->
+              <div class="cinema-screen-viewport" id="cinemaScreenViewport">
+                <img id="arenaWpCinemaImg" src="" alt="Wallpaper" class="cinema-wallpaper-image blur-stage-1" style="display: none;">
                 
-                <defs>
-                  <linearGradient id="goldBellGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#fef08a"/>
-                    <stop offset="35%" stop-color="#facc15"/>
-                    <stop offset="70%" stop-color="#eab308"/>
-                    <stop offset="100%" stop-color="#ca8a04"/>
-                  </linearGradient>
-                </defs>
-              </svg>
+                <div id="arenaWpScreenPlaceholder" class="cinema-screen-placeholder">
+                  <div class="cinema-placeholder-icon">
+                    <svg class="ui-svg-icon" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+                  </div>
+                  <h3>Kein Wallpaper geladen</h3>
+                  <p>Wähle links einen Wallpaper-Ordner oder ziehe ein Bild per Drag & Drop hinein!</p>
+                </div>
+
+                <!-- 10-Second Countdown Radial Meter Overlay (Top Right) -->
+                <div id="arenaWpTimerMeter" class="cinema-timer-meter-overlay">
+                  <svg class="timer-meter-svg" viewBox="0 0 44 44">
+                    <circle class="timer-meter-bg" cx="22" cy="22" r="18"></circle>
+                    <circle id="circleWpProgress" class="timer-meter-fill" cx="22" cy="22" r="18"></circle>
+                  </svg>
+                  <span id="lblWpRadialSeconds" class="timer-meter-text">10s</span>
+                </div>
+
+                <!-- Film Resolved Overlay Banner -->
+                <div id="arenaWpResolvedOverlay" class="cinema-resolved-overlay hidden">
+                  <div class="resolved-crown">
+                    <svg class="ui-svg-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/></svg>
+                    FILM AUFGELÖST!
+                  </div>
+                  <h2 id="arenaWpResolvedTitleLarge" class="resolved-movie-name">Der Film</h2>
+                  <div class="resolved-points-awarded">Bild 100% scharf gestellt</div>
+                </div>
+              </div>
             </div>
-            <h3>Warte auf Buzzer...</h3>
-            <p>Sobald ein Spieler in Discord buzzert, poppt er hier auf!</p>
+
+            <!-- Keep legacy elements hidden for smooth IPC / DOM sync -->
+            <div id="arenaWallpaperBanner" class="hidden">
+              <div id="arenaWpStageText" class="hidden">Stufe 1 (4 Pkt)</div>
+              <div id="arenaWpResolvedTitle" class="hidden"></div>
+              <img id="arenaWpPreviewImg" class="hidden" src="">
+            </div>
+          </div>
+
+          <!-- Wallpaper Evaluation Bar -->
+          <div class="cinema-evaluation-bar">
+            <div id="evalActionsWallpaper" class="evaluation-actions" style="margin: 0; width: 100%; justify-content: center;">
+              <button id="btnWpWrong" class="eval-btn eval-wrong" title="Falsch geraten (Keine Punkte)">
+                <div class="eval-icon-circle">
+                  <svg class="eval-svg-icon icon-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </div>
+                <div class="eval-text">
+                  <strong>Falsch</strong>
+                  <small>0 Punkte</small>
+                </div>
+              </button>
+
+              <button id="btnWpSkip" class="eval-btn eval-skip" title="Überspringen">
+                <div class="eval-icon-circle">
+                  <svg class="eval-svg-icon icon-skip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                    <line x1="19" y1="5" x2="19" y2="19"></line>
+                  </svg>
+                </div>
+                <div class="eval-text">
+                  <strong>Weiter</strong>
+                  <small>Kein Abzug</small>
+                </div>
+              </button>
+
+              <button id="btnWpCorrect" class="eval-btn eval-correct" title="Richtig! Vergibt Punkte nach aktueller Zeitstufe">
+                <div class="eval-icon-circle">
+                  <svg class="eval-svg-icon icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <div class="eval-text">
+                  <strong id="lblWpCorrectPointsTitle">Richtig!</strong>
+                  <small id="lblWpCorrectPointsSub">+4 Punkte</small>
+                </div>
+              </button>
+
+              <button id="btnWpResolveCenter" class="eval-btn eval-perfect" title="Film sofort aufdecken & 100% scharf stellen">
+                <div class="eval-icon-circle">
+                  <svg class="eval-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <div class="eval-text">
+                  <strong>Film auflösen</strong>
+                  <small>100% Scharf</small>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Buzzer Queue (2nd, 3rd, 4th...) -->
-        <div class="queue-section">
-          <div class="queue-header">
-            <div class="queue-title-wrap">
-              <svg class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              <h4>Warteschlange</h4>
-              <small class="queue-hint">(Klicke auf einen Spieler zum Drannehmen)</small>
-            </div>
-            <span id="queueCountBadge" class="badge-pill">0 Spieler</span>
-          </div>
-          <div id="queueListContainer" class="queue-list">
-            <div class="queue-empty">Keine weiteren Spieler in der Warteschlange</div>
-          </div>
-        </div>
-
-        <!-- Voice Channel Members List (Bottom Section) -->
+        <!-- Voice Channel Members List (Shared Bottom Section) -->
         <div class="voice-members-section">
           <div class="voice-members-header">
             <div class="queue-title-wrap">
@@ -356,6 +1096,15 @@
           <span id="playerCountBadge" class="badge-pill">0 Spieler</span>
         </div>
 
+        <!-- Player Quick Management Bar -->
+        <div class="player-management-bar">
+          <input type="text" id="txtNewPlayerName" placeholder="Spielernamen vergeben..." class="excel-input" style="flex: 1; font-size: 12px; padding: 7px 10px;">
+          <button id="btnAddPlayer" class="btn-chunky btn-secondary" style="padding: 7px 12px; font-size: 11px; white-space: nowrap; display: flex; align-items: center; gap: 4px;" title="Neuen Spieler hinzufügen">
+            <svg class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Anlegen</span>
+          </button>
+        </div>
+
         <div id="scoreboardList" class="scoreboard-list">
           <div class="scoreboard-empty">
             <svg class="empty-trophy-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -366,6 +1115,18 @@
         </div>
       </section>
     </main>
+
+    <!-- In-App Stream View (Live Overlay Preview) -->
+    <div id="inAppStreamContainer" class="hidden" style="position: fixed; inset: 0; background: #0f1016; z-index: 99990; flex-direction: column;">
+      <div style="background: #1a1c28; padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2d3148;">
+        <span style="font-weight: 800; font-size: 13px; color: #10b981; display: flex; align-items: center; gap: 6px;">
+          <svg class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          Live Stream- & Teilnehmer-Ansicht (OBS Vorschau)
+        </span>
+        <button id="btnCloseStreamView" class="btn-modal-cancel" style="padding: 4px 12px; font-size: 12px;">✕ Zurück zur Regie</button>
+      </div>
+      <iframe id="inAppStreamFrame" src="stream.html" style="width: 100%; height: calc(100% - 44px); border: none;"></iframe>
+    </div>
 
     <!-- Banned Players Modal -->
     <div id="bannedModal" class="modal-backdrop hidden">
@@ -523,8 +1284,201 @@
         </div>
       </div>
     </div>
+    <!-- 3D Startup Game Selection Gate / Standby Screen -->
+    <div id="startupGateModal" class="startup-gate-overlay">
+      <div class="startup-gate-content">
+        <div class="startup-gate-header">
+          <div class="startup-standby-pill">
+            <span class="standby-radar-dot"></span>
+            <span id="lblStartupBotStandby">DISCORD BOT IM STANDBY</span>
+          </div>
+          <h1 class="startup-gate-title">
+            <svg class="gate-title-svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="6"></rect><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13" stroke-width="3"></line><line x1="18" y1="11" x2="18.01" y2="11" stroke-width="3"></line></svg>
+            WÄHLE DEIN SPIEL
+          </h1>
+          <p class="startup-gate-sub">
+            Der Discord-Bot wartet im Standby (<span class="standby-typing-text">„Wählt das Spiel aus...“</span>).<br>
+            Wähle den Spielmodus, um die Session zu starten:
+          </p>
+        </div>
+
+        <div class="startup-cards-grid">
+          <!-- Card 1: Erkennst du den Song -->
+          <div class="startup-game-card card-song" data-mode="song" id="cardSelectSong">
+            <div class="game-card-glow-edge"></div>
+            <div class="game-card-icon-badge">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+            </div>
+            <h2 class="game-card-title">Erkennst du den Song</h2>
+            <div class="game-card-tag">3 — 6 Spieler • Musik-Quiz</div>
+            <p class="game-card-desc">
+              Erkenne Songs aus deinem Musik-Ordner oder Excel-Listen.
+              Echter Discord-Buzzer, automatisches ID3-Tagging, lokaler Player & Live-Screen-Flash!
+            </p>
+            <div class="game-card-features">
+              <span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                Lokale MP3s
+              </span>
+              <span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                Excel-Eingabe
+              </span>
+              <span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                Live-Buzzer
+              </span>
+            </div>
+            <button class="btn-startup-select btn-song-accent">
+              <span>SPIELEN ➔</span>
+            </button>
+          </div>
+
+          <!-- Card 2: Hitster Zeitstrahl -->
+          <div class="startup-game-card card-hitster" data-mode="hitster" id="cardSelectHitster">
+            <div class="game-card-glow-edge"></div>
+            <div class="game-card-icon-badge">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+            </div>
+            <h2 class="game-card-title">Hitster Zeitstrahl</h2>
+            <div class="game-card-tag">2 — 8 Spieler • Chronologie</div>
+            <p class="game-card-desc">
+              Welcher Song erschien früher oder später?
+              Interaktive 3D-Flip-Karten, 3D-Vinyl-Plattenspieler und taktiler Zeitstrahl!
+            </p>
+            <div class="game-card-features">
+              <span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Interaktiver Zeitstrahl
+              </span>
+              <span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
+                3D-Flip-Karte
+              </span>
+              <span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                Vinyl-Deck
+              </span>
+            </div>
+            <button class="btn-startup-select btn-hitster-accent">
+              <span>SPIELEN ➔</span>
+            </button>
+          </div>
+
+          <!-- Card 3: Filme / Wallpaper -->
+          <div class="startup-game-card card-wallpaper" data-mode="wallpaper" id="cardSelectWallpaper">
+            <div class="game-card-glow-edge"></div>
+            <div class="game-card-icon-badge">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+            </div>
+            <h2 class="game-card-title">Filme / Wallpaper</h2>
+            <div class="game-card-tag">3 — 6 Spieler • Bild-Erkennung</div>
+            <p class="game-card-desc">
+              Erkenne den Film anhand des Wallpapers!
+              Automatischer 4-Stufen-Blur alle 10s mit zeitbasierten Punkten (4, 3, 2, 1 Pkt).
+            </p>
+            <div class="game-card-features">
+              <span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                4-Stufen Schärfung
+              </span>
+              <span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                10s Timer
+              </span>
+              <span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+                Bis zu 4 Pkt
+              </span>
+            </div>
+            <button class="btn-startup-select btn-wallpaper-accent">
+              <span>SPIELEN ➔</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grand Champion Victory Celebration Modal -->
+    <div id="victoryModal" class="modal-backdrop hidden">
+      <div class="modal-box victory-modal-box">
+        <div class="victory-header-glow"></div>
+        <div class="victory-trophy-rig">
+          <div class="trophy-sparkle-ring"></div>
+          <div class="victory-trophy-icon">
+            <svg viewBox="0 0 24 24" width="56" height="56" fill="currentColor"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+          </div>
+        </div>
+        <h1 class="victory-headline">CHAMPION DER MANNISBOX!</h1>
+        <p class="victory-subline">Das offizielle Spielziel wurde triumphal erreicht!</p>
+        
+        <div class="winner-spotlight-card">
+          <img id="victoryWinnerAvatar" src="../../App.png" alt="Winner" class="winner-avatar-large">
+          <div class="winner-info-wrap">
+            <h2 id="victoryWinnerName" class="winner-name-text">SpielerName</h2>
+            <div id="victoryWinnerScoreTag" class="winner-score-tag">52 Punkte • Sieger!</div>
+          </div>
+        </div>
+
+        <div class="victory-actions-row">
+          <button id="btnVictoryNewGame" class="btn-chunky btn-primary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            <span>Neues Spiel starten</span>
+          </button>
+          <button id="btnVictoryClose" class="btn-modal-cancel">
+            <span>Schließen</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- Floating Animated Quick Score Editor Popup -->
+  <div id="quickScoreEditorPopup" class="quick-score-popup hidden">
+    <div class="quick-score-header">
+      <span class="quick-score-title" style="display: flex; align-items: center; gap: 6px;">
+        <svg class="ui-svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span>Punkte anpassen</span>
+      </span>
+      <button id="btnQuickScoreClose" class="quick-score-close">&times;</button>
+    </div>
+    <div class="quick-score-player" id="quickScorePlayerName">Manni</div>
+    <div class="quick-score-controls">
+      <button class="btn-score-quick" data-delta="-5">-5</button>
+      <button class="btn-score-quick" data-delta="-1">-1</button>
+      <input type="number" id="txtQuickScoreValue" class="quick-score-input" value="0">
+      <button class="btn-score-quick" data-delta="1">+1</button>
+      <button class="btn-score-quick" data-delta="5">+5</button>
+    </div>
+    <button id="btnQuickScoreSave" class="btn-chunky btn-primary" style="min-height: 32px; padding: 5px 12px; font-size: 12px; width: 100%;">
+      ✓ Punkte übernehmen
+    </button>
+  </div>
+
+  <!-- Bespoke In-App Modal Dialog (Alert / Confirm / Prompt) -->
+  <div id="customAppDialogModal" class="custom-app-dialog-overlay hidden">
+    <div class="custom-app-dialog-card">
+      <div class="custom-dialog-header">
+        <div id="customDialogIconContainer" class="custom-dialog-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </div>
+        <h3 id="customDialogTitle" class="custom-dialog-title">Hinweis</h3>
+      </div>
+      <div id="customDialogMessage" class="custom-dialog-message"></div>
+      <input type="text" id="customDialogInput" class="custom-dialog-input hidden" placeholder="Eingabe...">
+      <div class="custom-dialog-actions" id="customDialogActions">
+        <button id="btnCustomDialogCancel" class="btn-dialog-cancel hidden">Abbrechen</button>
+        <button id="btnCustomDialogConfirm" class="btn-dialog-confirm">Verstanden</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="ue5_stage3d.js"></script>
+  <script>
+    if (window.UE5Stage3D) {
+      window.ue5StageInstance = new window.UE5Stage3D('ue5Canvas');
+    }
+  </script>
   <script src="app.js"></script>
 </body>
 </html>

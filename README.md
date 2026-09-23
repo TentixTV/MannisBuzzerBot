@@ -1,15 +1,15 @@
 <div align="center">
 
-# 🎮 MannisBox — Discord Musik-Quiz & Buzzer Master (v1.1.0)
+# 🎮 MannisBox — Discord Musik-Quiz, Hitster & Wallpaper Master (v4.8.025)
 
-### *Die ultimative Desktop-App für Musik-Quizze & Buzzer-Runden auf Discord!*
+### *Die ultimative High-End Desktop-App & Discord-Buzzer-Bot Suite*
 
 <br>
 
 [![Electron](https://img.shields.io/badge/Electron-34.5.8-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://electronjs.org/)
 [![Discord.js](https://img.shields.io/badge/Discord.js-14.18.0-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.js.org/)
-[![Version](https://img.shields.io/badge/Release-v1.1.0-10B981?style=for-the-badge)](https://github.com/TentixTV/MannisBuzzerBot/releases)
-[![Idea](https://img.shields.io/badge/Idee-ThisManniGuy-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com)
+[![Version](https://img.shields.io/badge/Release-v4.8.025-10B981?style=for-the-badge)](https://github.com/TentixTV/MannisBuzzerBot/releases/tag/v4.8.025)
+[![Idee](https://img.shields.io/badge/Idee-ThisManniGuy-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com)
 [![Author](https://img.shields.io/badge/Entwickler-TentixTV-8B5CF6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TentixTV)
 [![License: MIT](https://img.shields.io/badge/Lizenz-MIT-F59E0B?style=for-the-badge)](LICENSE)
 
@@ -20,83 +20,105 @@
 
 ---
 
+### ⚡ Sofort-Download / Instant Download (v4.8.025)
+
+Keine Installation nötig! Einfach herunterladen, entpacken und sofort loslegen:
+
+[![Direct Download ZIP](https://img.shields.io/badge/📦_Instant_Download-MannisBox_v4.8.025_(ZIP)-2563EB?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.025/MannisBox-Windows-x64.zip)
+[![Direct Download RAR](https://img.shields.io/badge/🗜️_Instant_Download-MannisBox_v4.8.025_(RAR)-7C3AED?style=for-the-badge&logo=winrar&logoColor=white)](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.025/MannisBox-Windows-x64.rar)
+
+🔗 **Alle Versionen & Assets:** [GitHub Releases Overview](https://github.com/TentixTV/MannisBuzzerBot/releases)
+
+---
+
 </div>
 
-## 🌟 Highlights & Features in v1.1.0
+## 🌟 Die 3 Deluxe-Spielmodi
 
-- 🕹️ **Scribble Darkmode UI**: Inspiriert vom Skribbl-Design mit fetten 3D-Arcade-Buttons, animierten Badges und responsivem 3-Spalten-Layout.
-- 🔔 **Golden Bell & Arena**: Wunderschön animierte Glocke mit harmonischer Schwingung und sanftem Ticking.
-- ⏳ **Animierter 3-2-1 Center Countdown**:
-  - Nach jeder Punktevergabe schützt ein Doppel-Klick-Schutz vor versehentlichen Mehrfacheingaben.
-  - Ein animierter `3.. 2.. 1..`-Countdown zählt herunter.
-  - Bei falschen Antworten rutscht der nächste Spieler automatisch hoch. Bei richtigen Antworten wird die Queue zurückgesetzt.
-- 🎧 **Mitspieler im Voice-Kanal**:
-  - Live-Übersicht aller Personen im Voice-Kanal mit Avatar und 1-Klick-Bann/Entbann-Funktion.
-- 🎮 **Discord Rich Presence (Status)**:
-  - Zeigt im Discord live: `Spielt SongQuiz 🎵` und `👥 X Mitspieler`.
-- ✏️ **Slide-Down Ranglisten-Editor**:
-  - Beim Überfahren eines Spielers klappt sanft eine Aktionsleiste mit `[-1 Punkt]`, `[+1 Punkt]` und `[🚫 Sperren]` auf — ohne Verschieben oder Abschneiden!
-- 🏁 **Deluxe Quiz-Endstand & Podium**:
-  - Button **„Runde beenden & Ranking“** postet ein Endstand-Embed mit 🥇 1. Platz Champion, 🥈 2. Platz, 🥉 3. Platz und vollständiger Rangliste aller Teilnehmer.
-- 👑 **Host-Erkennung**:
-  - Zeigt in der App und in Discord dynamisch `@ID (Name)` an.
+### 🎵 1. Songquiz
+- **Intelligente Ordner-Erkennung**: Erkennt Künstler, Titel & Metadaten vollautomatisch aus Tags, Dateinamen oder Excel-Copy-Paste.
+- **Echtzeit-Suche (Live Autocomplete)**: Tippe einfach im Regie-Panel und finde Tracks 1:1 in Millisekunden.
+- **10-Sekunden Antwort-Timer**: Nach dem Buzzern läuft ein präziser 10s Countdown für den aktiven Spieler ab. Läuft er ab, entscheidet der Host über Freigabe oder Rundenabbruch.
+- **Integrierter Audio-Streamer**: Lokaler Zero-Latency Audio-Player mit Waveform-Visualizer & OBS-Browser-Source-Unterstützung.
+
+### 📻 2. Hitster (Zeitstrahl & Dispute-Chips)
+- **Automatischer Tag-Scanner**: Liest Erscheinungsjahre direkt aus MP3-Tags (ID3v2, Release Date, Lyrics & Comments) oder manueller Regie.
+- **3D Flippable Kassette / Karte**: Mit animiertem 3D-Kartenflip zum Aufdecken des Geheimjahres.
+- **🪙 Spielchips & Anfechtungs-System**:
+  - Jeder Spieler besitzt 3 Hitster-Chips (`🪙`).
+  - Wenn ein Spieler eine Karte anfechten möchte ("Chip werfen"), registriert der Bot sofort wer den Chip zuerst geworfen hat — absolut manipulationssicher!
+  - Chips können in der Regie per `[+]` / `[-]` flexibel angepasst werden.
+- **10-Karten Meilenstein**: Spieler sammeln erratene Hits auf ihren individuellen Regalen bis zum 10-Karten-Sieg!
+
+### 🎬 3. Wallpaperquiz (Progressive Schärfestufen)
+- **Dynamisches Pixelations-Rendering**: Bot und OBS-Stream zeigen Bilder von extrem verpixelt (Stufe 1) über 4 Zwischenstufen bis gestochen scharf (Stufe 5).
+- **Zeitabhängiges Punktesystem (1 bis 4 Punkte)**:
+  - ⏱️ Erraten in **0-10s**: **4 Punkte**
+  - ⏱️ Erraten in **10-20s**: **3 Punkte**
+  - ⏱️ Erraten in **20-30s**: **2 Punkte**
+  - ⏱️ Erraten in **30-40s+**: **1 Punkt**
+- **Automatischer Countdown-Stopp**: Sobald ein Spieler buzzert, wird der Runden-Countdown sofort pausiert, sodass niemand Zeit verliert während er antwortet!
+
+---
+
+## 🚀 Neue Deluxe-Features in v4.8.024
+
+- ✏️ **Interaktiver Punkte-Editor ("Links unten auf die Punkte")**:
+  - Fahre mit der Maus über Mannis Punkte (`#lblHostScore`) links unten in der Status-Card oder über beliebige Spieler-Pills — sie leuchten und vergrößern sich mit sanftem Hover.
+  - Ein Klick öffnet ein animiert bouncendes Pop-up mit Schnellwahltasten `[-5]`, `[-1]`, `[+1]`, `[+5]` sowie direkter Tastatureingabe (`Enter` zum Speichern).
+- 🔍 **Ordner Live-Suche**:
+  - Song-, Hitster- und Wallpaper-Regie besitzen jeweils eine blitzschnelle Autocomplete-Suche, um gezielt Songs oder Filme auszuwählen.
+- 🪟 **Custom Frameless Window**:
+  - Vollwertige eigene Titelleiste mit Minimieren, Maximieren/Wiederherstellen und Schließen.
+- 🛡️ **Offline- & Resilienz-Engine**:
+  - Countdown, Buzzer und Regie-Funktionen starten zuverlässig auch im lokalen Testbetrieb ohne bestehende Discord-Verbindung.
+- 🎨 **Reines UI-Design**:
+  - Störende Textbeschriftungen auf dem 3D-Buzzer und unpassende Untertitel wurden vollständig entfernt.
+  - Kompaktes Scroll-Layout ohne unschöne Panel-Überläufe.
 
 ---
 
 ## 🏆 Spielregeln & Punktesystem
 
-| Aktion | Punkte | Sound-Effekt | Ablauf |
-| :--- | :---: | :--- | :--- |
-| ❌ **Falsch** *(1. Versuch)* | **-1 Punkt** | Epischer Fail-Horn | 3s Countdown ➔ Nächster Spieler rutscht hoch |
-| ❌ **Falsch** *(Folgefehler)* | **-2 Punkte** | Epischer Fail-Horn | 3s Countdown ➔ Nächster Spieler rutscht hoch |
-| ⏭️ **Weiter / Überspringen** | **0 Punkte** | Keiner | Sofort nächster Spieler |
-| ✅ **Richtig** | **+3 Punkte** | Kristall-Chime | Queue geleert ➔ 3s Countdown |
-| 🌟 **100% Vollständig** *(Song & Interpret)* | **+4 Punkte** | Sieges-Fanfare | Queue geleert ➔ 3s Countdown |
+| Modus | Richtige Antwort | Falsche Antwort | Ablauf |
+| :--- | :---: | :---: | :--- |
+| 🎵 **Songquiz** | **+3 Punkte** *(+4 Pkt komplett)* | **-1 Pkt** *(Wdh: -2 Pkt)* | 10s Antwort-Timer ➔ Freigabe / Nächster Spieler |
+| 📻 **Hitster** | **+1 Karte / Punkt** | **0 Punkte** | Karte wird platziert, Chip-Anfechtung möglich |
+| 🎬 **Wallpaper** | **1 - 4 Punkte** *(nach Speed)* | **-1 Pkt** | Buzzer pausiert Countdown sofort |
+| 🔥 **Boost x2** | **Doppelte Punkte!** | Regulär | Epische Partikel-Animation in der Arena |
 
 ---
 
-## 📥 Direkter Download & Schnellstart
+## 📥 Schnellstart für Anwender
 
-### 🎮 Fertige App für Windows herunterladen (Keine Installation nötig)
-Lade dir einfach das fertige Windows-Paket herunter, entpacke es und starte direkt die **`MannisBox.exe`**:
-
-[![Download Windows ZIP](https://img.shields.io/badge/📦_Download-MannisBox_v1.1.0_(Windows_x64)-2563EB?style=for-the-badge&logo=windows)](https://github.com/TentixTV/MannisBuzzerBot/releases/tag/v1.1.0)
-
-1. Lade dir die neueste Version aus den **[GitHub Releases](https://github.com/TentixTV/MannisBuzzerBot/releases)** herunter.
-2. Entpacke das `.zip`-Archiv auf deinem PC.
-3. Starte die **`MannisBox.exe`** mit einem Doppelklick — der Bot verbindet sich automatisch!
+1. Lade das Windows-Paket herunter: **[MannisBox-Windows-x64.zip](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.024/MannisBox-Windows-x64.zip)**
+2. Entpacke das Archiv in einen beliebigen Ordner.
+3. Starte **`MannisBox.exe`**.
+4. Trage beim ersten Start deinen Discord-Bot-Token ein (unter ⚙️ Einstellungen) — fertig!
 
 ---
 
-### 💻 Für Entwickler: Aus dem Quellcode starten
+## 🛠️ Für Entwickler
+
 ```bash
-# 1. Repository klonen
+# Repository klonen
 git clone https://github.com/TentixTV/MannisBuzzerBot.git
 cd MannisBuzzerBot
 
-# 2. Abhängigkeiten installieren
+# Abhängigkeiten installieren
 npm install
 
-# 3. App starten
+# App im Entwicklungsmodus starten
 npm start
-```
 
----
-
-## 🛠️ Build-Pipeline (Eigene `.exe` & `.zip` erstellen)
-
-```bash
+# Standalone Windows .exe, .zip & .rar kompilieren
 npm run build
 ```
 
-Ausgabe-Dateien:
-- 📁 **`dist/MannisBox-win32-x64/MannisBox.exe`** (Direkt starten)
-- 📦 **`dist/MannisBox-Windows-x64.zip`** (Zum Verschicken)
-
 ---
 
-## 📜 Danksagung & Lizenz
+## 📜 Lizenz & Credits
 
-- **Konzept & Idee:** **ThisManniGuy** (Discord)
-- **Entwicklung:** **[TentixTV](https://github.com/TentixTV)** im Auftrag von **ThisManniGuy**.
-- **Lizenz:** Lizenziert unter der **MIT License** — siehe [LICENSE](LICENSE) für Details.
+- **Konzept & Vision:** **ThisManniGuy**
+- **Entwicklung:** **[TentixTV](https://github.com/TentixTV)**
+- **Lizenz:** [MIT License](LICENSE)

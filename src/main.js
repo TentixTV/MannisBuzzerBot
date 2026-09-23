@@ -1,21 +1,24 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const botManager = require('./bot/botManager');
+const StreamServer = require('./streamServer');
 const { loadConfig, saveConfig } = require('./config/configManager');
 
 let mainWindow = null;
+let streamServer = null;
 
 function createWindow() {
   const iconPath = path.join(__dirname, '..', 'App.png');
 
   mainWindow = new BrowserWindow({
-    width: 1320,
-    height: 860,
+    width: 1360,
+    height: 900,
     minWidth: 1080,
     minHeight: 720,
-    title: "Manni's Box — Discord Buzzer & Game Show Master",
+    title: "Manni's Box — Discord Buzzer & Stream Master V4.8.024",
     icon: iconPath,
     backgroundColor: '#12131a',
+    frame: false,
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -24,7 +27,23 @@ function createWindow() {
     }
   });
 
+  mainWindow.on('maximize', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('window-maximize-changed', true);
+    }
+  });
+
+  mainWindow.on('unmaximize', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('window-maximize-changed', false);
+    }
+  });
+
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    console.log(`[Renderer Console] [Level ${level}] ${message} (at ${path.basename(sourceId || '')}:${line})`);
+  });
 
   // Forward bot events to renderer
   botManager.on('status-changed', (status) => {
@@ -63,6 +82,10 @@ function createWindow() {
 
 // App lifecycle
 app.whenReady().then(() => {
+  // Start OBS StreamServer
+  streamServer = new StreamServer(() => botManager.getState());
+  streamServer.start();
+
   createWindow();
 
   app.on('activate', () => {
@@ -71,15 +94,51 @@ app.whenReady().then(() => {
 });
 
 app.on('before-quit', async () => {
-  console.log('[Main] App quitting, shutting down bot...');
+  console.log('[Main] App quitting, shutting down bot and stream server...');
+  if (streamServer) streamServer.stop();
   await botManager.stop();
 });
 
 app.on('window-all-closed', async () => {
+  if (streamServer) streamServer.stop();
   await botManager.stop();
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+// Window Controls (Custom Titlebar)
+ipcMain.handle('window-minimize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.minimize();
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('window-maximize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+      return false;
+    } else {
+      mainWindow.maximize();
+      return true;
+    }
+  }
+  return false;
+});
+
+ipcMain.handle('window-close', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.close();
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('window-is-maximized', () => {
+  return (mainWindow && !mainWindow.isDestroyed()) ? mainWindow.isMaximized() : false;
 });
 
 // IPC Handlers
@@ -126,8 +185,10 @@ ipcMain.handle('lock-buzzer', async (event, locked) => {
   return await botManager.setBuzzerLocked(locked);
 });
 
-ipcMain.handle('evaluate-player', async (event, action) => {
-  return await botManager.evaluateActivePlayer(action);
+ipcMain.handle('evaluate-player', async (event, arg) => {
+  const action = (typeof arg === 'object' && arg !== null) ? arg.action : arg;
+  const targetPlayer = (typeof arg === 'object' && arg !== null) ? arg.targetPlayer : undefined;
+  return await botManager.evaluateActivePlayer(action, targetPlayer);
 });
 
 ipcMain.handle('select-queue-player', async (event, playerId) => {
@@ -146,6 +207,10 @@ ipcMain.handle('adjust-player-score', (event, { playerId, delta }) => {
   return botManager.adjustPlayerScore(playerId, delta);
 });
 
+ipcMain.handle('set-player-score', (event, { playerId, newPoints }) => {
+  return botManager.setPlayerScore(playerId, newPoints);
+});
+
 ipcMain.handle('undo-last-action', () => {
   return botManager.undoLastAction();
 });
@@ -158,13 +223,37 @@ ipcMain.handle('reset-scores', async () => {
   return botManager.resetScores();
 });
 
+ipcMain.handle('add-custom-player', (event, username) => {
+  return botManager.addCustomPlayer(username);
+});
+
+ipcMain.handle('remove-player', (event, playerId) => {
+  return botManager.removePlayer(playerId);
+});
+
+ipcMain.handle('rename-player', (event, { playerId, newName }) => {
+  return botManager.renamePlayer(playerId, newName);
+});
+
+ipcMain.handle('manual-buzz-player', (event, arg) => {
+  const playerId = (typeof arg === 'object' && arg !== null) ? arg.playerId : arg;
+  const username = (typeof arg === 'object' && arg !== null) ? arg.username : undefined;
+  return botManager.manualBuzzPlayer(playerId, username);
+});
+
+ipcMain.handle('place-hitster-card', (event, arg) => {
+  if (typeof arg === 'object' && arg !== null) {
+    return botManager.placeHitsterCard(arg.targetSlot, arg.targetPlayer);
+  }
+  return botManager.placeHitsterCard(arg);
+});
+
 ipcMain.handle('get-game-state', () => {
   return botManager.getState();
 });
 
 ipcMain.handle('open-external', async (event, url) => {
   if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
-    const { shell } = require('electron');
     await shell.openExternal(url);
     return { success: true };
   }
@@ -174,3 +263,147 @@ ipcMain.handle('open-external', async (event, url) => {
 ipcMain.handle('play-test-sound', (event, type) => {
   return botManager.playTestSound(type);
 });
+
+// --- NEW GAME MODES IPC HANDLERS ---
+ipcMain.handle('set-game-mode', (event, mode) => {
+  return botManager.setGameMode(mode);
+});
+
+ipcMain.handle('select-music-folder', async () => {
+  try {
+    const parentWin = (mainWindow && !mainWindow.isDestroyed()) ? mainWindow : null;
+    const res = await dialog.showOpenDialog(parentWin, {
+      properties: ['openDirectory', 'dontAddToRecent'],
+      title: '📁 Musik-Ordner auswählen (MP3 / Audio)'
+    });
+    if (!res.canceled && res.filePaths.length > 0) {
+      return await botManager.scanMusicFolder(res.filePaths[0]);
+    }
+    return { success: false, canceled: true };
+  } catch (err) {
+    console.error('[Dialog] select-music-folder error:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('scan-music-folder-direct', async (event, folderPath) => {
+  return await botManager.scanMusicFolder(folderPath);
+});
+
+ipcMain.handle('pick-random-song', async (event, genre) => {
+  return await botManager.pickRandomSong(genre);
+});
+
+ipcMain.handle('set-manual-song', (event, { artist, title }) => {
+  return botManager.setManualSong(artist, title);
+});
+
+ipcMain.handle('pick-hitster-song', async (event, genre) => {
+  return await botManager.pickHitsterSong(genre);
+});
+
+ipcMain.handle('set-manual-hitster-card', (event, { year, artist, title }) => {
+  return botManager.setManualHitsterCard(year, artist, title);
+});
+
+ipcMain.handle('resolve-hitster-card', () => {
+  return botManager.resolveHitsterCard();
+});
+
+ipcMain.handle('select-wallpaper-folder', async () => {
+  try {
+    const parentWin = (mainWindow && !mainWindow.isDestroyed()) ? mainWindow : null;
+    const res = await dialog.showOpenDialog(parentWin, {
+      properties: ['openDirectory', 'dontAddToRecent'],
+      title: '📁 Wallpaper-Ordner auswählen'
+    });
+    if (!res.canceled && res.filePaths.length > 0) {
+      return botManager.scanWallpaperFolder(res.filePaths[0]);
+    }
+    return { success: false, canceled: true };
+  } catch (err) {
+    console.error('[Dialog] select-wallpaper-folder error:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('select-wallpaper-file', async () => {
+  try {
+    const parentWin = (mainWindow && !mainWindow.isDestroyed()) ? mainWindow : null;
+    const res = await dialog.showOpenDialog(parentWin, {
+      properties: ['openFile', 'dontAddToRecent'],
+      title: '🖼️ Wallpaper-Bild auswählen',
+      filters: [{ name: 'Bilder', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp'] }]
+    });
+    if (!res.canceled && res.filePaths.length > 0) {
+      return res.filePaths[0];
+    }
+    return '';
+  } catch (err) {
+    console.error('[Dialog] select-wallpaper-file error:', err);
+    return '';
+  }
+});
+
+ipcMain.handle('upload-wallpaper', (event, { imagePath, movieTitle }) => {
+  return botManager.uploadWallpaper(imagePath, movieTitle);
+});
+
+ipcMain.handle('resolve-wallpaper', () => {
+  botManager.resolveWallpaper();
+  return { success: true };
+});
+
+ipcMain.handle('resume-round', () => {
+  return botManager.resumeRound();
+});
+
+ipcMain.handle('abort-round', () => {
+  return botManager.abortRound();
+});
+
+ipcMain.handle('toggle-boost', (event, forcedState) => {
+  return botManager.toggleBoost(forcedState);
+});
+
+ipcMain.handle('set-goal', (event, target) => {
+  return botManager.setGoal(target);
+});
+
+ipcMain.handle('get-stream-url', () => {
+  return streamServer ? streamServer.getUrl() : 'http://localhost:8888/stream.html';
+});
+
+ipcMain.handle('pick-next-wallpaper', () => {
+  return botManager.pickNextWallpaper();
+});
+
+ipcMain.handle('pick-random-wallpaper', () => {
+  return botManager.pickRandomWallpaper();
+});
+
+ipcMain.handle('challenge-hitster-chip', (event, playerIdOrName) => {
+  return botManager.challengeHitsterChip(playerIdOrName);
+});
+
+ipcMain.handle('adjust-player-chips', (event, { playerIdOrName, delta }) => {
+  return botManager.adjustPlayerChips(playerIdOrName, delta);
+});
+
+ipcMain.handle('select-specific-song', async (event, filePath) => {
+  return await botManager.selectSpecificSong(filePath);
+});
+
+ipcMain.handle('select-specific-hitster', async (event, filePath) => {
+  return await botManager.selectSpecificHitster(filePath);
+});
+
+ipcMain.handle('select-specific-wallpaper', (event, titleOrIndex) => {
+  return botManager.selectSpecificWallpaper(titleOrIndex);
+});
+
+ipcMain.handle('set-wallpaper-stage-points', (event, pointsObj) => {
+  return botManager.setWallpaperStagePoints(pointsObj);
+});
+
+
