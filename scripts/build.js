@@ -66,7 +66,8 @@ async function build() {
       if (filePath.startsWith('/release') || filePath.startsWith('\\release')) return true;
       if (filePath.startsWith('/.git') || filePath.startsWith('\\.git')) return true;
       if (filePath.startsWith('/scripts') || filePath.startsWith('\\scripts')) return true;
-      if (filePath.endsWith('.zip')) return true;
+      if (filePath.endsWith('.zip') || filePath.endsWith('.rar') || filePath.endsWith('.lnk')) return true;
+      if (filePath.includes('sample_music_folder') || filePath.includes('sample_wallpaper_folder')) return true;
       return false;
     }
   });

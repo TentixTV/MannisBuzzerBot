@@ -20,18 +20,45 @@
 
 ---
 
-### ⚡ Sofort-Download / Instant Download (v4.8.025)
+## ⚡ 1-KLICK INSTALLATION & SOFORT-DOWNLOAD (v4.8.025)
 
-Keine Installation nötig! Einfach herunterladen, entpacken und sofort loslegen:
+Keine Installation nötig! Die App ist 100% portable. Einfach herunterladen, entpacken und sofort loslegen:
 
-[![Direct Download ZIP](https://img.shields.io/badge/📦_Instant_Download-MannisBox_v4.8.025_(ZIP)-2563EB?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.025/MannisBox-Windows-x64.zip)
-[![Direct Download RAR](https://img.shields.io/badge/🗜️_Instant_Download-MannisBox_v4.8.025_(RAR)-7C3AED?style=for-the-badge&logo=winrar&logoColor=white)](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.025/MannisBox-Windows-x64.rar)
+<br>
 
-🔗 **Alle Versionen & Assets:** [GitHub Releases Overview](https://github.com/TentixTV/MannisBuzzerBot/releases)
+<p align="center">
+  <a href="https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.025/MannisBox-Windows-x64.zip" title="MannisBox als .ZIP herunterladen (1-Klick Instant Download)">
+    <img src="https://img.shields.io/badge/⚡_1--KLICK_INSTALL_(.ZIP)-MANISBOX_v4.8.025-0284c7?style=for-the-badge&logo=windows&logoColor=white" height="48" alt="1-Click Install ZIP">
+  </a>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.025/MannisBox-Windows-x64.rar" title="MannisBox als .RAR herunterladen (1-Klick Instant Download)">
+    <img src="https://img.shields.io/badge/⚡_1--KLICK_INSTALL_(.RAR)-MANISBOX_v4.8.025-7c3aed?style=for-the-badge&logo=winrar&logoColor=white" height="48" alt="1-Click Install RAR">
+  </a>
+</p>
+
+<br>
+
+| Paket | Format | Dateigröße | 1-Klick Sofort-Download |
+| :--- | :---: | :---: | :--- |
+| 📦 **MannisBox Windows x64** | **`.ZIP`** (Standard Windows) | ~155 MB | [**👉 Jetzt .ZIP herunterladen (1-Klick)**](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.025/MannisBox-Windows-x64.zip) |
+| 🗜️ **MannisBox Windows x64** | **`.RAR`** (Maximale Kompression) | ~114 MB | [**👉 Jetzt .RAR herunterladen (1-Klick)**](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.025/MannisBox-Windows-x64.rar) |
+
+<br>
+
+🔗 **Alle Releases & Changelogs:** [GitHub Releases Overview](https://github.com/TentixTV/MannisBuzzerBot/releases)
 
 ---
 
 </div>
+
+## 🚀 1-Klick Schnellanleitung (In 10 Sekunden startklar)
+
+1. **1-Klick Download:** Klicke oben auf den blauen **ZIP**- oder lilanen **RAR**-Button.
+2. **Entpacken:** Rechtsklick auf das heruntergeladene Archiv ➔ *Hier entpacken* (oder mit Windows Explorer / WinRAR öffnen).
+3. **Sofortstart:** Öffne den entpackten Ordner und starte **`MannisBox.exe`** mit einem Doppelklick — fertig!
+4. **Discord-Setup:** Trage beim ersten Start unter **⚙️ Einstellungen** deinen Discord-Bot-Token ein. Der Bot verbindet sich automatisch mit deinem Server und Voice-Kanal.
+
+---
 
 ## 🌟 Die 3 Deluxe-Spielmodi
 
@@ -44,8 +71,8 @@ Keine Installation nötig! Einfach herunterladen, entpacken und sofort loslegen:
 ### 📻 2. Hitster (Zeitstrahl & Dispute-Chips)
 - **Automatischer Tag-Scanner**: Liest Erscheinungsjahre direkt aus MP3-Tags (ID3v2, Release Date, Lyrics & Comments) oder manueller Regie.
 - **3D Flippable Kassette / Karte**: Mit animiertem 3D-Kartenflip zum Aufdecken des Geheimjahres.
-- **🪙 Spielchips & Anfechtungs-System**:
-  - Jeder Spieler besitzt 3 Hitster-Chips (`🪙`).
+- **Vektor-Spielchips & Anfechtungs-System**:
+  - Jeder Spieler besitzt 3 Hitster-Chips im Arcade-Design.
   - Wenn ein Spieler eine Karte anfechten möchte ("Chip werfen"), registriert der Bot sofort wer den Chip zuerst geworfen hat — absolut manipulationssicher!
   - Chips können in der Regie per `[+]` / `[-]` flexibel angepasst werden.
 - **10-Karten Meilenstein**: Spieler sammeln erratene Hits auf ihren individuellen Regalen bis zum 10-Karten-Sieg!
@@ -61,20 +88,26 @@ Keine Installation nötig! Einfach herunterladen, entpacken und sofort loslegen:
 
 ---
 
-## 🚀 Neue Deluxe-Features in v4.8.024
+## 💎 Neue Deluxe-Features in v4.8.025
 
-- ✏️ **Interaktiver Punkte-Editor ("Links unten auf die Punkte")**:
-  - Fahre mit der Maus über Mannis Punkte (`#lblHostScore`) links unten in der Status-Card oder über beliebige Spieler-Pills — sie leuchten und vergrößern sich mit sanftem Hover.
-  - Ein Klick öffnet ein animiert bouncendes Pop-up mit Schnellwahltasten `[-5]`, `[-1]`, `[+1]`, `[+5]` sowie direkter Tastatureingabe (`Enter` zum Speichern).
-- 🔍 **Ordner Live-Suche**:
-  - Song-, Hitster- und Wallpaper-Regie besitzen jeweils eine blitzschnelle Autocomplete-Suche, um gezielt Songs oder Filme auszuwählen.
+- 🎯 **Interaktive Schärfe-Stufen Punkte ("Unten links bei Schärfestufen")**:
+  - Die Schärfe-Stufen-Karten unten links (`0-10s`, `10-20s`, etc.) sind interaktiv klickbar.
+  - Ein Klick öffnet den animierten Quick-Score-Editor, mit dem Manni die Punkte für jede Stufe frei individualisieren kann.
+  - Die Werte werden sofort per IPC an die Bot-Engine übergeben und für alle Berechnungen aktiv übernommen.
+- ✨ **Supercharged Specular Golden Hover-Glow**:
+  - Mehrschichtiger, tiefer Gold-Halo auf Score-Pills, Host-Punkten und Schärfe-Stufen für ein edles Arcade-Gefühl.
+- 🎬 **Stream-Proof Optical Blur für Filmtitel (Anti-Spoiler)**:
+  - Kein starrer weißer Zensur-Balken mehr! Der echte Filmtitel steht in der Regieklappe und ist mit einem starken optischen Blur (`filter: blur(15px)`) belegt.
+  - Im Stream oder auf Discord ist der Titel unmöglich zu entziffern. Bei richtiger Antwort blendet er weich und strahlend auf.
+- 🪟 **Maßgeschneiderte Glassmorphism In-App-Dialoge**:
+  - Keine hässlichen Standard-Windows-`alert()`/`confirm()`-Fenster mehr.
+  - Alle Bestätigungen und Prompts laufen über ein eigenes dunkles Glassmorphism-Modal mit flüssigen Animationen und Tastatur-Shortcuts (`Enter` / `Escape`).
+- 🪙 **Reine Vektor-SVGs (Keine fehlerhaften Emojis)**:
+  - Alle Chips, Stifte, Schallplatten, Trophäen und Zielscheiben sind hochauflösende Vektor-SVGs — garantiert keine fehlenden Windows-Glyphen (`▯`) mehr.
+- 🔍 **Echtzeit Live-Suche (1:1 Dateisuche)**:
+  - Song-, Hitster- und Wallpaper-Regie besitzen jeweils eine blitzschnelle Autocomplete-Suche.
 - 🪟 **Custom Frameless Window**:
-  - Vollwertige eigene Titelleiste mit Minimieren, Maximieren/Wiederherstellen und Schließen.
-- 🛡️ **Offline- & Resilienz-Engine**:
-  - Countdown, Buzzer und Regie-Funktionen starten zuverlässig auch im lokalen Testbetrieb ohne bestehende Discord-Verbindung.
-- 🎨 **Reines UI-Design**:
-  - Störende Textbeschriftungen auf dem 3D-Buzzer und unpassende Untertitel wurden vollständig entfernt.
-  - Kompaktes Scroll-Layout ohne unschöne Panel-Überläufe.
+  - Eigene Titelleiste mit Minimieren, Maximieren/Wiederherstellen und Schließen.
 
 ---
 
@@ -84,17 +117,8 @@ Keine Installation nötig! Einfach herunterladen, entpacken und sofort loslegen:
 | :--- | :---: | :---: | :--- |
 | 🎵 **Songquiz** | **+3 Punkte** *(+4 Pkt komplett)* | **-1 Pkt** *(Wdh: -2 Pkt)* | 10s Antwort-Timer ➔ Freigabe / Nächster Spieler |
 | 📻 **Hitster** | **+1 Karte / Punkt** | **0 Punkte** | Karte wird platziert, Chip-Anfechtung möglich |
-| 🎬 **Wallpaper** | **1 - 4 Punkte** *(nach Speed)* | **-1 Pkt** | Buzzer pausiert Countdown sofort |
+| 🎬 **Wallpaper** | **1 - 4 Punkte** *(nach Speed / Stufe)* | **-1 Pkt** | Buzzer pausiert Countdown sofort |
 | 🔥 **Boost x2** | **Doppelte Punkte!** | Regulär | Epische Partikel-Animation in der Arena |
-
----
-
-## 📥 Schnellstart für Anwender
-
-1. Lade das Windows-Paket herunter: **[MannisBox-Windows-x64.zip](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.024/MannisBox-Windows-x64.zip)**
-2. Entpacke das Archiv in einen beliebigen Ordner.
-3. Starte **`MannisBox.exe`**.
-4. Trage beim ersten Start deinen Discord-Bot-Token ein (unter ⚙️ Einstellungen) — fertig!
 
 ---
 
