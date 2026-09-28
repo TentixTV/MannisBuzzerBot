@@ -271,6 +271,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   const SVG_DISC = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>`;
   const SVG_TROPHY = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>`;
   const SVG_TARGET = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`;
+  const SVG_PLAY = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
+  const SVG_PAUSE = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`;
+  const SVG_MUSIC = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+  const SVG_FILM = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>`;
+  const SVG_RADIO = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>`;
+  const SVG_BAN = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`;
+  const SVG_CHECK = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const SVG_CROSS = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  const SVG_TRASH = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+  const SVG_BUZZER = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
+  const SVG_WARNING = `<svg class="ui-svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+
+  function setPlayPauseIcon(isPlaying) {
+    const btn = document.getElementById('btnAudioPlayPause');
+    if (btn) {
+      btn.innerHTML = isPlaying ? SVG_PAUSE : SVG_PLAY;
+    }
+  }
 
   // Bespoke In-App Modal Dialogs (Alert / Confirm / Prompt - Replaces ugly Windows popups)
   function showCustomAlert(message, title = 'MannisBox') {
@@ -831,13 +849,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Dynamic Arena Main Header
     if (arenaModeIconBadge && arenaMainTitle) {
       if (mode === 'wallpaper') {
-        arenaModeIconBadge.textContent = '🎬';
+        arenaModeIconBadge.innerHTML = SVG_FILM;
         arenaMainTitle.textContent = 'Filme & Wallpaper Quiz';
       } else if (mode === 'hitster') {
-        arenaModeIconBadge.textContent = '📻';
+        arenaModeIconBadge.innerHTML = SVG_RADIO;
         arenaMainTitle.textContent = 'Hitster Zeitstrahl';
       } else {
-        arenaModeIconBadge.textContent = '🎵';
+        arenaModeIconBadge.innerHTML = SVG_MUSIC;
         arenaMainTitle.textContent = 'Erkennst du den Song';
       }
     }
@@ -1208,7 +1226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (state.activePlayer) {
       if (!lastActivePlayerId && localAudioPlayer && !localAudioPlayer.paused) {
         localAudioPlayer.pause();
-        btnAudioPlayPause.textContent = '▶️';
+        setPlayPauseIcon(false);
         wasAudioPausedByBuzzer = true;
       }
       lastActivePlayerId = state.activePlayer.id;
@@ -1218,7 +1236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       activePlayerAvatar.src = state.activePlayer.avatar || '../../App.png';
       activePlayerName.textContent = state.activePlayer.username || 'Unbekannt';
-      activePlayerTime.textContent = state.activePlayer.timeOffset ? `⚡ ${state.activePlayer.timeOffset}` : '⚡ 1. Platz';
+      activePlayerTime.textContent = state.activePlayer.timeOffset ? state.activePlayer.timeOffset : '1. Platz';
 
       const pScore = state.scores?.[state.activePlayer.id]?.points || 0;
       activePlayerScore.innerHTML = `${pScore} Punkte ${SVG_PENCIL}`;
@@ -1250,6 +1268,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (answerExpiredAlert) answerExpiredAlert.classList.add('hidden');
       }
     } else {
+      if (wasAudioPausedByBuzzer && state.songState?.isPlaying && localAudioPlayer && localAudioPlayer.src && localAudioPlayer.paused) {
+        localAudioPlayer.play().catch(e => console.warn(e));
+        wasAudioPausedByBuzzer = false;
+        setPlayPauseIcon(true);
+      }
       lastActivePlayerId = null;
       activeBuzzerCard.classList.add('hidden');
       buzzerPlaceholder.classList.remove('hidden');
@@ -1273,7 +1296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="queue-right">
             <span class="queue-time">${p.timeOffset || '+0s'}</span>
             <button class="queue-pick-btn" data-action="pick">Drannehmen</button>
-            <button class="btn-queue-ban" data-action="ban" title="Spieler sperren">🚫</button>
+            <button class="btn-queue-ban" data-action="ban" title="Spieler sperren">${SVG_BAN}</button>
           </div>
         </div>
       `).join('');
@@ -1311,8 +1334,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           <img src="${m.avatar || '../../App.png'}" class="chip-avatar" alt="Avatar">
           <span>${escapeHtml(m.username)}</span>
           ${m.isBanned 
-            ? `<button class="btn-chip-ban" data-action="unban" data-id="${m.id}" title="Entbannen">✅</button>`
-            : `<button class="btn-chip-ban" data-action="ban" data-id="${m.id}" data-name="${escapeHtml(m.username)}" title="Sperren">🚫</button>`
+            ? `<button class="btn-chip-ban" data-action="unban" data-id="${m.id}" title="Entbannen">${SVG_CHECK}</button>`
+            : `<button class="btn-chip-ban" data-action="ban" data-id="${m.id}" data-name="${escapeHtml(m.username)}" title="Sperren">${SVG_BAN}</button>`
           }
         </div>
       `).join('');
@@ -1352,9 +1375,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       scoreboardList.innerHTML = scoreEntries.map((p, idx) => {
         let rankClass = '';
         let medal = `#${idx + 1}`;
-        if (idx === 0) { rankClass = 'rank-1'; medal = '🥇'; }
-        else if (idx === 1) { rankClass = 'rank-2'; medal = '🥈'; }
-        else if (idx === 2) { rankClass = 'rank-3'; medal = '🥉'; }
+        if (idx === 0) { rankClass = 'rank-1'; medal = '#1'; }
+        else if (idx === 1) { rankClass = 'rank-2'; medal = '#2'; }
+        else if (idx === 2) { rankClass = 'rank-3'; medal = '#3'; }
 
         return `
           <div class="scoreboard-item ${rankClass}" data-player-id="${p.id}" data-player-name="${escapeHtml(p.username)}">
@@ -1364,7 +1387,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <img src="${p.avatar || '../../App.png'}" class="player-avatar-thumb" alt="Avatar">
                 <div class="player-names-wrap">
                   <span class="player-uname" title="${escapeHtml(p.username)}">${escapeHtml(p.username)}</span>
-                  <span class="player-substats">✅ ${p.correct || 0} | ❌ ${p.wrong || 0}</span>
+                  <span class="player-substats">${SVG_CHECK} ${p.correct || 0} | ${SVG_CROSS} ${p.wrong || 0}</span>
                 </div>
               </div>
               <div class="player-score-pill tag-score-interactive" title="Klicke hier, um Punkte direkt anzupassen">${p.points} Pkt. ${SVG_PENCIL}</div>
@@ -1374,10 +1397,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="scoreboard-action-drawer">
               <button class="btn-drawer-action btn-drawer-minus" data-action="minus" title="1 Punkt abziehen">-1</button>
               <button class="btn-drawer-action btn-drawer-plus" data-action="plus" title="1 Punkt hinzufügen">+1</button>
-              <button class="btn-drawer-action btn-drawer-buzz" data-action="buzz" title="Für diesen Spieler buzzern">🚨 Buzz</button>
+              <button class="btn-drawer-action btn-drawer-buzz" data-action="buzz" title="Für diesen Spieler buzzern">${SVG_BUZZER} Buzz</button>
               <button class="btn-drawer-action" data-action="rename" title="Namen ändern">${SVG_PENCIL}</button>
-              <button class="btn-drawer-action btn-drawer-ban" data-action="ban" title="Spieler sperren">🚫</button>
-              <button class="btn-drawer-action btn-drawer-del" data-action="del" title="Spieler entfernen">🗑️</button>
+              <button class="btn-drawer-action btn-drawer-ban" data-action="ban" title="Spieler sperren">${SVG_BAN}</button>
+              <button class="btn-drawer-action btn-drawer-del" data-action="del" title="Spieler entfernen">${SVG_TRASH}</button>
             </div>
           </div>
         `;
@@ -1456,7 +1479,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     bannedListContainer.innerHTML = list.map((b) => `
       <div class="banned-item">
         <div class="banned-user-info">
-          <span>🚫</span>
+          <span>${SVG_BAN}</span>
           <strong>${escapeHtml(b.username)}</strong>
           <small class="help-text">(${b.id})</small>
         </div>
@@ -1482,7 +1505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     lblCurrentTextCh.textContent = currentText ? `#${currentText.name}` : (config.textChannelId ? 'Gewählt' : 'Nicht ausgewählt');
 
     const currentVoice = availableChannels.voice.find(c => c.id === config.voiceChannelId);
-    lblCurrentVoiceCh.textContent = currentVoice ? `🔊 ${currentVoice.name}` : (config.voiceChannelId ? 'Gewählt' : 'Nicht ausgewählt');
+    lblCurrentVoiceCh.textContent = currentVoice ? currentVoice.name : (config.voiceChannelId ? 'Gewählt' : 'Nicht ausgewählt');
   }
 
   // 5. Host Actions
@@ -1569,7 +1592,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     playLocalSound('wrong');
     if (localAudioPlayer && localAudioPlayer.src) {
       localAudioPlayer.play().catch(e => console.warn(e));
-      btnAudioPlayPause.textContent = '⏸️';
+      setPlayPauseIcon(true);
     }
     await window.mannisBoxAPI.evaluatePlayer('wrong');
   });
@@ -1578,7 +1601,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (currentGameState?.isEvaluating) return;
     if (localAudioPlayer && localAudioPlayer.src) {
       localAudioPlayer.play().catch(e => console.warn(e));
-      btnAudioPlayPause.textContent = '⏸️';
+      setPlayPauseIcon(true);
     }
     await window.mannisBoxAPI.evaluatePlayer('skip');
   });
@@ -1589,7 +1612,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fall 1: Song resumes playing after correct answer
     if (localAudioPlayer && localAudioPlayer.src) {
       localAudioPlayer.play().catch(e => console.warn(e));
-      btnAudioPlayPause.textContent = '⏸️';
+      setPlayPauseIcon(true);
     }
     await window.mannisBoxAPI.evaluatePlayer('correct');
   });
@@ -1600,7 +1623,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fall 1: Song resumes playing after perfect answer
     if (localAudioPlayer && localAudioPlayer.src) {
       localAudioPlayer.play().catch(e => console.warn(e));
-      btnAudioPlayPause.textContent = '⏸️';
+      setPlayPauseIcon(true);
     }
     await window.mannisBoxAPI.evaluatePlayer('perfect');
   });
@@ -1609,7 +1632,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnResumeRound.addEventListener('click', async () => {
       if (localAudioPlayer && localAudioPlayer.src) {
         localAudioPlayer.play().catch(e => console.warn(e));
-        btnAudioPlayPause.textContent = '⏸️';
+        setPlayPauseIcon(true);
       }
       await window.mannisBoxAPI.resumeRound();
     });
@@ -1620,7 +1643,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (await showCustomConfirm('Möchtest du diese Runde vorzeitig abbrechen und auflösen?', 'Runde abbrechen')) {
         if (localAudioPlayer) {
           localAudioPlayer.pause();
-          btnAudioPlayPause.textContent = '▶️';
+          setPlayPauseIcon(false);
         }
         await window.mannisBoxAPI.abortRound();
       }
@@ -1631,7 +1654,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnExpiredRelease.addEventListener('click', async () => {
       if (localAudioPlayer && localAudioPlayer.src) {
         localAudioPlayer.play().catch(e => console.warn(e));
-        btnAudioPlayPause.textContent = '⏸️';
+        setPlayPauseIcon(true);
       }
       await window.mannisBoxAPI.resumeRound();
     });
@@ -1641,7 +1664,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnExpiredEndRound.addEventListener('click', async () => {
       if (localAudioPlayer) {
         localAudioPlayer.pause();
-        btnAudioPlayPause.textContent = '▶️';
+        setPlayPauseIcon(false);
       }
       await window.mannisBoxAPI.abortRound();
     });
@@ -1778,7 +1801,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       availableChannels.voice.forEach((ch) => {
         const opt = document.createElement('option');
         opt.value = ch.id;
-        opt.textContent = `🔊 ${ch.name}`;
+        opt.textContent = ch.name;
         if (ch.id === config.voiceChannelId) opt.selected = true;
         selVoiceChannel.appendChild(opt);
       });
@@ -1858,13 +1881,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Dynamic Arena Main Header
     if (arenaModeIconBadge && arenaMainTitle) {
       if (mode === 'wallpaper') {
-        arenaModeIconBadge.textContent = '🎬';
+        arenaModeIconBadge.innerHTML = SVG_FILM;
         arenaMainTitle.textContent = 'Filme & Wallpaper Quiz';
       } else if (mode === 'hitster') {
-        arenaModeIconBadge.textContent = '📻';
+        arenaModeIconBadge.innerHTML = SVG_RADIO;
         arenaMainTitle.textContent = 'Hitster Zeitstrahl';
       } else {
-        arenaModeIconBadge.textContent = '🎵';
+        arenaModeIconBadge.innerHTML = SVG_MUSIC;
         arenaMainTitle.textContent = 'Erkennst du den Song';
       }
     }
@@ -2084,12 +2107,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const res = await window.mannisBoxAPI.playNextSong();
     if (res && res.success && res.song) {
       lblAudioTrackTitle.textContent = res.song.fullTitle;
+      if (arenaSongTitleText) {
+        arenaSongTitleText.textContent = res.song.fullTitle;
+      }
       const streamUrl = `http://localhost:8888/api/audio?path=${encodeURIComponent(res.song.filePath)}`;
       localAudioPlayer.src = streamUrl;
       localAudioPlayer.volume = parseFloat(rngAudioPlayerVolume.value);
       try {
         await localAudioPlayer.play();
-        btnAudioPlayPause.textContent = '⏸️';
+        setPlayPauseIcon(true);
       } catch (e) {
         console.warn('Auto-play error:', e);
       }
@@ -2099,13 +2125,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  btnAudioPlayPause.addEventListener('click', () => {
+  btnAudioPlayPause.addEventListener('click', async () => {
     if (localAudioPlayer.paused) {
-      localAudioPlayer.play();
-      btnAudioPlayPause.textContent = '⏸️';
+      localAudioPlayer.play().catch(e => console.warn(e));
+      setPlayPauseIcon(true);
+      if (window.mannisBoxAPI.resumeSong) {
+        await window.mannisBoxAPI.resumeSong();
+      }
     } else {
       localAudioPlayer.pause();
-      btnAudioPlayPause.textContent = '▶️';
+      setPlayPauseIcon(false);
+      if (window.mannisBoxAPI.pauseSong) {
+        await window.mannisBoxAPI.pauseSong();
+      }
     }
   });
 
@@ -2115,11 +2147,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (localAudioPlayer) {
     localAudioPlayer.addEventListener('play', () => {
-      btnAudioPlayPause.textContent = '⏸️';
+      setPlayPauseIcon(true);
       if (window.ue5StageInstance) window.ue5StageInstance.setAudioPulse(1.0);
     });
     localAudioPlayer.addEventListener('pause', () => {
-      btnAudioPlayPause.textContent = '▶️';
+      setPlayPauseIcon(false);
       if (window.ue5StageInstance) window.ue5StageInstance.setAudioPulse(0.0);
     });
     localAudioPlayer.addEventListener('timeupdate', () => {
@@ -2210,7 +2242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         localAudioPlayer.volume = parseFloat(rngAudioPlayerVolume.value);
         try {
           await localAudioPlayer.play();
-          btnAudioPlayPause.textContent = '⏸️';
+          setPlayPauseIcon(true);
         } catch (e) {
           console.warn('Auto-play error:', e);
         }
@@ -2431,7 +2463,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (loadedMusicFiles.length === 0) {
-        songSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8;">⚠️ Noch kein Musik-Ordner geladen. Wähle zuerst einen Ordner!</div>';
+        songSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">' + SVG_WARNING + '<span>Noch kein Musik-Ordner geladen. Wähle zuerst einen Ordner!</span></div>';
         songSearchResults.classList.remove('hidden');
         return;
       }
@@ -2447,7 +2479,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const title = getCleanFileName(filePath);
         return `
           <div class="folder-search-item" data-path="${escapeHtml(filePath)}">
-            <span class="folder-search-item-title" title="${escapeHtml(title)}">🎵 ${escapeHtml(title)}</span>
+            <span class="folder-search-item-title" title="${escapeHtml(title)}" style="display: flex; align-items: center; gap: 6px;">${SVG_MUSIC}<span>${escapeHtml(title)}</span></span>
             <span style="font-size: 10px; color: #38bdf8; font-weight: 700; flex-shrink: 0;">Als Nächster ➔</span>
           </div>
         `;
@@ -2483,7 +2515,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (loadedMusicFiles.length === 0) {
-        hitsterSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8;">⚠️ Noch kein Musik-Ordner geladen. Wähle zuerst einen Ordner!</div>';
+        hitsterSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">' + SVG_WARNING + '<span>Noch kein Musik-Ordner geladen. Wähle zuerst einen Ordner!</span></div>';
         hitsterSearchResults.classList.remove('hidden');
         return;
       }
@@ -2499,7 +2531,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const title = getCleanFileName(filePath);
         return `
           <div class="folder-search-item" data-path="${escapeHtml(filePath)}">
-            <span class="folder-search-item-title" title="${escapeHtml(title)}">📻 ${escapeHtml(title)}</span>
+            <span class="folder-search-item-title" title="${escapeHtml(title)}" style="display: flex; align-items: center; gap: 6px;">${SVG_RADIO}<span>${escapeHtml(title)}</span></span>
             <span style="font-size: 10px; color: #f59e0b; font-weight: 700; flex-shrink: 0;">Karte ➔</span>
           </div>
         `;
@@ -2524,7 +2556,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               localAudioPlayer.volume = parseFloat(rngAudioPlayerVolume.value);
               try {
                 await localAudioPlayer.play();
-                btnAudioPlayPause.textContent = '⏸️';
+                setPlayPauseIcon(true);
               } catch (err) {
                 console.warn('Auto-play error:', err);
               }
@@ -2546,7 +2578,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (loadedWallpaperRounds.length === 0) {
-        wpSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8;">⚠️ Noch kein Wallpaper-Ordner geladen. Wähle zuerst einen Ordner!</div>';
+        wpSearchResults.innerHTML = '<div style="padding: 8px 10px; font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">' + SVG_WARNING + '<span>Noch kein Wallpaper-Ordner geladen. Wähle zuerst einen Ordner!</span></div>';
         wpSearchResults.classList.remove('hidden');
         return;
       }
@@ -2561,7 +2593,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       wpSearchResults.innerHTML = matches.map(r => {
         return `
           <div class="folder-search-item" data-title="${escapeHtml(r.movieTitle)}">
-            <span class="folder-search-item-title" title="${escapeHtml(r.movieTitle)}">🎬 ${escapeHtml(r.movieTitle)}</span>
+            <span class="folder-search-item-title" title="${escapeHtml(r.movieTitle)}" style="display: flex; align-items: center; gap: 6px;">${SVG_FILM}<span>${escapeHtml(r.movieTitle)}</span></span>
             <span style="font-size: 10px; color: #fbbf24; font-weight: 700; flex-shrink: 0;">Laden ➔</span>
           </div>
         `;

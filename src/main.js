@@ -90,6 +90,9 @@ function createWindow() {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('game-state', state);
     }
+    if (streamServer) {
+      streamServer.broadcast(state);
+    }
   });
 
   botManager.on('voice-status', (status) => {
@@ -308,7 +311,7 @@ ipcMain.handle('select-music-folder', async () => {
     const parentWin = (mainWindow && !mainWindow.isDestroyed()) ? mainWindow : null;
     const res = await dialog.showOpenDialog(parentWin, {
       properties: ['openDirectory', 'dontAddToRecent'],
-      title: '📁 Musik-Ordner auswählen (MP3 / Audio)'
+      title: 'Musik-Ordner auswählen (MP3 / Audio)'
     });
     if (!res.canceled && res.filePaths.length > 0) {
       return await botManager.scanMusicFolder(res.filePaths[0]);
@@ -349,7 +352,7 @@ ipcMain.handle('select-wallpaper-folder', async () => {
     const parentWin = (mainWindow && !mainWindow.isDestroyed()) ? mainWindow : null;
     const res = await dialog.showOpenDialog(parentWin, {
       properties: ['openDirectory', 'dontAddToRecent'],
-      title: '📁 Wallpaper-Ordner auswählen'
+      title: 'Wallpaper-Ordner auswählen'
     });
     if (!res.canceled && res.filePaths.length > 0) {
       return botManager.scanWallpaperFolder(res.filePaths[0]);
@@ -366,7 +369,7 @@ ipcMain.handle('select-wallpaper-file', async () => {
     const parentWin = (mainWindow && !mainWindow.isDestroyed()) ? mainWindow : null;
     const res = await dialog.showOpenDialog(parentWin, {
       properties: ['openFile', 'dontAddToRecent'],
-      title: '🖼️ Wallpaper-Bild auswählen',
+      title: 'Wallpaper-Bild auswählen',
       filters: [{ name: 'Bilder', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp'] }]
     });
     if (!res.canceled && res.filePaths.length > 0) {

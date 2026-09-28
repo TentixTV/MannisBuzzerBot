@@ -1740,7 +1740,8 @@ class BotManager extends EventEmitter {
       fullTitle: tags.fullTitle,
       censoredTitle: tags.censoredTitle,
       revealed: false,
-      filePath: tags.filePath
+      filePath: tags.filePath,
+      isPlaying: true
     };
     audioManager.playSong(filePath);
     this.emitState();
@@ -1805,6 +1806,7 @@ class BotManager extends EventEmitter {
       filePath: chosen
     };
 
+    audioManager.playSong(chosen);
     this.emitState();
     return { success: true, card: this.gameState.hitsterState.currentCard };
   }
@@ -2127,8 +2129,8 @@ class BotManager extends EventEmitter {
       timeOffset: `nach ${elapsed.toFixed(1)}s`
     };
     this.gameState.isLocked = true;
-    const boostTag = this.gameState.isBoostActive ? ' 🔥 (2X BOOST)' : '';
-    this.gameState.statusText = `🚨 **${player.username}** hat gebuzzert!${boostTag}`;
+    const boostTag = this.gameState.isBoostActive ? ' [2X BOOST]' : '';
+    this.gameState.statusText = `**${player.username}** hat gebuzzert!${boostTag}`;
 
     audioManager.playSound('buzzer');
     this.startAnswerCountdown(15);
@@ -2287,15 +2289,15 @@ class BotManager extends EventEmitter {
       this.gameState.screenFlash = 'green';
       setTimeout(() => { this.gameState.screenFlash = null; this.emitState(); }, 1500);
       audioManager.playCorrect();
-      const boostBadge = wasBoosted ? ' 🔥 (2X BOOST!)' : '';
-      this.gameState.statusText = `✅ Richtig! **${card.title}** erschien **${year}**! (${targetPlayer.username}: +${ptsGain} Karte/Pkt${boostBadge})`;
+      const boostBadge = wasBoosted ? ' [2X BOOST!]' : '';
+      this.gameState.statusText = `Richtig! **${card.title}** erschien **${year}**! (${targetPlayer.username}: +${ptsGain} Karte/Pkt${boostBadge})`;
 
       this.checkVictory(targetPlayer);
     } else {
       this.gameState.screenFlash = 'red';
       setTimeout(() => { this.gameState.screenFlash = null; this.emitState(); }, 1500);
       audioManager.playWrong();
-      this.gameState.statusText = `❌ Falsch platziert! **${card.title}** erschien im Jahr **${year}**.`;
+      this.gameState.statusText = `Falsch platziert! **${card.title}** erschien im Jahr **${year}**.`;
     }
 
     this.emitState();

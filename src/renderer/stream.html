@@ -85,11 +85,94 @@
     }
 
     .vu-meter-container {
-      background: rgba(10, 11, 16, 0.95);
-      padding: 14px 18px;
-      border-radius: 14px;
-      border: 2px solid #232536;
-      box-shadow: inset 0 3px 12px rgba(0, 0, 0, 0.8), 0 6px 20px rgba(0, 0, 0, 0.4);
+      background: radial-gradient(ellipse at 50% 15%, rgba(26, 34, 58, 0.96) 0%, rgba(10, 12, 19, 0.98) 100%);
+      padding: 12px 18px 10px 18px;
+      border-radius: 18px;
+      border: 2px solid #2e3552;
+      box-shadow: 
+        inset 0 2px 16px rgba(0, 0, 0, 0.85),
+        0 12px 35px rgba(0, 0, 0, 0.65),
+        0 0 25px rgba(99, 102, 241, 0.2);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .vu-meter-container.boost-active {
+      border-color: #f97316 !important;
+      box-shadow: 
+        inset 0 2px 16px rgba(0, 0, 0, 0.85),
+        0 12px 35px rgba(0, 0, 0, 0.7),
+        0 0 45px rgba(249, 115, 22, 0.5) !important;
+    }
+
+    .visualizer-hud-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      padding: 0 4px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #94a3b8;
+    }
+
+    .viz-hud-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #38bdf8;
+    }
+
+    .viz-dot-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
+      animation: vizPulse 1.2s infinite alternate;
+    }
+
+    @keyframes vizPulse {
+      from { opacity: 0.5; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1.3); box-shadow: 0 0 12px #38bdf8; }
+    }
+
+    .viz-hud-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      padding: 2px 10px;
+      border-radius: 20px;
+      color: #fde047;
+      animation: flamePulse 1s infinite alternate;
+    }
+
+    @keyframes flamePulse {
+      from { transform: scale(0.98); }
+      to { transform: scale(1.04); box-shadow: 0 0 12px rgba(249, 115, 22, 0.6); }
+    }
+
+    .viz-hud-right {
+      color: #64748b;
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 0.68rem;
+    }
+
+    /* Standby Mode Stage Styles */
+    .standby-card {
+      background: rgba(18, 20, 32, 0.95);
+      border: 2px solid #2a2e45;
+      border-radius: 20px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.25);
     }
 
     .timer-pulse-alert {
@@ -102,31 +185,21 @@
       to { box-shadow: 0 0 28px rgba(239, 68, 68, 0.95); }
     }
 
-    /* Player scoreboard cards */
+    /* Player scoreboard cards matching user mockup */
     .stream-player-card {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 10px;
-      padding: 8px 14px;
-      border-radius: 12px;
-      background: rgba(24, 26, 38, 0.88);
-      border: 1.5px solid #2a2c3d;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 14px;
+      min-width: 100px;
+      border-radius: 14px;
+      background: rgba(18, 20, 30, 0.92);
+      border: 2px solid #2a2c3d;
       color: #fff;
-      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    .stream-player-card.stream-player-buzzed {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95));
-      border-color: #ef4444;
-      color: #000;
-      box-shadow: 0 0 22px rgba(245, 158, 11, 0.85), 0 0 38px rgba(239, 68, 68, 0.45);
-      transform: scale(1.05);
-      animation: buzzPulse 0.9s infinite alternate ease-in-out;
-    }
-
-    @keyframes buzzPulse {
-      from { box-shadow: 0 0 15px rgba(245, 158, 11, 0.7); }
-      to { box-shadow: 0 0 30px rgba(239, 68, 68, 0.95), 0 0 45px rgba(245, 158, 11, 0.6); }
+      transition: all 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
     }
 
     .stream-avatar-wrap {
@@ -137,54 +210,87 @@
     }
 
     .stream-player-avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
       border: 2px solid #3b3e55;
       object-fit: cover;
       background: #0f1016;
-    }
-
-    .stream-player-avatar.buzzed-avatar {
-      border-color: #000;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
-    }
-
-    .stream-buzzer-badge {
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      font-size: 0.95rem;
-      animation: bounce 0.6s infinite alternate;
-    }
-
-    .stream-player-info {
-      display: flex;
-      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      transition: all 0.25s ease;
     }
 
     .stream-player-name {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 800;
-      max-width: 140px;
+      max-width: 110px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      text-align: center;
+      color: #f1f5f9;
+    }
+
+    /* Distinct BUZZER pill as seen in user's image mockup */
+    .stream-buzzer-pill {
+      font-size: 0.65rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      padding: 3px 12px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      transition: all 0.25s ease;
+      background: #1c1f2e;
+      border: 1.5px solid #2d3148;
+      color: #475569;
+      opacity: 0.5;
     }
 
     .stream-player-score {
       font-size: 0.75rem;
       font-weight: 800;
       color: #60a5fa;
+      text-align: center;
     }
 
-    .stream-player-buzzed .stream-player-name {
-      color: #000;
+    /* Active Buzzed Player Spotlight */
+    .stream-player-card.stream-player-buzzed {
+      background: rgba(35, 22, 22, 0.96);
+      border-color: #ef4444;
+      transform: translateY(-4px) scale(1.06);
+      box-shadow: 0 0 24px rgba(239, 68, 68, 0.65), 0 0 40px rgba(245, 158, 11, 0.35);
+      animation: buzzCardPulse 0.8s infinite alternate ease-in-out;
     }
 
-    .stream-player-buzzed .stream-player-score {
-      color: #7f1d1d;
+    .stream-player-card.stream-player-buzzed .stream-player-avatar {
+      border-color: #ef4444;
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.85);
+    }
+
+    /* BUZZER pill lights up ONLY when player buzzed! */
+    .stream-player-card.stream-player-buzzed .stream-buzzer-pill {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      border-color: #fca5a5;
+      color: #fff;
+      opacity: 1;
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.95), 0 0 28px rgba(245, 158, 11, 0.7);
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.95);
+      animation: buzzPillAlert 0.55s infinite alternate ease-in-out;
+    }
+
+    .stream-player-card.stream-player-buzzed .stream-player-score {
+      color: #fde047;
       font-weight: 900;
+    }
+
+    @keyframes buzzCardPulse {
+      from { box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
+      to { box-shadow: 0 0 32px rgba(239, 68, 68, 0.85), 0 0 48px rgba(245, 158, 11, 0.5); }
+    }
+
+    @keyframes buzzPillAlert {
+      from { transform: scale(1); box-shadow: 0 0 12px rgba(239, 68, 68, 0.8); }
+      to { transform: scale(1.08); box-shadow: 0 0 24px rgba(239, 68, 68, 1), 0 0 35px rgba(245, 158, 11, 0.85); }
     }
   </style>
 </head>
@@ -196,7 +302,7 @@
   <!-- Top Bar -->
   <header class="w-full flex items-center justify-between z-20" style="display: flex; justify-content: space-between; align-items: center;">
     <div class="stream-glass-card" style="padding: 8px 18px; display: flex; align-items: center; gap: 12px;">
-      <span style="font-size: 1.5rem;">🎮</span>
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#60a5fa" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="6"></rect><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13" stroke-width="3"></line><line x1="18" y1="11" x2="18.01" y2="11" stroke-width="3"></line></svg>
       <div>
         <div id="streamGameMode" style="font-size: 1.1rem; font-weight: 800; color: #60a5fa;">
           Erkennst du den Song?
@@ -209,7 +315,7 @@
 
     <!-- Buzzer Alert Notification -->
     <div id="streamBuzzerPopup" class="stream-glass-card buzzer-popup hidden" style="padding: 10px 24px; display: none; align-items: center; gap: 14px; background: rgba(245, 158, 11, 0.95); color: #000; border: 3px solid #ef4444; box-shadow: 0 0 30px rgba(245, 158, 11, 0.65);">
-      <span style="font-size: 2rem; animation: bounce 1s infinite;">🚨</span>
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#b91c1c" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
       <img id="buzzerAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" style="width: 46px; height: 46px; border-radius: 50%; border: 3px solid #000;" />
       <div>
         <div style="font-size: 0.75rem; font-weight: 900; text-transform: uppercase; color: #991b1b; letter-spacing: 1px;">GEBUZZERT!</div>
@@ -224,7 +330,7 @@
     <div style="display: flex; align-items: center; gap: 12px;">
       <!-- Goal Target Badge -->
       <div id="streamGoalBadge" class="stream-glass-card" style="padding: 8px 18px; display: flex; align-items: center; gap: 8px; border-color: #10b981;">
-        <span style="font-size: 1.2rem;">🎯</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#34d399" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
         <div>
           <div style="font-size: 0.7rem; color: #6ee7b7; font-weight: 800; text-transform: uppercase;">ZIEL</div>
           <div id="streamGoalVal" style="font-size: 1.2rem; font-weight: 900; color: #fff;">50</div>
@@ -232,10 +338,10 @@
       </div>
 
       <!-- Timer Box (Top-Right, 15s Countdown on Buzzer) -->
-      <div id="streamTimerCard" class="stream-glass-card" style="padding: 8px 20px; display: flex; align-items: center; gap: 10px; min-width: 110px; justify-content: center;">
-        <span id="streamTimerLabel" style="font-size: 0.75rem; color: #9ca3af; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">TIMER</span>
-        <span id="streamTimer" style="font-family: monospace; font-size: 1.7rem; font-weight: 900; color: #ef4444;">
-          --s
+      <div id="streamTimerCard" class="stream-glass-card" style="display: none; padding: 8px 20px; align-items: center; gap: 10px; min-width: 110px; justify-content: center;">
+        <span id="streamTimerLabel" style="font-size: 0.75rem; color: #9ca3af; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">ANTWORT</span>
+        <span id="streamTimer" style="font-family: monospace; font-size: 1.7rem; font-weight: 900; color: #f59e0b;">
+          15s
         </span>
       </div>
     </div>
@@ -243,13 +349,13 @@
 
   <!-- 2X Boost Alert Banner in Stream -->
   <div id="streamBoostBanner" class="stream-glass-card" style="display: none; align-items: center; justify-content: center; gap: 8px; padding: 6px 24px; margin: 8px auto 0 auto; background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(249, 115, 22, 0.95) 100%); border: 2px solid #fde047; box-shadow: 0 0 25px rgba(249, 115, 22, 0.7); z-index: 20;">
-    <span style="font-size: 1.2rem;">🔥</span>
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="#fde047"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
     <span style="font-size: 1rem; font-weight: 900; color: #fff; letter-spacing: 1px;">2X BOOST AKTIV! PUNKTE ZÄHLEN DOPPELT!</span>
   </div>
 
   <!-- Grand Champion Victory Overlay in Stream -->
   <div id="streamVictoryOverlay" class="stream-glass-card" style="display: none; position: fixed; inset: 40px; z-index: 99990; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 11, 18, 0.96); border: 4px solid #fbbf24; box-shadow: 0 0 60px rgba(251, 191, 36, 0.8);">
-    <div style="font-size: 5rem; animation: bounce 1s infinite;">🏆</div>
+    <svg viewBox="0 0 24 24" width="72" height="72" fill="none" stroke="#fbbf24" stroke-width="2" style="animation: bounce 1s infinite;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
     <div style="font-size: 1.2rem; font-weight: 900; color: #fbbf24; letter-spacing: 2px; text-transform: uppercase; margin-top: 10px;">CHAMPION DER MANNISBOX!</div>
     <img id="streamWinnerAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" style="width: 100px; height: 100px; border-radius: 50%; border: 4px solid #fbbf24; margin: 14px 0; box-shadow: 0 0 30px rgba(251, 191, 36, 0.7);" />
     <div id="streamWinnerName" style="font-size: 2.4rem; font-weight: 900; color: #fff;">SpielerName</div>
@@ -259,21 +365,75 @@
   <!-- Center Stage -->
   <main style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: auto; z-index: 10;">
     
+    <!-- 0. Standby / Modus-Auswahl Stage -->
+    <div id="stageStandby" class="stream-glass-card standby-card" style="padding: 28px 48px; text-align: center; display: none; flex-direction: column; align-items: center; gap: 18px; min-width: 620px;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png" id="streamAppLogo" style="width: 54px; height: 54px; border-radius: 14px; border: 2.5px solid #6366f1; box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);" />
+        <div style="text-align: left;">
+          <div style="font-family: 'Fredoka', cursive, sans-serif; font-size: 1.8rem; font-weight: 700; color: #fff; text-shadow: 0 0 15px rgba(99, 102, 241, 0.6); letter-spacing: 1px;">
+            MANNI'S BOX
+          </div>
+          <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+            Discord Musik-Quiz, Hitster & Film Stream
+          </div>
+        </div>
+      </div>
+
+      <div style="background: rgba(99, 102, 241, 0.15); border: 1.5px solid #6366f1; border-radius: 30px; padding: 6px 20px; color: #a5b4fc; font-weight: 800; font-size: 0.85rem; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 8px;">
+        <span class="viz-dot-pulse"></span>
+        <span>SPIELMODUS WIRD GEWÄHLT...</span>
+      </div>
+
+      <div style="display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 4px;">
+        <div style="background: rgba(30, 34, 52, 0.85); border: 1.5px solid #38bdf8; border-radius: 10px; padding: 8px 16px; font-size: 0.82rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+          <span>1. Song Quiz</span>
+        </div>
+        <div style="background: rgba(30, 34, 52, 0.85); border: 1.5px solid #a78bfa; border-radius: 10px; padding: 8px 16px; font-size: 0.82rem; font-weight: 800; color: #a78bfa; display: flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+          <span>2. Hitster</span>
+        </div>
+        <div style="background: rgba(30, 34, 52, 0.85); border: 1.5px solid #f59e0b; border-radius: 10px; padding: 8px 16px; font-size: 0.82rem; font-weight: 800; color: #f59e0b; display: flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>
+          <span>3. Filme / Wallpaper</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 1. Song Quiz Center Stage -->
-    <div id="stageSong" class="stream-glass-card" style="padding: 24px 36px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 18px; min-width: 580px;">
-      <!-- Slower, Smoother LED Segment Levelmeter Canvas -->
-      <div class="vu-meter-container">
-        <canvas id="waveformCanvas" width="540" height="85" style="display: block;"></canvas>
+    <div id="stageSong" class="stream-glass-card" style="padding: 20px 32px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; min-width: 660px;">
+      <!-- Supreme 3D Cyber-Glass Audio Visualizer Container -->
+      <div id="visualizerDeck" class="vu-meter-container">
+        <!-- Visualizer Top HUD Header -->
+        <div class="visualizer-hud-bar">
+          <div class="viz-hud-left">
+            <span class="viz-dot-pulse"></span>
+            <span id="vizModeTag">3D AUDIO SPECTRUM</span>
+          </div>
+          <div id="vizBoostTag" class="viz-hud-center" style="display: none;">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="#fde047"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            <span>2X BOOST SUPERCHARGED</span>
+          </div>
+          <div class="viz-hud-right">
+            <span id="vizStatusText">HARMONIC WAVE IDLE</span>
+          </div>
+        </div>
+
+        <canvas id="waveformCanvas" width="620" height="130" style="display: block; width: 620px; height: 130px;"></canvas>
       </div>
       
       <!-- Censored / Masked Song Box (Until Fall 1 or Fall X) -->
       <div id="censoredSongBox" class="censored-title">
-        🔒 ████████ - ████████
+        <span id="censoredIconWrap" style="color:#f59e0b;margin-right:6px;vertical-align:middle;display:inline-flex;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+        <span id="censoredTitleText">████████ - ████████</span>
       </div>
 
       <!-- Revealed Song Box -->
       <div id="songRevealBox" style="display: none; text-align: center; animation: popIn 0.4s ease-out;">
-        <div style="font-size: 0.85rem; text-transform: uppercase; font-weight: 800; color: #10b981; letter-spacing: 2px;">🎉 Song Aufgelöst</div>
+        <div style="font-size: 0.85rem; text-transform: uppercase; font-weight: 800; color: #10b981; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Song Aufgelöst</span>
+        </div>
         <div id="songFullName" style="font-size: 2rem; font-weight: 900; color: #fbbf24; margin-top: 4px; text-shadow: 0 0 20px rgba(251, 191, 36, 0.45);">
           Artist - Title
         </div>
@@ -335,7 +495,10 @@
             <div class="card-corner-star bl">★</div>
             <div class="card-corner-star br">★</div>
             <div class="card-revealed-wrap">
-              <div class="card-revealed-crown">👑 AUFGEDECKT</div>
+              <div class="card-revealed-crown">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="vertical-align:middle;margin-right:4px;"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/></svg>
+                AUFGEDECKT
+              </div>
               <div id="streamHitsterCardYear" class="card-year-number" style="font-size: 36px;">????</div>
               <div class="card-year-sub">ERSCHEINUNGSJAHR</div>
             </div>
@@ -349,8 +512,9 @@
 
       <!-- Hitster Timeline Strip in Stream -->
       <div style="width: 100%; margin-top: 10px;">
-        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #a78bfa; margin-bottom: 6px; letter-spacing: 1px;">
-          ⏱️ Chronologischer Zeitstrahl
+        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #a78bfa; margin-bottom: 6px; letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Chronologischer Zeitstrahl</span>
         </div>
         <div id="streamHitsterTimeline" style="display: flex; gap: 8px; overflow-x: auto; padding: 6px 4px; justify-content: center; align-items: center; min-height: 48px;">
           <span style="font-size: 0.85rem; color: #64748b;">Noch keine Karten platziert</span>
@@ -359,8 +523,9 @@
 
       <!-- Hitster Player Shelves in Stream -->
       <div style="width: 100%; margin-top: 10px; border-top: 1px dashed rgba(167, 139, 250, 0.3); padding-top: 8px;">
-        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #f59e0b; margin-bottom: 6px; letter-spacing: 1px;">
-          🃏 Spieler-Regale (Ziel: 10 Karten)
+        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #f59e0b; margin-bottom: 6px; letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
+          <span>Spieler-Regale (Ziel: 10 Karten)</span>
         </div>
         <div id="streamHitsterShelves" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: stretch; width: 100%;">
           <span style="font-size: 0.8rem; color: #64748b;">Keine Mitspieler-Karten</span>
@@ -382,7 +547,9 @@
 
   <script>
     let lastFlash = null;
+    let lastFlashId = null;
     let isAudioActiveForVisualizer = false;
+    let isBoostActive = false;
 
     function escapeHtml(str) {
       if (!str) return '';
@@ -394,12 +561,33 @@
         .replace(/'/g, '&#039;');
     }
 
+    const baseApiUrl = (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+      ? ''
+      : 'http://localhost:8888';
+
     async function pollState() {
       try {
-        const res = await fetch('/api/state');
+        const res = await fetch(`${baseApiUrl}/api/state`);
         if (!res.ok) return;
         const state = await res.json();
         renderOverlay(state);
+      } catch (e) {}
+    }
+
+    // Connect SSE for instantaneous zero-latency updates
+    function initEventSource() {
+      try {
+        const sseUrl = `${baseApiUrl}/api/events`;
+        const evtSource = new EventSource(sseUrl);
+        evtSource.onmessage = (event) => {
+          try {
+            const state = JSON.parse(event.data);
+            renderOverlay(state);
+          } catch (e) {}
+        };
+        evtSource.onerror = () => {
+          // EventSource will automatically retry connection
+        };
       } catch (e) {}
     }
 
@@ -407,24 +595,34 @@
       if (!state) return;
 
       // Determine if song audio is currently actively playing (not paused by buzz)
-      if (state.gameMode === 'song') {
-        const hasSong = !!(state.songState && (state.songState.title || state.songState.filePath));
-        isAudioActiveForVisualizer = hasSong && !state.activePlayer && !state.isLocked && !state.songState.revealed;
+      if (state.songState && (state.songState.title || state.songState.filePath)) {
+        if (state.songState.isPlaying !== undefined) {
+          isAudioActiveForVisualizer = !!state.songState.isPlaying;
+        } else {
+          isAudioActiveForVisualizer = !state.activePlayer && (!state.isLocked || state.songState.revealed);
+        }
       } else {
         isAudioActiveForVisualizer = false;
       }
+      isBoostActive = !!state.isBoostActive;
 
       // 1. Header & Mode
       const modeLabel = document.getElementById('streamGameMode');
       const subStatus = document.getElementById('streamSubStatus');
-      if (state.gameMode === 'wallpaper') {
-        modeLabel.innerText = '🎬 Filme / Wallpaper erkennen';
+      const mode = state.gameMode;
+      const isStandby = !mode || mode === 'standby';
+
+      if (isStandby) {
+        modeLabel.innerText = 'Standby — Wähle Spielmodus';
+        subStatus.innerText = 'Warte auf Spielleiter...';
+      } else if (mode === 'wallpaper') {
+        modeLabel.innerText = 'Filme / Wallpaper erkennen';
         subStatus.innerText = state.isLocked ? 'Buzzer gesperrt' : 'Buzzer ist FREI!';
-      } else if (state.gameMode === 'hitster') {
-        modeLabel.innerText = '📻 Hitster Zeitstrahl';
+      } else if (mode === 'hitster') {
+        modeLabel.innerText = 'Hitster Zeitstrahl';
         subStatus.innerText = 'Welches Erscheinungsjahr?';
       } else {
-        modeLabel.innerText = '🎵 Erkennst du den Song?';
+        modeLabel.innerText = 'Erkennst du den Song?';
         subStatus.innerText = state.activePlayer 
           ? `${state.activePlayer.username} antwortet...` 
           : (state.isLocked ? 'Buzzer gesperrt' : 'Buzzer ist FREI!');
@@ -433,11 +631,32 @@
       // Goal & Boost State in Stream
       const goalEl = document.getElementById('streamGoalVal');
       if (goalEl) {
-        goalEl.innerText = state.goal || (state.gameMode === 'hitster' ? 10 : 50);
+        goalEl.innerText = state.goal || (mode === 'hitster' ? 10 : 50);
       }
       const boostBanner = document.getElementById('streamBoostBanner');
       if (boostBanner) {
         boostBanner.style.display = state.isBoostActive ? 'flex' : 'none';
+      }
+
+      // Visualizer HUD Elements
+      const visualizerDeck = document.getElementById('visualizerDeck');
+      const vizBoostTag = document.getElementById('vizBoostTag');
+      const vizStatusText = document.getElementById('vizStatusText');
+
+      if (visualizerDeck) {
+        visualizerDeck.classList.toggle('boost-active', !!state.isBoostActive);
+      }
+      if (vizBoostTag) {
+        vizBoostTag.style.display = state.isBoostActive ? 'flex' : 'none';
+      }
+      if (vizStatusText) {
+        if (isAudioActiveForVisualizer) {
+          vizStatusText.innerText = state.isBoostActive ? 'BOOST AUDIO LIVE' : 'LIVE AUDIO TRACK';
+          vizStatusText.style.color = state.isBoostActive ? '#fde047' : '#38bdf8';
+        } else {
+          vizStatusText.innerText = 'HARMONIC WAVE IDLE';
+          vizStatusText.style.color = '#64748b';
+        }
       }
 
       // Grand Champion Victory Overlay in Stream
@@ -456,30 +675,24 @@
         }
       }
 
-      // 2. Stage Switch
+      // 2. Center Stage Clean Switch based on Game Mode
+      const stageStandby = document.getElementById('stageStandby');
       const stageSong = document.getElementById('stageSong');
       const stageWp = document.getElementById('stageWallpaper');
       const stageHitster = document.getElementById('stageHitster');
-      if (state.gameMode === 'wallpaper') {
-        stageSong.style.display = 'none';
-        stageWp.style.display = 'flex';
-        stageHitster.style.display = 'none';
-      } else if (state.gameMode === 'hitster') {
-        stageSong.style.display = 'none';
-        stageWp.style.display = 'none';
-        stageHitster.style.display = 'flex';
-      } else {
-        stageSong.style.display = 'flex';
-        stageWp.style.display = 'none';
-        stageHitster.style.display = 'none';
-      }
 
-      // 3. Top-Right Timer (15s Countdown on Buzzer)
+      if (stageStandby) stageStandby.style.display = isStandby ? 'flex' : 'none';
+      if (stageWp) stageWp.style.display = (mode === 'wallpaper') ? 'flex' : 'none';
+      if (stageHitster) stageHitster.style.display = (mode === 'hitster') ? 'flex' : 'none';
+      if (stageSong) stageSong.style.display = (mode === 'song') ? 'flex' : 'none';
+
+      // 3. Top-Right Timer (Appears only when someone buzzes with 15s Countdown)
       const timerCard = document.getElementById('streamTimerCard');
       const timerLabel = document.getElementById('streamTimerLabel');
       const timerEl = document.getElementById('streamTimer');
 
       if (state.activePlayer && state.answerTimer) {
+        timerCard.style.display = 'flex';
         const remaining = Math.max(0, Math.ceil(state.answerTimer.remaining));
         timerLabel.innerText = 'ANTWORT';
         timerLabel.style.color = '#f59e0b';
@@ -491,18 +704,9 @@
           timerEl.style.color = '#f59e0b';
           timerCard.classList.remove('timer-pulse-alert');
         }
-      } else if (state.roundTimer && state.roundTimer.active) {
-        timerLabel.innerText = 'RUNDE';
-        timerLabel.style.color = '#9ca3af';
-        timerCard.classList.remove('timer-pulse-alert');
-        timerEl.style.color = '#60a5fa';
-        timerEl.innerText = `${Math.ceil(state.roundTimer.remaining)}s`;
       } else {
-        timerLabel.innerText = 'TIMER';
-        timerLabel.style.color = '#9ca3af';
+        timerCard.style.display = 'none';
         timerCard.classList.remove('timer-pulse-alert');
-        timerEl.style.color = '#6b7280';
-        timerEl.innerText = '--s';
       }
 
       // 4. Buzzer Alert Notification Popup
@@ -521,14 +725,15 @@
 
       // 5. Fullscreen Screen Flash (Green / Red)
       const flashLayer = document.getElementById('flashLayer');
-      if (state.screenFlash === 'green' && lastFlash !== 'green') {
-        flashLayer.className = 'flash-overlay flash-green';
-        setTimeout(() => { flashLayer.className = 'flash-overlay'; }, 1400);
-      } else if (state.screenFlash === 'red' && lastFlash !== 'red') {
-        flashLayer.className = 'flash-overlay flash-red';
-        setTimeout(() => { flashLayer.className = 'flash-overlay'; }, 1400);
+      if (state.screenFlash && (state.screenFlash !== lastFlash || state.flashId !== lastFlashId)) {
+        lastFlash = state.screenFlash;
+        lastFlashId = state.flashId || Date.now();
+        flashLayer.className = 'flash-overlay';
+        void flashLayer.offsetWidth; // Force CSS reflow
+        flashLayer.className = `flash-overlay flash-${state.screenFlash}`;
+      } else if (!state.screenFlash) {
+        lastFlash = null;
       }
-      lastFlash = state.screenFlash;
 
       // 6. Song Details (Masked until Fall 1 or Fall X)
       if (state.songState) {
@@ -539,11 +744,15 @@
         if (state.songState.revealed) {
           censoredBox.style.display = 'none';
           revealBox.style.display = 'block';
-          fullName.innerText = state.songState.fullTitle || 'Aufgelöst!';
+          fullName.innerText = state.songState.fullTitle || (state.songState.title ? `${state.songState.artist || ''} - ${state.songState.title}` : 'Aufgelöst!');
         } else {
           censoredBox.style.display = 'inline-block';
           revealBox.style.display = 'none';
-          censoredBox.innerText = state.songState.censoredTitle || '🔒 ████████ - ████████';
+          if (state.songState.filePath || state.songState.title) {
+            censoredBox.innerText = state.songState.censoredTitle || '████████ - ████████';
+          } else {
+            censoredBox.innerText = 'Bereit für nächsten Song...';
+          }
         }
       }
 
@@ -557,7 +766,7 @@
 
         const imgPath = wp.imagePath || wp.currentImage;
         if (imgPath) {
-          img.src = `/api/image?path=${encodeURIComponent(imgPath)}`;
+          img.src = `${baseApiUrl}/api/image?path=${encodeURIComponent(imgPath)}`;
         }
         const st = Math.min(5, Math.max(1, wp.stage || 1));
         const blurPixels = [32, 18, 8, 2.5, 0];
@@ -568,7 +777,7 @@
           revealOverlay.style.display = 'flex';
           movieName.innerText = wp.movieTitle || 'Film Aufgelöst';
           if (wp.sharpImage) {
-            img.src = `/api/image?path=${encodeURIComponent(wp.sharpImage)}`;
+            img.src = `${baseApiUrl}/api/image?path=${encodeURIComponent(wp.sharpImage)}`;
           }
         } else {
           img.style.filter = `blur(${blurPixels[st - 1]}px)`;
@@ -589,7 +798,7 @@
           if (streamCardYear) streamCardYear.innerText = card.year || '????';
           if (card.revealed) {
             if (streamCard) streamCard.classList.add('is-flipped');
-            yearEl.innerText = `🎉 ${card.year || '????'}`;
+            yearEl.innerText = card.year || '????';
             yearEl.style.background = '#10b981';
           } else {
             if (streamCard) streamCard.classList.remove('is-flipped');
@@ -609,7 +818,7 @@
           if (timeline.length > 0) {
             timelineEl.innerHTML = timeline.map(c => `
               <div style="background: #1e1b4b; border: 2px solid #fbbf24; border-radius: 8px; padding: 4px 10px; display: flex; flex-direction: column; align-items: center; min-width: 90px;">
-                <span style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; font-family: monospace;">📅 ${escapeHtml(c.year)}</span>
+                <span style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; font-family: monospace;">${escapeHtml(c.year)}</span>
                 <span style="font-size: 0.75rem; font-weight: 800; color: #fff; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(c.title)}</span>
               </div>
             `).join('');
@@ -637,7 +846,7 @@
                   <div style="display: flex; flex-wrap: wrap; gap: 4px;">
                     ${cards.length > 0 ? cards.map(c => `
                       <span style="background: #4c1d95; color: #fde047; font-size: 0.7rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid #7c3aed;" title="${escapeHtml(c.title || '')}">
-                        📅 ${escapeHtml(String(c.year || ''))}
+                        ${escapeHtml(String(c.year || ''))}
                       </span>
                     `).join('') : '<span style="font-size: 0.7rem; color: #64748b;">Noch keine Karten</span>'}
                   </div>
@@ -668,30 +877,16 @@
             ? `${(p.cards && p.cards.length) ? p.cards.length : (p.points || 0)} / ${state.goal || 10} Karten`
             : `${p.points || 0} Pkt`;
 
-          if (isBuzzed) {
-            return `
-              <div class="stream-player-card stream-player-buzzed">
-                <div class="stream-avatar-wrap">
-                  <img src="${p.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" class="stream-player-avatar buzzed-avatar" />
-                  <span class="stream-buzzer-badge">🚨</span>
-                </div>
-                <div class="stream-player-info">
-                  <div class="stream-player-name">${escapeHtml(p.username)}</div>
-                  <div class="stream-player-score">${scoreDisplay} • AM ZUG!</div>
-                </div>
-              </div>
-            `;
-          }
-
           return `
-            <div class="stream-player-card">
+            <div class="stream-player-card ${isBuzzed ? 'stream-player-buzzed' : ''}">
               <div class="stream-avatar-wrap">
                 <img src="${p.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" class="stream-player-avatar" />
               </div>
-              <div class="stream-player-info">
-                <div class="stream-player-name">${escapeHtml(p.username)}</div>
-                <div class="stream-player-score">${scoreDisplay}</div>
+              <div class="stream-player-name">${escapeHtml(p.username)}</div>
+              <div class="stream-buzzer-pill">
+                ${isBuzzed ? 'BUZZER' : 'BUZZER'}
               </div>
+              <div class="stream-player-score">${scoreDisplay}</div>
             </div>
           `;
         }).join('');
@@ -700,7 +895,7 @@
       }
     }
 
-    // --- Slower, Smoother LED Segment Levelmeter Visualizer with Peak-Hold Caps ---
+    // --- SUPREME 3D CYBER-GLASS AUDIO VISUALIZER ---
     const canvas = document.getElementById('waveformCanvas');
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -708,112 +903,273 @@
       const bars = [];
       for (let i = 0; i < numBars; i++) {
         bars.push({
-          current: 4,
-          target: 4,
-          peak: 4,
-          peakTimer: 0
+          current: 18,
+          target: 18,
+          peak: 18,
+          peakTimer: 0,
+          peakVel: 0
         });
       }
 
       let animTime = 0;
 
-      function renderVuMeter() {
+      function renderVisualizer() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const isPlaying = isAudioActiveForVisualizer;
-        // Slower harmonic progression
-        animTime += isPlaying ? 0.024 : 0.008;
+        const isBoost = isBoostActive;
 
-        const padX = 8;
-        const padY = 6;
-        const availableWidth = canvas.width - (padX * 2);
-        const availableHeight = canvas.height - (padY * 2);
-        const barGap = 4;
-        const barWidth = Math.floor((availableWidth - (numBars - 1) * barGap) / numBars);
-        const segmentHeight = 4;
-        const segmentGap = 2;
-        const totalSegments = Math.floor(availableHeight / (segmentHeight + segmentGap));
+        // Advance animation time: steady liquid pace in idle, faster beat rhythm when playing
+        animTime += isPlaying ? 0.055 : 0.024;
 
+        // Baseline geometry
+        const floorY = 94; // Baseline height
+        const availableHeight = 78; // Max bar height above floorY (room for peak caps)
+        const padX = 32;
+        const totalW = canvas.width - (padX * 2); // 620 - 64 = 556
+        const barGap = 4.5;
+        const barWidth = Math.floor((totalW - (numBars - 1) * barGap) / numBars); // ~13px
+        const depthX = 4;
+        const depthY = 4.5;
+
+        // 1. Draw 3D Perspective Floor Grid under the pillars
+        ctx.save();
+        ctx.strokeStyle = isBoost ? 'rgba(249, 115, 22, 0.18)' : 'rgba(99, 102, 241, 0.18)';
+        ctx.lineWidth = 1;
+
+        // Baseline glow line
+        ctx.beginPath();
+        ctx.moveTo(padX - 10, floorY);
+        ctx.lineTo(canvas.width - padX + 10, floorY);
+        ctx.stroke();
+
+        // Floor perspective grid lines (converging backwards)
+        for (let g = 0; g < 4; g++) {
+          const gy = floorY + (g + 1) * 7.5;
+          ctx.beginPath();
+          ctx.moveTo(padX - 15 - g * 4, gy);
+          ctx.lineTo(canvas.width - padX + 15 + g * 4, gy);
+          ctx.stroke();
+        }
+
+        // Perspective ray lines
+        for (let r = 0; r <= 8; r++) {
+          const rx = padX + (totalW / 8) * r;
+          ctx.beginPath();
+          ctx.moveTo(rx, floorY);
+          ctx.lineTo(rx + (rx - canvas.width / 2) * 0.25, canvas.height - 4);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // 2. Ambient Stage Glow
+        ctx.save();
+        const centerGlow = ctx.createRadialGradient(
+          canvas.width / 2, floorY - 20, 10,
+          canvas.width / 2, floorY - 20, 220
+        );
+        if (isBoost) {
+          centerGlow.addColorStop(0, 'rgba(239, 68, 68, 0.14)');
+          centerGlow.addColorStop(0.5, 'rgba(249, 115, 22, 0.08)');
+          centerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        } else {
+          centerGlow.addColorStop(0, 'rgba(56, 189, 248, 0.12)');
+          centerGlow.addColorStop(0.5, 'rgba(99, 102, 241, 0.06)');
+          centerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        }
+        ctx.fillStyle = centerGlow;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+
+        // 3. Calculate Physics & Render Each 3D Bar
         for (let i = 0; i < numBars; i++) {
           const b = bars[i];
+          const x = padX + i * (barWidth + barGap);
+          const freqNorm = i / (numBars - 1);
 
           if (isPlaying) {
-            // Multi-harmonic smooth wave function without erratic jitter
-            const freq = (i + 1) / numBars;
-            const w1 = Math.sin(animTime * 2.1 + i * 0.26);
-            const w2 = Math.cos(animTime * 1.4 - i * 0.17);
-            const w3 = Math.sin(animTime * 3.6 + i * 0.42);
-            
-            // Bass emphasis on lower indices, dynamic highs
-            const harmonic = (w1 * 0.46 + w2 * 0.34 + w3 * 0.20) + 1.0; // 0.0 to 2.0
-            const bassWeight = Math.max(0.35, 1.25 - freq * 0.65);
-            let targetNorm = (harmonic / 2.0) * bassWeight;
-            targetNorm = Math.min(0.96, Math.max(0.08, targetNorm));
+            // Live Audio Reactive physics
+            const bassBeat = Math.pow(Math.max(0, Math.sin(animTime * 3.4)), 4) * Math.max(0, 1.4 - freqNorm * 1.5);
+            const m1 = Math.sin(animTime * 4.2 + i * 0.42);
+            const m2 = Math.cos(animTime * 2.6 - i * 0.28);
+            const m3 = Math.sin(animTime * 7.2 + i * 0.75) * 0.35;
+            const harmonic = (m1 + m2 + m3 + 2.35) / 4.7;
+            const sparkle = (freqNorm > 0.55) ? (Math.random() * 0.32 * freqNorm) : 0;
 
-            b.target = targetNorm * availableHeight;
+            let energy = harmonic * 0.62 + bassBeat * 0.58 + sparkle;
+            if (isBoost) energy *= 1.25;
+            energy = Math.min(0.96, Math.max(0.10, energy));
+            b.target = energy * availableHeight;
           } else {
-            // Gentle resting shimmer when paused or idle
-            const idleWave = (Math.sin(animTime * 0.8 + i * 0.32) + 1.0) * 0.5;
-            b.target = 3 + idleWave * 7;
+            // Fluid undulating 3D harmonic wave ("Welle dingsen") in Idle
+            const k1 = (i / numBars) * Math.PI * 2.2;
+            const k2 = (i / numBars) * Math.PI * 4.4;
+            const k3 = (i / numBars) * Math.PI * 1.1;
+
+            const w1 = Math.sin(animTime * 2.2 - k1);
+            const w2 = Math.cos(animTime * 1.4 - k2) * 0.38;
+            const w3 = Math.sin(animTime * 0.7 + k3) * 0.28;
+
+            const breathing = Math.sin(animTime * 0.85) * 0.16 + 0.84;
+            const arch = Math.sin(freqNorm * Math.PI) * 0.35 + 0.65;
+            const waveNorm = Math.max(0, (w1 + w2 + w3 + 1.66) / 3.32);
+
+            b.target = (16 + waveNorm * 48 * breathing) * arch;
           }
 
-          // Slow, organic lerp (prevents twitching)
-          b.current += (b.target - b.current) * 0.085;
+          // Smooth lerp interpolation
+          b.current += (b.target - b.current) * (isPlaying ? 0.22 : 0.08);
 
-          // Peak-hold caps logic
-          if (b.current > b.peak) {
+          // Peak-hold caps with gravity physics
+          if (b.current >= b.peak) {
             b.peak = b.current;
-            b.peakTimer = 35; // Hold peak cap for 35 frames (~0.6s)
+            b.peakTimer = 35;
+            b.peakVel = 0;
           } else {
             if (b.peakTimer > 0) {
               b.peakTimer--;
             } else {
-              b.peak = Math.max(b.current, b.peak - 1.1); // Smooth downward decay
+              b.peakVel += 0.22;
+              b.peak = Math.max(b.current, b.peak - b.peakVel);
             }
           }
 
-          const x = padX + i * (barWidth + barGap);
-          const activeHeight = Math.max(3, b.current);
-          const activeSegments = Math.round((activeHeight / availableHeight) * totalSegments);
+          const h = Math.max(4, b.current);
+          const yTop = floorY - h;
 
-          // Draw stacked LED segments
-          for (let s = 0; s < totalSegments; s++) {
-            const segY = canvas.height - padY - (s + 1) * (segmentHeight + segmentGap);
-            const segNorm = s / totalSegments;
+          // --- A. Mirrored Floor Reflection (Glossy Glass Pedestal) ---
+          const refH = Math.min(28, h * 0.42);
+          const refGrad = ctx.createLinearGradient(x, floorY, x, floorY + refH);
+          if (isBoost) {
+            refGrad.addColorStop(0, 'rgba(249, 115, 22, 0.32)');
+            refGrad.addColorStop(0.6, 'rgba(239, 68, 68, 0.15)');
+            refGrad.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+          } else {
+            refGrad.addColorStop(0, 'rgba(56, 189, 248, 0.28)');
+            refGrad.addColorStop(0.6, 'rgba(99, 102, 241, 0.12)');
+            refGrad.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+          }
+          ctx.fillStyle = refGrad;
+          ctx.fillRect(x, floorY + 1, barWidth, refH);
 
-            if (s < activeSegments) {
-              // Active LED color gradient (Green -> Amber -> Crimson Red)
-              if (segNorm > 0.82) {
-                ctx.fillStyle = '#ef4444'; // Red peak
-              } else if (segNorm > 0.56) {
-                ctx.fillStyle = '#f59e0b'; // Amber mid
-              } else {
-                ctx.fillStyle = '#10b981'; // Green safe
-              }
-            } else {
-              // Inactive LED segment background
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-            }
+          // Reflection side face
+          ctx.beginPath();
+          ctx.moveTo(x + barWidth, floorY + 1);
+          ctx.lineTo(x + barWidth + depthX, floorY + 1 + depthY * 0.5);
+          ctx.lineTo(x + barWidth + depthX, floorY + 1 + refH * 0.8);
+          ctx.lineTo(x + barWidth, floorY + 1 + refH);
+          ctx.closePath();
+          ctx.fillStyle = isBoost ? 'rgba(185, 28, 28, 0.15)' : 'rgba(30, 27, 75, 0.18)';
+          ctx.fill();
 
-            ctx.fillRect(x, segY, barWidth, segmentHeight);
+          // --- B. 3D Front Face ---
+          const frontGrad = ctx.createLinearGradient(x, floorY, x, yTop);
+          if (isBoost) {
+            frontGrad.addColorStop(0, '#7f1d1d');
+            frontGrad.addColorStop(0.4, '#dc2626');
+            frontGrad.addColorStop(0.75, '#f97316');
+            frontGrad.addColorStop(1, '#fde047');
+          } else {
+            frontGrad.addColorStop(0, '#1e1b4b');
+            frontGrad.addColorStop(0.35, '#0891b2');
+            frontGrad.addColorStop(0.7, '#38bdf8');
+            frontGrad.addColorStop(1, '#c084fc');
+          }
+          ctx.fillStyle = frontGrad;
+          ctx.fillRect(x, yTop, barWidth, h);
+
+          // Glass specular edge line (left border highlight)
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.42)';
+          ctx.fillRect(x, yTop, 1.2, h);
+
+          // Subtle horizontal segment grooves for studio EQ fidelity
+          const segStep = 7;
+          ctx.fillStyle = 'rgba(10, 12, 20, 0.4)';
+          for (let gy = floorY - segStep; gy > yTop; gy -= segStep) {
+            ctx.fillRect(x, gy, barWidth, 1.2);
           }
 
-          // Draw Peak Hold Cap
+          // --- C. 3D Side Face (Extrusion with ambient occlusion shadow) ---
+          ctx.beginPath();
+          ctx.moveTo(x + barWidth, yTop);
+          ctx.lineTo(x + barWidth + depthX, yTop - depthY);
+          ctx.lineTo(x + barWidth + depthX, floorY - depthY);
+          ctx.lineTo(x + barWidth, floorY);
+          ctx.closePath();
+          if (isBoost) {
+            ctx.fillStyle = '#7c2d12';
+          } else {
+            ctx.fillStyle = '#172554';
+          }
+          ctx.fill();
+          ctx.strokeStyle = isBoost ? 'rgba(254, 240, 138, 0.25)' : 'rgba(165, 180, 252, 0.25)';
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+
+          // --- D. 3D Top Cap (Bright specular reflection face) ---
+          ctx.beginPath();
+          ctx.moveTo(x, yTop);
+          ctx.lineTo(x + barWidth, yTop);
+          ctx.lineTo(x + barWidth + depthX, yTop - depthY);
+          ctx.lineTo(x + depthX, yTop - depthY);
+          ctx.closePath();
+          if (isBoost) {
+            const topGrad = ctx.createLinearGradient(x, yTop, x + barWidth, yTop - depthY);
+            topGrad.addColorStop(0, '#ffffff');
+            topGrad.addColorStop(1, '#fde047');
+            ctx.fillStyle = topGrad;
+          } else {
+            const topGrad = ctx.createLinearGradient(x, yTop, x + barWidth, yTop - depthY);
+            topGrad.addColorStop(0, '#ffffff');
+            topGrad.addColorStop(1, '#67e8f9');
+            ctx.fillStyle = topGrad;
+          }
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+
+          // --- E. 3D Floating Peak-Hold Cap ---
           if (b.peak > 4) {
-            const peakSeg = Math.min(totalSegments - 1, Math.round((b.peak / availableHeight) * totalSegments));
-            const peakY = canvas.height - padY - (peakSeg + 1) * (segmentHeight + segmentGap);
-            ctx.fillStyle = peakSeg > totalSegments * 0.82 ? '#ffffff' : '#fbbf24';
-            ctx.fillRect(x, peakY, barWidth, segmentHeight);
+            const peakH = Math.min(availableHeight + 6, b.peak);
+            const peakY = floorY - peakH;
+            
+            // Peak front tile
+            ctx.fillStyle = isBoost ? '#fef08a' : '#ffffff';
+            ctx.fillRect(x, peakY - 3, barWidth, 2.5);
+
+            // Peak top face
+            ctx.beginPath();
+            ctx.moveTo(x, peakY - 3);
+            ctx.lineTo(x + barWidth, peakY - 3);
+            ctx.lineTo(x + barWidth + depthX, peakY - 3 - depthY * 0.7);
+            ctx.lineTo(x + depthX, peakY - 3 - depthY * 0.7);
+            ctx.closePath();
+            ctx.fillStyle = isBoost ? '#ffffff' : '#e0f2fe';
+            ctx.fill();
+
+            // Peak drop glow
+            ctx.shadowColor = isBoost ? 'rgba(253, 224, 71, 0.8)' : 'rgba(56, 189, 248, 0.8)';
+            ctx.shadowBlur = 6;
+            ctx.fillRect(x, peakY - 3, barWidth, 1.5);
+            ctx.shadowBlur = 0; // reset
           }
         }
 
-        requestAnimationFrame(renderVuMeter);
+        requestAnimationFrame(renderVisualizer);
       }
-      renderVuMeter();
+      renderVisualizer();
     }
 
-    setInterval(pollState, 200);
+    // Polling interval as backup
+    setInterval(pollState, 400);
     pollState();
+    initEventSource();
+
+    // Direct IPC hook if running in Electron window
+    if (window.mannisBoxAPI && window.mannisBoxAPI.onGameState) {
+      window.mannisBoxAPI.onGameState((state) => renderOverlay(state));
+    }
   </script>
 </body>
 </html>

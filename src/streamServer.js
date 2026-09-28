@@ -9,6 +9,7 @@ class StreamServer {
     this.port = 8888;
     this.server = null;
     this.isRunning = false;
+    this.sseClients = new Set();
   }
 
   start() {
@@ -29,7 +30,26 @@ class StreamServer {
         return;
       }
 
-      // 1. Live State API
+      // 1. Live SSE Stream API (Server-Sent Events for zero-latency instant updates)
+      if (pathname === '/api/events') {
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive'
+        });
+        res.write(': connected\n\n');
+        const state = this.getStateCallback ? this.getStateCallback() : {};
+        res.write(`data: ${JSON.stringify(state)}\n\n`);
+
+        this.sseClients.add(res);
+
+        req.on('close', () => {
+          this.sseClients.delete(res);
+        });
+        return;
+      }
+
+      // 1b. Live State API (HTTP Polling fallback)
       if (pathname === '/api/state') {
         res.writeHead(200, {
           'Content-Type': 'application/json; charset=utf-8',
@@ -156,7 +176,25 @@ class StreamServer {
     return `http://localhost:${this.port}/stream.html`;
   }
 
+  broadcast(state) {
+    if (!this.sseClients || this.sseClients.size === 0) return;
+    const payload = `data: ${JSON.stringify(state)}\n\n`;
+    for (const client of this.sseClients) {
+      try {
+        client.write(payload);
+      } catch (e) {
+        this.sseClients.delete(client);
+      }
+    }
+  }
+
   stop() {
+    if (this.sseClients) {
+      for (const client of this.sseClients) {
+        try { client.end(); } catch (e) {}
+      }
+      this.sseClients.clear();
+    }
     if (this.server && this.isRunning) {
       this.server.close();
       this.isRunning = false;

@@ -69,6 +69,9 @@ contextBridge.exposeInMainWorld('mannisBoxAPI', {
   prepareNextSong: () => ipcRenderer.invoke('prepare-next-song'),
   stageNextSong: (filePath) => ipcRenderer.invoke('stage-next-song', filePath),
   playNextSong: () => ipcRenderer.invoke('play-next-song'),
+  pauseSong: () => ipcRenderer.invoke('pause-song'),
+  resumeSong: () => ipcRenderer.invoke('resume-song'),
+  stopSong: () => ipcRenderer.invoke('stop-song'),
 
   // Window Controls (Custom Titlebar)
   minimizeWindow: () => ipcRenderer.invoke('window-minimize'),
