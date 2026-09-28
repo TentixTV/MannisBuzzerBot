@@ -1089,6 +1089,12 @@
       let animTime = 0;
 
       function renderVisualizer() {
+        requestAnimationFrame(renderVisualizer);
+
+        if (document.hidden) {
+          return;
+        }
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const isPlaying = isAudioActiveForVisualizer;
@@ -1331,13 +1337,12 @@
           }
         }
 
-        requestAnimationFrame(renderVisualizer);
       }
       renderVisualizer();
     }
 
-    // Polling interval as backup
-    setInterval(pollState, 400);
+    // Polling interval as backup (relaxed to 2500ms since SSE/IPC push events provide instant real-time updates)
+    setInterval(pollState, 2500);
     pollState();
     initEventSource();
 

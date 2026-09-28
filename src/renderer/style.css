@@ -3140,9 +3140,7 @@ body {
 }
 
 .panel {
-  background: rgba(18, 19, 28, 0.92) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(18, 19, 28, 0.95) !important;
   transform: translateZ(0);
   border: 1.5px solid rgba(56, 62, 92, 0.7) !important;
   border-top-color: rgba(255, 255, 255, 0.18) !important;

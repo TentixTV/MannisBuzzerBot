@@ -213,8 +213,8 @@ class UE5Stage3D {
   initGeometry() {
     const gl = this.gl;
 
-    // 1. Niagara Particles (2,000 high-fidelity particles)
-    const count = 2000;
+    // 1. Niagara Particles (1,200 optimized particles for ultra-smooth 120+ FPS)
+    const count = 1200;
     const positions = [];
     const params = [];
 
@@ -260,7 +260,8 @@ class UE5Stage3D {
 
   onResize() {
     if (!this.canvas || !this.gl) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+    // Native pixel ratio capped at 1.0 to eliminate fill-rate bottlenecks on 1440p / 4K
+    const dpr = 1.0;
     const targetW = Math.round(window.innerWidth * dpr);
     const targetH = Math.round(window.innerHeight * dpr);
     if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
@@ -321,7 +322,12 @@ class UE5Stage3D {
       return;
     }
 
-    const dt = Math.min((timestamp - this.lastTimestamp) / 1000, 0.05);
+    const elapsed = timestamp - this.lastTimestamp;
+    if (elapsed < 3.5) {
+      return; // Skip sub-millisecond duplicate frames
+    }
+
+    const dt = Math.min(elapsed / 1000, 0.05);
     this.lastTimestamp = timestamp;
     this.time += dt;
 

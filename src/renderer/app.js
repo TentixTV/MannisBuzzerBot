@@ -2086,6 +2086,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   btnCloseStreamView.addEventListener('click', () => {
     inAppStreamContainer.classList.add('hidden');
     inAppStreamContainer.style.display = 'none';
+    if (inAppStreamFrame) inAppStreamFrame.src = 'about:blank';
   });
   btnCopyObsLink.addEventListener('click', async () => {
     const url = await window.mannisBoxAPI.getStreamUrl();
