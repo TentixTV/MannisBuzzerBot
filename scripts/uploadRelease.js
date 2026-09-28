@@ -146,19 +146,38 @@ async function main() {
   const zipFile = path.join(rootDir, 'MannisBox-Windows-x64.zip');
   const rarFile = path.join(rootDir, 'MannisBox-Windows-x64.rar');
 
-  // Check if zip already uploaded
-  const hasZip = existingAssets.some(a => a.name === 'MannisBox-Windows-x64.zip');
-  if (hasZip) {
-    console.log('MannisBox-Windows-x64.zip is already uploaded.');
-  } else if (fs.existsSync(zipFile)) {
+  // Helper to delete an asset
+  async function deleteAssetIfExists(assetName) {
+    const existing = existingAssets.find(a => a.name === assetName);
+    if (existing) {
+      console.log(`Deleting existing ${assetName} (ID: ${existing.id}) to upload fresh build...`);
+      try {
+        await request({
+          hostname: 'api.github.com',
+          path: `/repos/${OWNER}/${REPO}/releases/assets/${existing.id}`,
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${TOKEN}`,
+            'User-Agent': 'MannisBox-Uploader',
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        console.log(`✓ Deleted old ${assetName}`);
+      } catch (e) {
+        console.warn(`Could not delete asset ${existing.id}:`, e.message);
+      }
+    }
+  }
+
+  // Upload zip
+  if (fs.existsSync(zipFile)) {
+    await deleteAssetIfExists('MannisBox-Windows-x64.zip');
     await uploadAsset(release.upload_url, zipFile, 'application/zip');
   }
 
-  // Check if rar already uploaded
-  const hasRar = existingAssets.some(a => a.name === 'MannisBox-Windows-x64.rar');
-  if (hasRar) {
-    console.log('MannisBox-Windows-x64.rar is already uploaded.');
-  } else if (fs.existsSync(rarFile)) {
+  // Upload rar
+  if (fs.existsSync(rarFile)) {
+    await deleteAssetIfExists('MannisBox-Windows-x64.rar');
     await uploadAsset(release.upload_url, rarFile, 'application/x-rar-compressed');
   }
 
