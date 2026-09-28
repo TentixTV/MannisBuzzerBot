@@ -109,6 +109,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const lblMusicFolderStatus = document.getElementById('lblMusicFolderStatus');
   const selMusicGenre = document.getElementById('selMusicGenre');
   const btnPickRandomSong = document.getElementById('btnPickRandomSong');
+  const btnPlaylistShuffle = document.getElementById('btnPlaylistShuffle');
+  const btnPlaylistNumbered = document.getElementById('btnPlaylistNumbered');
+  const btnRerollNextSong = document.getElementById('btnRerollNextSong');
+  const lblNextSongTitle = document.getElementById('lblNextSongTitle');
+
+  let lastActivePlayerId = null;
+  let wasAudioPausedByBuzzer = false;
 
   const localAudioPlayer = document.getElementById('localAudioPlayer');
   const btnAudioPlayPause = document.getElementById('btnAudioPlayPause');
@@ -919,12 +926,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // 1. Song Quiz State Rendering
+    // 1. Song Quiz State Rendering (In Modansicht immer unverschlüsselt anzeigen)
     if (state.songState) {
       const song = state.songState;
-      const displaySong = song.revealed ? song.fullTitle : (song.censoredTitle || '████████ - ████████');
+      const displaySong = song.fullTitle || (song.title ? `${song.artist || 'Unbekannt'} - ${song.title}` : 'Kein Track aktiv');
       arenaSongTitleText.textContent = displaySong;
       if (song.fullTitle) lblAudioTrackTitle.textContent = song.fullTitle;
+    }
+
+    // Next Song Slot & Playlist Mode Sync
+    if (state.nextSong && lblNextSongTitle) {
+      lblNextSongTitle.textContent = state.nextSong.fullTitle || 'Kein Track vorgemerkt';
+      lblNextSongTitle.title = state.nextSong.fullTitle || '';
+      btnPickRandomSong.disabled = false;
+    } else if (lblNextSongTitle && !state.songState?.filePath) {
+      lblNextSongTitle.textContent = 'Kein Track vorgemerkt';
+      btnPickRandomSong.disabled = true;
+    }
+
+    if (state.playlistMode) {
+      if (btnPlaylistShuffle) btnPlaylistShuffle.classList.toggle('active', state.playlistMode === 'shuffle');
+      if (btnPlaylistNumbered) btnPlaylistNumbered.classList.toggle('active', state.playlistMode === 'numbered');
     }
 
     // 2. Hitster State Rendering
@@ -1184,6 +1206,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Active Player (Buzzer Spotlight)
     if (state.activePlayer) {
+      if (!lastActivePlayerId && localAudioPlayer && !localAudioPlayer.paused) {
+        localAudioPlayer.pause();
+        btnAudioPlayPause.textContent = '▶️';
+        wasAudioPausedByBuzzer = true;
+      }
+      lastActivePlayerId = state.activePlayer.id;
+
       activeBuzzerCard.classList.remove('hidden');
       buzzerPlaceholder.classList.add('hidden');
 
@@ -1203,11 +1232,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         lblWrongPenalty.textContent = `${config.points?.wrongFirst || -1} Punkt`;
       }
 
-      // 10s Buzzer Answer Timer
+      // 15s Buzzer Answer Timer
       if (state.answerTimer) {
         if (answerTimerBox) answerTimerBox.classList.remove('hidden');
-        const rem = state.answerTimer.remaining !== undefined ? state.answerTimer.remaining : 10;
-        const tot = state.answerTimer.total || 10;
+        const rem = state.answerTimer.remaining !== undefined ? state.answerTimer.remaining : 15;
+        const tot = state.answerTimer.total || 15;
         if (lblAnswerTimerSeconds) lblAnswerTimerSeconds.textContent = `${rem}s`;
         if (answerTimerBarFill) answerTimerBarFill.style.width = `${Math.max(0, Math.min(100, (rem / tot) * 100))}%`;
 
@@ -1221,6 +1250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (answerExpiredAlert) answerExpiredAlert.classList.add('hidden');
       }
     } else {
+      lastActivePlayerId = null;
       activeBuzzerCard.classList.add('hidden');
       buzzerPlaceholder.classList.remove('hidden');
       if (answerTimerBox) answerTimerBox.classList.add('hidden');
@@ -1537,25 +1567,85 @@ document.addEventListener('DOMContentLoaded', async () => {
   btnEvalWrong.addEventListener('click', async () => {
     if (currentGameState?.isEvaluating) return;
     playLocalSound('wrong');
+    if (localAudioPlayer && localAudioPlayer.src) {
+      localAudioPlayer.play().catch(e => console.warn(e));
+      btnAudioPlayPause.textContent = '⏸️';
+    }
     await window.mannisBoxAPI.evaluatePlayer('wrong');
   });
 
   btnEvalSkip.addEventListener('click', async () => {
     if (currentGameState?.isEvaluating) return;
+    if (localAudioPlayer && localAudioPlayer.src) {
+      localAudioPlayer.play().catch(e => console.warn(e));
+      btnAudioPlayPause.textContent = '⏸️';
+    }
     await window.mannisBoxAPI.evaluatePlayer('skip');
   });
 
   btnEvalCorrect.addEventListener('click', async () => {
     if (currentGameState?.isEvaluating) return;
     playLocalSound('correct');
+    // Fall 1: Song resumes playing after correct answer
+    if (localAudioPlayer && localAudioPlayer.src) {
+      localAudioPlayer.play().catch(e => console.warn(e));
+      btnAudioPlayPause.textContent = '⏸️';
+    }
     await window.mannisBoxAPI.evaluatePlayer('correct');
   });
 
   btnEvalPerfect.addEventListener('click', async () => {
     if (currentGameState?.isEvaluating) return;
     playLocalSound('perfect');
+    // Fall 1: Song resumes playing after perfect answer
+    if (localAudioPlayer && localAudioPlayer.src) {
+      localAudioPlayer.play().catch(e => console.warn(e));
+      btnAudioPlayPause.textContent = '⏸️';
+    }
     await window.mannisBoxAPI.evaluatePlayer('perfect');
   });
+
+  if (btnResumeRound) {
+    btnResumeRound.addEventListener('click', async () => {
+      if (localAudioPlayer && localAudioPlayer.src) {
+        localAudioPlayer.play().catch(e => console.warn(e));
+        btnAudioPlayPause.textContent = '⏸️';
+      }
+      await window.mannisBoxAPI.resumeRound();
+    });
+  }
+
+  if (btnAbortRound) {
+    btnAbortRound.addEventListener('click', async () => {
+      if (await showCustomConfirm('Möchtest du diese Runde vorzeitig abbrechen und auflösen?', 'Runde abbrechen')) {
+        if (localAudioPlayer) {
+          localAudioPlayer.pause();
+          btnAudioPlayPause.textContent = '▶️';
+        }
+        await window.mannisBoxAPI.abortRound();
+      }
+    });
+  }
+
+  if (btnExpiredRelease) {
+    btnExpiredRelease.addEventListener('click', async () => {
+      if (localAudioPlayer && localAudioPlayer.src) {
+        localAudioPlayer.play().catch(e => console.warn(e));
+        btnAudioPlayPause.textContent = '⏸️';
+      }
+      await window.mannisBoxAPI.resumeRound();
+    });
+  }
+
+  if (btnExpiredEndRound) {
+    btnExpiredEndRound.addEventListener('click', async () => {
+      if (localAudioPlayer) {
+        localAudioPlayer.pause();
+        btnAudioPlayPause.textContent = '▶️';
+      }
+      await window.mannisBoxAPI.abortRound();
+    });
+  }
 
   // 7. Bot Invite Link
   async function openInviteUrl() {
@@ -1920,8 +2010,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           loadedMusicFiles = res.files || [];
           lblMusicFolderStatus.textContent = `${res.totalFiles} Songs gefunden (${res.folder})`;
           btnPickRandomSong.disabled = false;
-          selMusicGenre.innerHTML = '<option value="">Alle Genres</option>' + 
-            res.genres.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+          if (selMusicGenre) {
+            selMusicGenre.innerHTML = '<option value="">Alle Genres</option>' + 
+              (res.genres || []).map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+          }
           await showCustomAlert(`Musik-Ordner erfolgreich geladen: ${res.totalFiles} Songs!`, 'Musik-Ordner');
         }
       }
@@ -1929,9 +2021,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // 2. Stream View & OBS Link
-  btnToggleStreamView.addEventListener('click', () => {
-    inAppStreamContainer.classList.remove('hidden');
-    inAppStreamContainer.style.display = 'flex';
+  btnToggleStreamView.addEventListener('click', async () => {
+    await window.mannisBoxAPI.openStreamWindow();
   });
   btnCloseStreamView.addEventListener('click', () => {
     inAppStreamContainer.classList.add('hidden');
@@ -1952,8 +2043,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (lblMusicFolderStatus) lblMusicFolderStatus.textContent = statusText;
       if (lblHitsterFolderStatus) lblHitsterFolderStatus.textContent = statusText;
       btnPickRandomSong.disabled = false;
-      selMusicGenre.innerHTML = '<option value="">Alle Genres</option>' + 
-        res.genres.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+      if (selMusicGenre) {
+        selMusicGenre.innerHTML = '<option value="">Alle Genres</option>' + 
+          (res.genres || []).map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+      }
     }
   }
 
@@ -1962,9 +2055,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnSelectHitsterFolder.addEventListener('click', handleMusicFolderSelection);
   }
 
+  if (btnPlaylistShuffle) {
+    btnPlaylistShuffle.addEventListener('click', async () => {
+      await window.mannisBoxAPI.setPlaylistMode('shuffle');
+      btnPlaylistShuffle.classList.add('active');
+      if (btnPlaylistNumbered) btnPlaylistNumbered.classList.remove('active');
+    });
+  }
+
+  if (btnPlaylistNumbered) {
+    btnPlaylistNumbered.addEventListener('click', async () => {
+      await window.mannisBoxAPI.setPlaylistMode('numbered');
+      btnPlaylistNumbered.classList.add('active');
+      if (btnPlaylistShuffle) btnPlaylistShuffle.classList.remove('active');
+    });
+  }
+
+  if (btnRerollNextSong) {
+    btnRerollNextSong.addEventListener('click', async () => {
+      const next = await window.mannisBoxAPI.prepareNextSong();
+      if (next && lblNextSongTitle) {
+        lblNextSongTitle.textContent = next.fullTitle || 'Kein Track vorgemerkt';
+      }
+    });
+  }
+
   btnPickRandomSong.addEventListener('click', async () => {
-    const genre = selMusicGenre.value || null;
-    const res = await window.mannisBoxAPI.pickRandomSong(genre);
+    const res = await window.mannisBoxAPI.playNextSong();
     if (res && res.success && res.song) {
       lblAudioTrackTitle.textContent = res.song.fullTitle;
       const streamUrl = `http://localhost:8888/api/audio?path=${encodeURIComponent(res.song.filePath)}`;
@@ -1975,6 +2092,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnAudioPlayPause.textContent = '⏸️';
       } catch (e) {
         console.warn('Auto-play error:', e);
+      }
+      if (!currentGameState?.isRoundActive) {
+        await window.mannisBoxAPI.startRound();
       }
     }
   });
@@ -2215,16 +2335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await window.mannisBoxAPI.resolveWallpaper();
   });
 
-  // 7. Resume & Abort Round
-  btnResumeRound.addEventListener('click', async () => {
-    await window.mannisBoxAPI.resumeRound();
-  });
 
-  btnAbortRound.addEventListener('click', async () => {
-    if (await showCustomConfirm('Möchtest du diese Runde vorzeitig abbrechen und auflösen?', 'Runde abbrechen')) {
-      await window.mannisBoxAPI.abortRound();
-    }
-  });
 
   // 8. Custom Titlebar Controls (Frameless Window)
   if (titlebarMin) {
@@ -2337,7 +2448,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `
           <div class="folder-search-item" data-path="${escapeHtml(filePath)}">
             <span class="folder-search-item-title" title="${escapeHtml(title)}">🎵 ${escapeHtml(title)}</span>
-            <span style="font-size: 10px; color: #818cf8; font-weight: 700; flex-shrink: 0;">Wählen ➔</span>
+            <span style="font-size: 10px; color: #38bdf8; font-weight: 700; flex-shrink: 0;">Als Nächster ➔</span>
           </div>
         `;
       }).join('');
@@ -2350,18 +2461,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           songSearchResults.classList.add('hidden');
           txtSearchSong.value = '';
 
-          const res = await window.mannisBoxAPI.selectSpecificSong(chosenPath);
-          if (res && res.success && res.song) {
-            lblAudioTrackTitle.textContent = res.song.fullTitle;
-            const streamUrl = `http://localhost:8888/api/audio?path=${encodeURIComponent(res.song.filePath)}`;
-            localAudioPlayer.src = streamUrl;
-            localAudioPlayer.volume = parseFloat(rngAudioPlayerVolume.value);
-            try {
-              await localAudioPlayer.play();
-              btnAudioPlayPause.textContent = '⏸️';
-            } catch (err) {
-              console.warn('Auto-play error:', err);
-            }
+          // Stage as Next Song (does not play directly)
+          const res = await window.mannisBoxAPI.stageNextSong(chosenPath);
+          if (res && res.success && res.nextSong) {
+            if (lblNextSongTitle) lblNextSongTitle.textContent = res.nextSong.fullTitle;
+            btnPickRandomSong.disabled = false;
           }
         });
       });

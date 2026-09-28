@@ -22,11 +22,12 @@
       flex-direction: column;
       justify-content: space-between;
       user-select: none;
+      font-family: 'Nunito', sans-serif;
     }
 
     .stream-glass-card {
       background: rgba(18, 19, 26, 0.92);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
       border: 2px solid #2a2c3d;
       border-radius: 16px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
@@ -40,31 +41,28 @@
       width: 100vw;
       height: 100vh;
       pointer-events: none;
-      z-index: 9999;
+      z-index: 99999;
       opacity: 0;
-      transition: opacity 0.2s ease-in-out;
     }
 
     .flash-green {
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.6) 0%, rgba(16, 185, 129, 0.85) 100%);
-      opacity: 1 !important;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.7) 0%, rgba(16, 185, 129, 0.92) 100%);
       animation: flashAnim 1.4s ease-out forwards;
     }
 
     .flash-red {
-      background: radial-gradient(circle, rgba(239, 68, 68, 0.6) 0%, rgba(239, 68, 68, 0.85) 100%);
-      opacity: 1 !important;
+      background: radial-gradient(circle, rgba(239, 68, 68, 0.7) 0%, rgba(239, 68, 68, 0.92) 100%);
       animation: flashAnim 1.4s ease-out forwards;
     }
 
     @keyframes flashAnim {
-      0% { opacity: 0.85; }
-      50% { opacity: 0.5; }
+      0% { opacity: 0.92; }
+      40% { opacity: 0.65; }
       100% { opacity: 0; }
     }
 
     .buzzer-popup {
-      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     @keyframes popIn {
@@ -73,15 +71,120 @@
     }
 
     .censored-title {
-      font-family: monospace;
-      letter-spacing: 2px;
-      background: #0f1016;
+      font-family: 'Fredoka', monospace, sans-serif;
+      letter-spacing: 3px;
+      background: #0b0c12;
       color: #f59e0b;
-      padding: 10px 24px;
-      border-radius: 10px;
-      border: 2px solid #3b3e55;
-      font-size: 1.6rem;
+      padding: 12px 28px;
+      border-radius: 12px;
+      border: 2px dashed #3b3e55;
+      font-size: 1.8rem;
       font-weight: 800;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 158, 11, 0.15);
+      display: inline-block;
+    }
+
+    .vu-meter-container {
+      background: rgba(10, 11, 16, 0.95);
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 2px solid #232536;
+      box-shadow: inset 0 3px 12px rgba(0, 0, 0, 0.8), 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .timer-pulse-alert {
+      animation: timerAlert 0.8s infinite alternate ease-in-out;
+      border-color: #ef4444 !important;
+    }
+
+    @keyframes timerAlert {
+      from { box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+      to { box-shadow: 0 0 28px rgba(239, 68, 68, 0.95); }
+    }
+
+    /* Player scoreboard cards */
+    .stream-player-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      background: rgba(24, 26, 38, 0.88);
+      border: 1.5px solid #2a2c3d;
+      color: #fff;
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .stream-player-card.stream-player-buzzed {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95));
+      border-color: #ef4444;
+      color: #000;
+      box-shadow: 0 0 22px rgba(245, 158, 11, 0.85), 0 0 38px rgba(239, 68, 68, 0.45);
+      transform: scale(1.05);
+      animation: buzzPulse 0.9s infinite alternate ease-in-out;
+    }
+
+    @keyframes buzzPulse {
+      from { box-shadow: 0 0 15px rgba(245, 158, 11, 0.7); }
+      to { box-shadow: 0 0 30px rgba(239, 68, 68, 0.95), 0 0 45px rgba(245, 158, 11, 0.6); }
+    }
+
+    .stream-avatar-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stream-player-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid #3b3e55;
+      object-fit: cover;
+      background: #0f1016;
+    }
+
+    .stream-player-avatar.buzzed-avatar {
+      border-color: #000;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+    }
+
+    .stream-buzzer-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      font-size: 0.95rem;
+      animation: bounce 0.6s infinite alternate;
+    }
+
+    .stream-player-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stream-player-name {
+      font-size: 0.85rem;
+      font-weight: 800;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stream-player-score {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #60a5fa;
+    }
+
+    .stream-player-buzzed .stream-player-name {
+      color: #000;
+    }
+
+    .stream-player-buzzed .stream-player-score {
+      color: #7f1d1d;
+      font-weight: 900;
     }
   </style>
 </head>
@@ -105,33 +208,36 @@
     </div>
 
     <!-- Buzzer Alert Notification -->
-    <div id="streamBuzzerPopup" class="stream-glass-card buzzer-popup hidden" style="padding: 10px 24px; display: flex; align-items: center; gap: 14px; background: rgba(245, 158, 11, 0.95); color: #000; border: 3px solid #ef4444;">
+    <div id="streamBuzzerPopup" class="stream-glass-card buzzer-popup hidden" style="padding: 10px 24px; display: none; align-items: center; gap: 14px; background: rgba(245, 158, 11, 0.95); color: #000; border: 3px solid #ef4444; box-shadow: 0 0 30px rgba(245, 158, 11, 0.65);">
       <span style="font-size: 2rem; animation: bounce 1s infinite;">🚨</span>
-      <img id="buzzerAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid #000;" />
+      <img id="buzzerAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" style="width: 46px; height: 46px; border-radius: 50%; border: 3px solid #000;" />
       <div>
-        <div style="font-size: 0.75rem; font-weight: 900; text-transform: uppercase; color: #991b1b;">GEBUZZERT!</div>
-        <div id="buzzerName" style="font-size: 1.3rem; font-weight: 900;">Spieler</div>
+        <div style="font-size: 0.75rem; font-weight: 900; text-transform: uppercase; color: #991b1b; letter-spacing: 1px;">GEBUZZERT!</div>
+        <div id="buzzerName" style="font-size: 1.4rem; font-weight: 900;">Spieler</div>
       </div>
-      <div id="buzzerPointsTag" style="background: #ef4444; color: #fff; font-weight: 900; padding: 4px 10px; border-radius: 6px; font-size: 1rem;">
-        +50 Pkt
+      <div id="buzzerPointsTag" style="background: #ef4444; color: #fff; font-weight: 900; padding: 5px 12px; border-radius: 8px; font-size: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        +3 Pkt
       </div>
     </div>
 
-    <!-- Goal Target Badge -->
-    <div id="streamGoalBadge" class="stream-glass-card" style="padding: 8px 18px; display: flex; align-items: center; gap: 8px; border-color: #10b981;">
-      <span style="font-size: 1.2rem;">🎯</span>
-      <div>
-        <div style="font-size: 0.7rem; color: #6ee7b7; font-weight: 800; text-transform: uppercase;">ZIEL</div>
-        <div id="streamGoalVal" style="font-size: 1.2rem; font-weight: 900; color: #fff;">50</div>
+    <!-- Right Controls: Goal Badge & Timer -->
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <!-- Goal Target Badge -->
+      <div id="streamGoalBadge" class="stream-glass-card" style="padding: 8px 18px; display: flex; align-items: center; gap: 8px; border-color: #10b981;">
+        <span style="font-size: 1.2rem;">🎯</span>
+        <div>
+          <div style="font-size: 0.7rem; color: #6ee7b7; font-weight: 800; text-transform: uppercase;">ZIEL</div>
+          <div id="streamGoalVal" style="font-size: 1.2rem; font-weight: 900; color: #fff;">50</div>
+        </div>
       </div>
-    </div>
 
-    <!-- Timer Box -->
-    <div class="stream-glass-card" style="padding: 8px 20px; display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 0.8rem; color: #9ca3af; font-weight: 800;">TIMER</span>
-      <span id="streamTimer" style="font-family: monospace; font-size: 1.6rem; font-weight: 900; color: #ef4444;">
-        --s
-      </span>
+      <!-- Timer Box (Top-Right, 15s Countdown on Buzzer) -->
+      <div id="streamTimerCard" class="stream-glass-card" style="padding: 8px 20px; display: flex; align-items: center; gap: 10px; min-width: 110px; justify-content: center;">
+        <span id="streamTimerLabel" style="font-size: 0.75rem; color: #9ca3af; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">TIMER</span>
+        <span id="streamTimer" style="font-family: monospace; font-size: 1.7rem; font-weight: 900; color: #ef4444;">
+          --s
+        </span>
+      </div>
     </div>
   </header>
 
@@ -154,16 +260,21 @@
   <main style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: auto; z-index: 10;">
     
     <!-- 1. Song Quiz Center Stage -->
-    <div id="stageSong" class="stream-glass-card" style="padding: 24px 36px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; min-width: 580px;">
-      <canvas id="waveformCanvas" width="520" height="60" style="background: #0d0e14; border-radius: 8px;"></canvas>
+    <div id="stageSong" class="stream-glass-card" style="padding: 24px 36px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 18px; min-width: 580px;">
+      <!-- Slower, Smoother LED Segment Levelmeter Canvas -->
+      <div class="vu-meter-container">
+        <canvas id="waveformCanvas" width="540" height="85" style="display: block;"></canvas>
+      </div>
       
+      <!-- Censored / Masked Song Box (Until Fall 1 or Fall X) -->
       <div id="censoredSongBox" class="censored-title">
-        ████████ - ████████
+        🔒 ████████ - ████████
       </div>
 
-      <div id="songRevealBox" style="display: none; text-align: center;">
-        <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #10b981; letter-spacing: 1px;">Song Aufgelöst</div>
-        <div id="songFullName" style="font-size: 1.8rem; font-weight: 900; color: #fbbf24; margin-top: 4px;">
+      <!-- Revealed Song Box -->
+      <div id="songRevealBox" style="display: none; text-align: center; animation: popIn 0.4s ease-out;">
+        <div style="font-size: 0.85rem; text-transform: uppercase; font-weight: 800; color: #10b981; letter-spacing: 2px;">🎉 Song Aufgelöst</div>
+        <div id="songFullName" style="font-size: 2rem; font-weight: 900; color: #fbbf24; margin-top: 4px; text-shadow: 0 0 20px rgba(251, 191, 36, 0.45);">
           Artist - Title
         </div>
       </div>
@@ -260,17 +371,18 @@
   </main>
 
   <!-- Bottom Player Scoreboard -->
-  <footer class="stream-glass-card" style="padding: 12px 16px; width: 100%; box-sizing: border-box;">
-    <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #9ca3af; margin-bottom: 8px;">
+  <footer class="stream-glass-card" style="padding: 12px 18px; width: 100%; box-sizing: border-box;">
+    <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #9ca3af; margin-bottom: 8px; letter-spacing: 1px;">
       Mitspieler & Punktestand
     </div>
-    <div id="streamPlayerList" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-      <!-- Dynamically filled -->
+    <div id="streamPlayerList" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+      <!-- Dynamically filled with active buzzer indicator -->
     </div>
   </footer>
 
   <script>
     let lastFlash = null;
+    let isAudioActiveForVisualizer = false;
 
     function escapeHtml(str) {
       if (!str) return '';
@@ -294,6 +406,14 @@
     function renderOverlay(state) {
       if (!state) return;
 
+      // Determine if song audio is currently actively playing (not paused by buzz)
+      if (state.gameMode === 'song') {
+        const hasSong = !!(state.songState && (state.songState.title || state.songState.filePath));
+        isAudioActiveForVisualizer = hasSong && !state.activePlayer && !state.isLocked && !state.songState.revealed;
+      } else {
+        isAudioActiveForVisualizer = false;
+      }
+
       // 1. Header & Mode
       const modeLabel = document.getElementById('streamGameMode');
       const subStatus = document.getElementById('streamSubStatus');
@@ -305,7 +425,9 @@
         subStatus.innerText = 'Welches Erscheinungsjahr?';
       } else {
         modeLabel.innerText = '🎵 Erkennst du den Song?';
-        subStatus.innerText = state.isLocked ? 'Buzzer gesperrt' : 'Buzzer ist FREI!';
+        subStatus.innerText = state.activePlayer 
+          ? `${state.activePlayer.username} antwortet...` 
+          : (state.isLocked ? 'Buzzer gesperrt' : 'Buzzer ist FREI!');
       }
 
       // Goal & Boost State in Stream
@@ -352,29 +474,52 @@
         stageHitster.style.display = 'none';
       }
 
-      // 3. Timer
+      // 3. Top-Right Timer (15s Countdown on Buzzer)
+      const timerCard = document.getElementById('streamTimerCard');
+      const timerLabel = document.getElementById('streamTimerLabel');
       const timerEl = document.getElementById('streamTimer');
-      if (state.roundTimer && state.roundTimer.active) {
+
+      if (state.activePlayer && state.answerTimer) {
+        const remaining = Math.max(0, Math.ceil(state.answerTimer.remaining));
+        timerLabel.innerText = 'ANTWORT';
+        timerLabel.style.color = '#f59e0b';
+        timerEl.innerText = `${remaining}s`;
+        if (remaining <= 5) {
+          timerEl.style.color = '#ef4444';
+          timerCard.classList.add('timer-pulse-alert');
+        } else {
+          timerEl.style.color = '#f59e0b';
+          timerCard.classList.remove('timer-pulse-alert');
+        }
+      } else if (state.roundTimer && state.roundTimer.active) {
+        timerLabel.innerText = 'RUNDE';
+        timerLabel.style.color = '#9ca3af';
+        timerCard.classList.remove('timer-pulse-alert');
+        timerEl.style.color = '#60a5fa';
         timerEl.innerText = `${Math.ceil(state.roundTimer.remaining)}s`;
       } else {
+        timerLabel.innerText = 'TIMER';
+        timerLabel.style.color = '#9ca3af';
+        timerCard.classList.remove('timer-pulse-alert');
+        timerEl.style.color = '#6b7280';
         timerEl.innerText = '--s';
       }
 
-      // 4. Buzzer Alert
+      // 4. Buzzer Alert Notification Popup
       const buzzerPopup = document.getElementById('streamBuzzerPopup');
       if (state.activePlayer) {
         buzzerPopup.classList.remove('hidden');
         buzzerPopup.style.display = 'flex';
         document.getElementById('buzzerName').innerText = state.activePlayer.username || 'Spieler';
         document.getElementById('buzzerAvatar').src = state.activePlayer.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
-        const pts = state.activePlayer.potentialPoints || 50;
+        const pts = state.activePlayer.potentialPoints || 3;
         document.getElementById('buzzerPointsTag').innerText = `+${pts} Pkt`;
       } else {
         buzzerPopup.classList.add('hidden');
         buzzerPopup.style.display = 'none';
       }
 
-      // 5. Screen Flash (Green / Red)
+      // 5. Fullscreen Screen Flash (Green / Red)
       const flashLayer = document.getElementById('flashLayer');
       if (state.screenFlash === 'green' && lastFlash !== 'green') {
         flashLayer.className = 'flash-overlay flash-green';
@@ -385,7 +530,7 @@
       }
       lastFlash = state.screenFlash;
 
-      // 6. Song details
+      // 6. Song Details (Masked until Fall 1 or Fall X)
       if (state.songState) {
         const censoredBox = document.getElementById('censoredSongBox');
         const revealBox = document.getElementById('songRevealBox');
@@ -396,13 +541,13 @@
           revealBox.style.display = 'block';
           fullName.innerText = state.songState.fullTitle || 'Aufgelöst!';
         } else {
-          censoredBox.style.display = 'block';
+          censoredBox.style.display = 'inline-block';
           revealBox.style.display = 'none';
-          censoredBox.innerText = state.songState.censoredTitle || '████████ - ████████';
+          censoredBox.innerText = state.songState.censoredTitle || '🔒 ████████ - ████████';
         }
       }
 
-      // 7. Wallpaper details
+      // 7. Wallpaper Details
       if (state.wallpaperState) {
         const wp = state.wallpaperState;
         const img = document.getElementById('wpImage');
@@ -431,7 +576,7 @@
         }
       }
 
-      // 8. Hitster details
+      // 8. Hitster Details
       if (state.hitsterState) {
         const card = state.hitsterState.currentCard;
         const trackEl = document.getElementById('streamHitsterTrack');
@@ -473,7 +618,6 @@
           }
         }
 
-        // Hitster Player Shelves
         const shelvesEl = document.getElementById('streamHitsterShelves');
         if (shelvesEl) {
           const shelves = state.hitsterState.playerShelves || {};
@@ -506,7 +650,7 @@
         }
       }
 
-      // 9. Player Leaderboard
+      // 9. Player Leaderboard with Avatar & Buzzer Indicator
       const playerList = document.getElementById('streamPlayerList');
       if (state.scores && Object.keys(state.scores).length > 0) {
         const sorted = Object.values(state.scores).sort((a, b) => {
@@ -517,43 +661,155 @@
           }
           return (b.points || 0) - (a.points || 0);
         });
+
         playerList.innerHTML = sorted.map(p => {
-          const isBuzzed = state.activePlayer && state.activePlayer.id === p.id;
-          const bg = isBuzzed ? 'background: #f59e0b; color: #000;' : 'background: #1e202c; color: #fff;';
+          const isBuzzed = state.activePlayer && (state.activePlayer.id === p.id);
           const scoreDisplay = state.gameMode === 'hitster'
             ? `${(p.cards && p.cards.length) ? p.cards.length : (p.points || 0)} / ${state.goal || 10} Karten`
             : `${p.points || 0} Pkt`;
+
+          if (isBuzzed) {
+            return `
+              <div class="stream-player-card stream-player-buzzed">
+                <div class="stream-avatar-wrap">
+                  <img src="${p.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" class="stream-player-avatar buzzed-avatar" />
+                  <span class="stream-buzzer-badge">🚨</span>
+                </div>
+                <div class="stream-player-info">
+                  <div class="stream-player-name">${escapeHtml(p.username)}</div>
+                  <div class="stream-player-score">${scoreDisplay} • AM ZUG!</div>
+                </div>
+              </div>
+            `;
+          }
+
           return `
-            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 8px; border: 1.5px solid #2a2c3d; ${bg}">
-              <img src="${p.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" style="width: 28px; height: 28px; border-radius: 50%;" />
-              <div>
-                <div style="font-size: 0.8rem; font-weight: 800;">${escapeHtml(p.username)}</div>
-                <div style="font-size: 0.7rem; font-weight: 700; color: ${isBuzzed ? '#000' : '#60a5fa'};">${scoreDisplay}</div>
+            <div class="stream-player-card">
+              <div class="stream-avatar-wrap">
+                <img src="${p.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" class="stream-player-avatar" />
+              </div>
+              <div class="stream-player-info">
+                <div class="stream-player-name">${escapeHtml(p.username)}</div>
+                <div class="stream-player-score">${scoreDisplay}</div>
               </div>
             </div>
           `;
         }).join('');
       } else {
-        playerList.innerHTML = `<span style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">Warte auf Mitspieler...</span>`;
+        playerList.innerHTML = `<span style="font-size: 0.8rem; color: #6b7280; font-weight: 700;">Warte auf Mitspieler...</span>`;
       }
     }
 
-    // Audio Visualizer
+    // --- Slower, Smoother LED Segment Levelmeter Visualizer with Peak-Hold Caps ---
     const canvas = document.getElementById('waveformCanvas');
     if (canvas) {
       const ctx = canvas.getContext('2d');
-      function drawWave() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const bars = 26;
-        const w = canvas.width / bars;
-        ctx.fillStyle = '#10B981';
-        for (let i = 0; i < bars; i++) {
-          const h = Math.random() * (canvas.height * 0.7) + 4;
-          ctx.fillRect(i * w + 2, canvas.height - h, w - 4, h);
-        }
-        requestAnimationFrame(drawWave);
+      const numBars = 32;
+      const bars = [];
+      for (let i = 0; i < numBars; i++) {
+        bars.push({
+          current: 4,
+          target: 4,
+          peak: 4,
+          peakTimer: 0
+        });
       }
-      drawWave();
+
+      let animTime = 0;
+
+      function renderVuMeter() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const isPlaying = isAudioActiveForVisualizer;
+        // Slower harmonic progression
+        animTime += isPlaying ? 0.024 : 0.008;
+
+        const padX = 8;
+        const padY = 6;
+        const availableWidth = canvas.width - (padX * 2);
+        const availableHeight = canvas.height - (padY * 2);
+        const barGap = 4;
+        const barWidth = Math.floor((availableWidth - (numBars - 1) * barGap) / numBars);
+        const segmentHeight = 4;
+        const segmentGap = 2;
+        const totalSegments = Math.floor(availableHeight / (segmentHeight + segmentGap));
+
+        for (let i = 0; i < numBars; i++) {
+          const b = bars[i];
+
+          if (isPlaying) {
+            // Multi-harmonic smooth wave function without erratic jitter
+            const freq = (i + 1) / numBars;
+            const w1 = Math.sin(animTime * 2.1 + i * 0.26);
+            const w2 = Math.cos(animTime * 1.4 - i * 0.17);
+            const w3 = Math.sin(animTime * 3.6 + i * 0.42);
+            
+            // Bass emphasis on lower indices, dynamic highs
+            const harmonic = (w1 * 0.46 + w2 * 0.34 + w3 * 0.20) + 1.0; // 0.0 to 2.0
+            const bassWeight = Math.max(0.35, 1.25 - freq * 0.65);
+            let targetNorm = (harmonic / 2.0) * bassWeight;
+            targetNorm = Math.min(0.96, Math.max(0.08, targetNorm));
+
+            b.target = targetNorm * availableHeight;
+          } else {
+            // Gentle resting shimmer when paused or idle
+            const idleWave = (Math.sin(animTime * 0.8 + i * 0.32) + 1.0) * 0.5;
+            b.target = 3 + idleWave * 7;
+          }
+
+          // Slow, organic lerp (prevents twitching)
+          b.current += (b.target - b.current) * 0.085;
+
+          // Peak-hold caps logic
+          if (b.current > b.peak) {
+            b.peak = b.current;
+            b.peakTimer = 35; // Hold peak cap for 35 frames (~0.6s)
+          } else {
+            if (b.peakTimer > 0) {
+              b.peakTimer--;
+            } else {
+              b.peak = Math.max(b.current, b.peak - 1.1); // Smooth downward decay
+            }
+          }
+
+          const x = padX + i * (barWidth + barGap);
+          const activeHeight = Math.max(3, b.current);
+          const activeSegments = Math.round((activeHeight / availableHeight) * totalSegments);
+
+          // Draw stacked LED segments
+          for (let s = 0; s < totalSegments; s++) {
+            const segY = canvas.height - padY - (s + 1) * (segmentHeight + segmentGap);
+            const segNorm = s / totalSegments;
+
+            if (s < activeSegments) {
+              // Active LED color gradient (Green -> Amber -> Crimson Red)
+              if (segNorm > 0.82) {
+                ctx.fillStyle = '#ef4444'; // Red peak
+              } else if (segNorm > 0.56) {
+                ctx.fillStyle = '#f59e0b'; // Amber mid
+              } else {
+                ctx.fillStyle = '#10b981'; // Green safe
+              }
+            } else {
+              // Inactive LED segment background
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+            }
+
+            ctx.fillRect(x, segY, barWidth, segmentHeight);
+          }
+
+          // Draw Peak Hold Cap
+          if (b.peak > 4) {
+            const peakSeg = Math.min(totalSegments - 1, Math.round((b.peak / availableHeight) * totalSegments));
+            const peakY = canvas.height - padY - (peakSeg + 1) * (segmentHeight + segmentGap);
+            ctx.fillStyle = peakSeg > totalSegments * 0.82 ? '#ffffff' : '#fbbf24';
+            ctx.fillRect(x, peakY, barWidth, segmentHeight);
+          }
+        }
+
+        requestAnimationFrame(renderVuMeter);
+      }
+      renderVuMeter();
     }
 
     setInterval(pollState, 200);

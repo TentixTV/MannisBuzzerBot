@@ -289,13 +289,30 @@
             Kein Ordner geladen
           </div>
 
-          <div style="display: flex; gap: 6px;">
-            <select id="selMusicGenre" class="excel-input" style="flex: 1; min-width: 0;">
-              <option value="">Alle Genres</option>
-            </select>
-            <button id="btnPickRandomSong" class="btn-chunky btn-primary" style="padding: 6px 12px; font-size: 12px; flex-shrink: 0;" disabled>
+          <!-- Playlist-Modus: Shuffle vs. Nummeriert -->
+          <div class="playlist-mode-bar" style="display: flex; gap: 6px; margin: 4px 0;">
+            <button id="btnPlaylistShuffle" class="btn-chunky btn-playlist-mode active" style="flex: 1; padding: 6px 8px; font-size: 11px;" title="Playlist mischen / Zufall">
+              <span>🔀 Shuffle</span>
+            </button>
+            <button id="btnPlaylistNumbered" class="btn-chunky btn-playlist-mode" style="flex: 1; padding: 6px 8px; font-size: 11px;" title="Playlist nach Nummerierung abspielen (z.B. 01, 02 durch mp3Tag)">
+              <span>🔢 Nummeriert</span>
+            </button>
+          </div>
+
+          <!-- Nächster Song Slot -->
+          <div id="nextSongSlotCard" class="next-song-card" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid #38bdf8; border-radius: 8px; padding: 8px 10px; margin: 2px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">⏭️ Nächster Song:</span>
+              <button id="btnRerollNextSong" class="btn-mini-action" title="Nächsten Song neu wählen / weiterschalten" style="font-size: 10px; padding: 2px 6px; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #bae6fd; border-radius: 4px; cursor: pointer;">
+                🎲 Neu wählen
+              </button>
+            </div>
+            <div id="lblNextSongTitle" style="font-size: 11px; font-weight: 800; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 6px;" title="Vorgemerkter Track">
+              Kein Track vorgemerkt
+            </div>
+            <button id="btnPickRandomSong" class="btn-chunky btn-primary" style="width: 100%; padding: 6px 12px; font-size: 12px;" disabled>
               <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>Song spielen</span>
+              <span>Song starten</span>
             </button>
           </div>
 
@@ -585,7 +602,7 @@
                   </span>
                 </div>
 
-                <!-- 10s Buzzer Answer Countdown Timer -->
+                <!-- 15s Buzzer Answer Countdown Timer -->
                 <div id="answerTimerBox" class="answer-timer-box hidden">
                   <div class="answer-timer-row">
                     <div class="answer-timer-info">
@@ -594,7 +611,7 @@
                         <polyline points="12 6 12 12 16 14"></polyline>
                       </svg>
                       <span class="timer-label">Antwortzeit:</span>
-                      <strong id="lblAnswerTimerSeconds" class="timer-value">10s</strong>
+                      <strong id="lblAnswerTimerSeconds" class="timer-value">15s</strong>
                     </div>
                   </div>
                   <div class="answer-timer-progress">
@@ -602,7 +619,7 @@
                   </div>
                 </div>
 
-                <!-- 10s Answer Expired Host Alert -->
+                <!-- 15s Answer Expired Host Alert -->
                 <div id="answerExpiredAlert" class="answer-expired-box hidden">
                   <div class="expired-msg">
                     <svg class="expired-warn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -610,7 +627,7 @@
                       <line x1="12" y1="9" x2="12" y2="13"></line>
                       <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <span><strong>10 Sekunden abgelaufen!</strong> Keine Antwort erhalten.</span>
+                    <span><strong>15 Sekunden abgelaufen!</strong> Keine Antwort erhalten.</span>
                   </div>
                   <div class="expired-actions">
                     <button id="btnExpiredEndRound" class="btn-expired-action btn-expired-abort" title="Runde auflösen oder beenden">
@@ -739,8 +756,8 @@
             </div>
           </div>
 
-          <!-- Buzzer Queue -->
-          <div class="queue-section" id="queueSection">
+          <!-- Buzzer Queue (Disabled/Hidden per user request) -->
+          <div class="queue-section hidden" id="queueSection" style="display: none !important;">
             <div class="queue-header">
               <div class="queue-title-wrap">
                 <svg class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -12,24 +12,46 @@ const { ensureSounds } = require('./generateSounds');
 
 class AudioManager {
   constructor() {
-    this.player = createAudioPlayer();
+    this.songPlayer = createAudioPlayer();
+    this.sfxPlayer = createAudioPlayer();
     this.connection = null;
     this.volume = 0.8;
     this.soundPaths = ensureSounds();
+    this.isSongPlaying = false;
+    this.isSongPaused = false;
+    this.currentSongPath = null;
 
-    this.player.on('error', (error) => {
-      console.error('Audio Player Error:', error.message, error);
+    this.songPlayer.on('error', (error) => {
+      console.error('[Audio] Song Player Error:', error.message);
     });
 
-    this.player.on(AudioPlayerStatus.Idle, () => {
-      // Audio finished playing
+    this.sfxPlayer.on('error', (error) => {
+      console.error('[Audio] SFX Player Error:', error.message);
+    });
+
+    this.sfxPlayer.on(AudioPlayerStatus.Idle, () => {
+      // When SFX finishes, re-subscribe connection to songPlayer if song is still active and not paused by buzzer
+      if (this.connection && this.isSongPlaying && !this.isSongPaused) {
+        try {
+          this.connection.subscribe(this.songPlayer);
+        } catch (e) {}
+      }
+    });
+
+    this.songPlayer.on(AudioPlayerStatus.Idle, () => {
+      this.isSongPlaying = false;
     });
   }
 
   setConnection(connection) {
     this.connection = connection;
     if (this.connection) {
-      this.connection.subscribe(this.player);
+      try {
+        const target = (this.isSongPlaying && !this.isSongPaused) ? this.songPlayer : this.sfxPlayer;
+        this.connection.subscribe(target);
+      } catch (e) {
+        console.warn('[Audio] setConnection subscribe error:', e.message);
+      }
     }
   }
 
@@ -54,7 +76,6 @@ class AudioManager {
     }
 
     if (!this.connection) {
-      console.log(`[Audio] No active voice connection to play ${soundType}`);
       return false;
     }
 
@@ -65,7 +86,8 @@ class AudioManager {
       if (resource.volume) {
         resource.volume.setVolume(this.volume);
       }
-      this.player.play(resource);
+      this.connection.subscribe(this.sfxPlayer);
+      this.sfxPlayer.play(resource);
       return true;
     } catch (err) {
       console.error(`Error playing sound ${soundType}:`, err);
@@ -89,10 +111,56 @@ class AudioManager {
     return this.playSound('perfect');
   }
 
-  stop() {
-    if (this.player) {
-      this.player.stop();
+  playSong(filePath) {
+    if (!filePath || !fs.existsSync(filePath)) return false;
+    this.currentSongPath = filePath;
+    this.isSongPlaying = true;
+    this.isSongPaused = false;
+
+    if (!this.connection) return true;
+    try {
+      const resource = createAudioResource(filePath, { inlineVolume: true });
+      if (resource.volume) {
+        resource.volume.setVolume(this.volume);
+      }
+      this.connection.subscribe(this.songPlayer);
+      this.songPlayer.play(resource);
+      return true;
+    } catch (err) {
+      console.warn('[Audio] playSong voice warning:', err.message);
+      return false;
     }
+  }
+
+  pauseSong() {
+    this.isSongPaused = true;
+    try {
+      if (this.songPlayer && this.songPlayer.state.status !== AudioPlayerStatus.Paused) {
+        this.songPlayer.pause();
+      }
+    } catch (e) {}
+  }
+
+  resumeSong() {
+    this.isSongPaused = false;
+    try {
+      if (this.connection) {
+        this.connection.subscribe(this.songPlayer);
+      }
+      if (this.songPlayer && this.songPlayer.state.status === AudioPlayerStatus.Paused) {
+        this.songPlayer.unpause();
+      }
+    } catch (e) {}
+  }
+
+  stop() {
+    this.isSongPlaying = false;
+    this.isSongPaused = false;
+    this.currentSongPath = null;
+    try {
+      if (this.songPlayer) this.songPlayer.stop();
+      if (this.sfxPlayer) this.sfxPlayer.stop();
+    } catch (e) {}
   }
 }
 

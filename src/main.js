@@ -5,7 +5,41 @@ const StreamServer = require('./streamServer');
 const { loadConfig, saveConfig } = require('./config/configManager');
 
 let mainWindow = null;
+let streamWindow = null;
 let streamServer = null;
+
+function openStreamWindow() {
+  if (streamWindow && !streamWindow.isDestroyed()) {
+    streamWindow.show();
+    streamWindow.focus();
+    return { success: true };
+  }
+
+  const iconPath = path.join(__dirname, '..', 'App.png');
+  streamWindow = new BrowserWindow({
+    width: 1280,
+    height: 720,
+    minWidth: 800,
+    minHeight: 450,
+    title: "MannisBox — Stream Overlay",
+    icon: iconPath,
+    backgroundColor: '#12131a',
+    autoHideMenuBar: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  const url = streamServer ? streamServer.getUrl() : 'http://localhost:8888/stream.html';
+  streamWindow.loadURL(url);
+
+  streamWindow.on('closed', () => {
+    streamWindow = null;
+  });
+
+  return { success: true };
+}
 
 function createWindow() {
   const iconPath = path.join(__dirname, '..', 'App.png');
@@ -404,6 +438,38 @@ ipcMain.handle('select-specific-wallpaper', (event, titleOrIndex) => {
 
 ipcMain.handle('set-wallpaper-stage-points', (event, pointsObj) => {
   return botManager.setWallpaperStagePoints(pointsObj);
+});
+
+ipcMain.handle('open-stream-window', () => {
+  return openStreamWindow();
+});
+
+ipcMain.handle('set-playlist-mode', (event, mode) => {
+  return botManager.setPlaylistMode(mode);
+});
+
+ipcMain.handle('prepare-next-song', async () => {
+  return await botManager.prepareNextSong();
+});
+
+ipcMain.handle('stage-next-song', async (event, filePath) => {
+  return await botManager.stageSpecificNextSong(filePath);
+});
+
+ipcMain.handle('play-next-song', async () => {
+  return await botManager.playNextSong();
+});
+
+ipcMain.handle('pause-song', () => {
+  return botManager.pauseSong();
+});
+
+ipcMain.handle('resume-song', () => {
+  return botManager.resumeSong();
+});
+
+ipcMain.handle('stop-song', () => {
+  return botManager.stopSong();
 });
 
 

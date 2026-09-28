@@ -13,7 +13,7 @@ if (!TOKEN) {
 }
 const OWNER = 'TentixTV';
 const REPO = 'MannisBuzzerBot';
-const TAG = 'v4.8.025';
+const TAG = 'v4.8.026';
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
@@ -120,8 +120,8 @@ async function main() {
     const releasePayload = JSON.stringify({
       tag_name: TAG,
       target_commitish: 'main',
-      name: `MannisBox ${TAG} — Deluxe Release (One-Click Instant Download)`,
-      body: `## 🎮 MannisBox ${TAG} — Deluxe Release\n\n### ⚡ One-Click Instant Download:\n- [📦 MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [🗜️ MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### 🌟 Neuerungen:\n- Interaktiver Schärfe-Stufen Quick-Punkte-Editor unten links\n- Deep Specular Golden Hover-Glow\n- Stream-Proof Optical Blur für Filmtitel (Anti-Spoiler)\n- Maßgeschneiderte Glassmorphism In-App-Dialoge\n- Reines Vektor-SVG statt zerschossener Emojis`,
+      name: `MannisBox ${TAG} — Song Quiz & Stream Engine Update`,
+      body: `## 🎮 MannisBox ${TAG} — Song Quiz & Stream Engine Update\n\n### ⚡ One-Click Instant Download:\n- [📦 MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [🗜️ MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### 🌟 Neuerungen in v4.8.026:\n- **Playlist-Modi:** Umschalten zwischen Shuffle und mp3Tag-Nummerierung (01, 02...)\n- **Next Track Slot:** Vorbereitung & Vorschau auf den nächsten Song\n- **Song-Suche:** Geklickter Titel wandert in den Nächster-Song-Slot statt sofort zu starten\n- **Echtes 2. Fenster für Stream-Ansicht:** Eigenständiges OBS Overlay Fenster\n- **Stream Overlay Layout:** 15s Countdown oben rechts, sanftes VU-Meter, verdeckter Songtitel (wird erst bei Richtig oder Abbruch aufgedeckt)\n- **Buzzer Audio Flow:** Musik stoppt bei Buzzer, Runden-Sperre für Mitspieler bei Fehlantworten (Fall 2), Weiterspielen bei Fall 1\n- **Clean Layout:** Genres und Warteschlange entfernt für maximale Übersicht`,
       draft: false,
       prerelease: false
     });

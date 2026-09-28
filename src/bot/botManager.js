@@ -54,6 +54,9 @@ class BotManager extends EventEmitter {
     // Music & Wallpaper storage
     this.availableMusicFiles = [];
     this.currentMusicFolder = '';
+    this.playlistMode = 'shuffle'; // 'shuffle' | 'numbered'
+    this.currentSongIndex = -1;
+    this.manuallyStagedNextSong = false;
     this.availableWallpaperRounds = [];
     this.currentWallpaperRound = null;
     this.answerCountdownInterval = null;
@@ -68,6 +71,7 @@ class BotManager extends EventEmitter {
       queue: [],
       scores: {}, // playerId -> { id, username, avatar, points, correct, wrong }
       roundWrongAttempts: {}, // playerId -> count
+      roundLockedPlayers: {}, // playerId -> true (locked for current round after wrong answer)
       roundFirstBuzzTime: null,
       statusText: 'Warte auf den Start der nächsten Runde...',
       currentMessage: null,
@@ -90,7 +94,9 @@ class BotManager extends EventEmitter {
         remaining: 30,
         duration: 30
       },
-      answerTimer: null, // { total: 10, remaining: 10, expired: false, activePlayerId: null }
+      answerTimer: null, // { total: 15, remaining: 15, expired: false, activePlayerId: null }
+      playlistMode: 'shuffle',
+      nextSong: null, // { filePath, title, artist, fullTitle, censoredTitle }
       songState: {
         title: '',
         artist: '',
@@ -883,12 +889,12 @@ class BotManager extends EventEmitter {
       return replyFn({ content: '🔒 Der Buzzer ist derzeit gesperrt!', ephemeral: true });
     }
 
-    const alreadyInQueue =
-      (this.gameState.activePlayer && this.gameState.activePlayer.id === userId) ||
-      this.gameState.queue.some((p) => p.id === userId);
+    if (this.gameState.roundLockedPlayers && this.gameState.roundLockedPlayers[userId]) {
+      return replyFn({ content: '❌ Du hast in dieser Runde bereits geantwortet und bist für diesen Song gesperrt!', ephemeral: true });
+    }
 
-    if (alreadyInQueue) {
-      return replyFn({ content: '⚠️ Du bist bereits im Buzzer-Ablauf!', ephemeral: true });
+    if (this.gameState.activePlayer) {
+      return replyFn({ content: `⏱️ **${this.gameState.activePlayer.username}** ist gerade am Zug! Bitte warte, bis der Buzzer wieder frei gegeben wird.`, ephemeral: true });
     }
 
     if (!this.gameState.scores[userId]) {
@@ -924,22 +930,21 @@ class BotManager extends EventEmitter {
 
     const player = { id: userId, username, avatar, timeOffset, timestamp: now, potentialPoints };
 
-    if (!this.gameState.activePlayer) {
-      this.gameState.activePlayer = player;
-      const boostBadge = this.gameState.isBoostActive ? ' 🔥 (2X BOOST)' : '';
-      this.gameState.statusText = `🔔 **${username}** hat zuerst gebuzzert!${boostBadge}`;
-      this.gameState.isLocked = true;
-      if (this.gameState.roundTimer) {
-        this.gameState.roundTimer.paused = true;
-      }
-      audioManager.playBuzzer();
-      this.startAnswerCountdown(10);
-      await replyFn({ content: `🎉 **GEBUZZERT!** Du bist dran! Antworte jetzt im Voice-Chat!${boostBadge}`, ephemeral: true });
-    } else {
-      this.gameState.queue.push(player);
-      const pos = this.gameState.queue.length + 1;
-      await replyFn({ content: `⏱️ Gebuzzert! Du bist auf **Platz #${pos}** in der Warteschlange.`, ephemeral: true });
+    this.gameState.activePlayer = player;
+    this.gameState.queue = [];
+    const boostBadge = this.gameState.isBoostActive ? ' 🔥 (2X BOOST)' : '';
+    this.gameState.statusText = `🔔 **${username}** hat zuerst gebuzzert!${boostBadge}`;
+    this.gameState.isLocked = true;
+    if (this.gameState.roundTimer) {
+      this.gameState.roundTimer.paused = true;
     }
+    audioManager.pauseSong();
+    if (this.gameState.songState) {
+      this.gameState.songState.isPlaying = false;
+    }
+    audioManager.playBuzzer();
+    this.startAnswerCountdown(15);
+    await replyFn({ content: `🎉 **GEBUZZERT!** Du bist dran! Antworte jetzt im Voice-Chat!${boostBadge}`, ephemeral: true });
 
     this.updateDiscordMessage();
     this.emitState();
@@ -969,6 +974,8 @@ class BotManager extends EventEmitter {
     this.gameState.activePlayer = null;
     this.gameState.queue = [];
     this.gameState.roundWrongAttempts = {};
+    this.gameState.roundLockedPlayers = {};
+    this.gameState.screenFlash = null;
     this.gameState.roundFirstBuzzTime = null;
     this.gameState.statusText = 'Drücke den Buzzer, wenn du die Antwort kennst!';
     this.gameState.currentTextChannelId = targetTextChannelId;
@@ -1067,8 +1074,8 @@ class BotManager extends EventEmitter {
     return { success: true };
   }
 
-  // --- 10-SECOND BUZZER ANSWER TIMER ---
-  startAnswerCountdown(seconds = 10) {
+  // --- 15-SECOND BUZZER ANSWER TIMER ---
+  startAnswerCountdown(seconds = 15) {
     this.stopAnswerCountdown();
     this.gameState.answerTimer = {
       total: seconds,
@@ -1087,7 +1094,7 @@ class BotManager extends EventEmitter {
       if (this.gameState.answerTimer.remaining <= 0) {
         this.gameState.answerTimer.remaining = 0;
         this.gameState.answerTimer.expired = true;
-        this.gameState.statusText = '⚠️ 10 Sekunden Antwortzeit abgelaufen! Bitte Runde auflösen oder freigeben.';
+        this.gameState.statusText = '⚠️ 15 Sekunden Antwortzeit abgelaufen! Bitte Runde auflösen oder freigeben.';
         clearInterval(this.answerCountdownInterval);
         this.answerCountdownInterval = null;
       }
@@ -1109,10 +1116,15 @@ class BotManager extends EventEmitter {
   resumeRound() {
     this.stopAnswerCountdown();
     this.gameState.activePlayer = null;
+    this.gameState.queue = [];
     this.gameState.isLocked = false;
     this.gameState.isEvaluating = false;
     if (this.gameState.roundTimer) {
       this.gameState.roundTimer.paused = false;
+    }
+    audioManager.resumeSong();
+    if (this.gameState.songState) {
+      this.gameState.songState.isPlaying = true;
     }
     this.gameState.statusText = 'Buzzer ist wieder frei!';
     this.updateDiscordMessage();
@@ -1127,15 +1139,20 @@ class BotManager extends EventEmitter {
     this.gameState.activePlayer = null;
     this.gameState.queue = [];
 
-    if (this.gameState.gameMode === 'wallpaper') {
-      this.resolveWallpaper();
-    } else if (this.gameState.gameMode === 'song') {
-      this.gameState.songState.revealed = true;
-    } else if (this.gameState.gameMode === 'hitster') {
-      this.resolveHitsterCard();
+    audioManager.stop();
+    if (this.gameState.songState) {
+      this.gameState.songState.isPlaying = false;
     }
 
-    this.gameState.statusText = '⏹️ Runde wurde vom Spielleiter aufgelöst.';
+    if (this.gameState.gameMode === 'wallpaper') {
+      this.resolveWallpaper();
+    } else if (this.gameState.gameMode === 'hitster') {
+      this.resolveHitsterCard();
+    } else {
+      this.gameState.songState.revealed = true;
+    }
+
+    this.gameState.statusText = '⏹️ Runde wurde vom Spielleiter abgebrochen. Lösung aufgedeckt!';
     this.updateDiscordMessage();
     this.emitState();
     return { success: true };
@@ -1165,53 +1182,70 @@ class BotManager extends EventEmitter {
       cards: []
     };
 
-    if (action === 'wrong') {
-      const attempts = this.gameState.roundWrongAttempts[userId] || 0;
-      let penalty = attempts >= 1 ? (this.config.points.wrongRepeat || -2) : (this.config.points.wrongFirst || -1);
-      if (this.gameState.gameMode === 'hitster') {
-        penalty = 0; // Bei Hitster keine Minuspunkte, nur falsche Platzierung
+    if (!this.gameState.roundLockedPlayers) {
+      this.gameState.roundLockedPlayers = {};
+    }
+
+    if (action === 'wrong' || action === 'skip') {
+      // Fall 2: Player answered incorrectly
+      // Auto-lock player who answered wrongly for the remainder of this song/round
+      this.gameState.roundLockedPlayers[userId] = true;
+
+      let penalty = 0;
+      if (action === 'wrong') {
+        const attempts = this.gameState.roundWrongAttempts[userId] || 0;
+        penalty = attempts >= 1 ? (this.config.points.wrongRepeat || -2) : (this.config.points.wrongFirst || -1);
+        if (this.gameState.gameMode === 'hitster') {
+          penalty = 0;
+        }
+        this.gameState.roundWrongAttempts[userId] = attempts + 1;
+        playerScore.points += penalty;
+        playerScore.wrong = (playerScore.wrong || 0) + 1;
       }
 
-      this.gameState.roundWrongAttempts[userId] = attempts + 1;
-      playerScore.points += penalty;
-      playerScore.wrong = (playerScore.wrong || 0) + 1;
       this.gameState.scores[userId] = playerScore;
 
       // Screen Flash RED
       this.gameState.screenFlash = 'red';
-      setTimeout(() => { this.gameState.screenFlash = null; this.emitState(); }, 1500);
+      this.gameState.flashId = Date.now();
+      setTimeout(() => {
+        if (this.gameState.screenFlash === 'red') {
+          this.gameState.screenFlash = null;
+          this.emitState();
+        }
+      }, 1500);
 
       audioManager.playWrong();
-      this.gameState.statusText = `❌ **${player.username}** lag falsch (${penalty} Pkt.)!`;
+      audioManager.resumeSong();
+      if (this.gameState.songState) {
+        this.gameState.songState.isPlaying = true;
+      }
+
+      // Free the buzzer for remaining eligible players; song continues playing
+      this.gameState.activePlayer = null;
+      this.gameState.queue = [];
+      this.gameState.isLocked = false;
+      this.gameState.isEvaluating = false;
+      if (this.gameState.roundTimer) {
+        this.gameState.roundTimer.paused = false;
+      }
+
+      if (action === 'wrong') {
+        this.gameState.statusText = `❌ **${player.username}** lag falsch (${penalty} Pkt.)! Song läuft weiter, Buzzer ist wieder frei.`;
+      } else {
+        this.gameState.statusText = `⏭️ **${player.username}** lag falsch (kein Abzug). Song läuft weiter, Buzzer ist wieder frei.`;
+      }
+
       await this.updateDiscordMessage();
       this.emitState();
 
-      // 3-second animated countdown
-      this.start3SecondCooldown(async () => {
-        if (this.gameState.queue.length > 0) {
-          const nextPlayer = this.gameState.queue.shift();
-          this.gameState.activePlayer = nextPlayer;
-          this.gameState.statusText = `➔ **${nextPlayer.username}** ist jetzt an der Reihe!`;
-          this.gameState.isLocked = false;
-          this.startAnswerCountdown(10);
-        } else {
-          this.gameState.activePlayer = null;
-          this.gameState.statusText = `Buzzer ist wieder frei für alle!`;
-          this.gameState.isLocked = false;
-          if (this.gameState.roundTimer) {
-            this.gameState.roundTimer.paused = false;
-          }
-        }
-        await this.updateDiscordMessage();
-        this.emitState();
-      });
-
     } else if (action === 'correct' || action === 'perfect') {
+      // Fall 1: Correct answer
       let gain = this.config.points.correct || 3;
       if (this.gameState.gameMode === 'wallpaper') {
         gain = player.potentialPoints || 4;
         this.resolveWallpaper();
-      } else if (this.gameState.gameMode === 'song') {
+      } else if (this.gameState.gameMode === 'song' || !this.gameState.gameMode) {
         this.gameState.songState.revealed = true;
         if (action === 'perfect') gain = this.config.points.perfect || 4;
       } else if (this.gameState.gameMode === 'hitster') {
@@ -1232,41 +1266,32 @@ class BotManager extends EventEmitter {
 
       // Screen Flash GREEN
       this.gameState.screenFlash = 'green';
-      setTimeout(() => { this.gameState.screenFlash = null; this.emitState(); }, 1500);
+      this.gameState.flashId = Date.now();
+      setTimeout(() => {
+        if (this.gameState.screenFlash === 'green') {
+          this.gameState.screenFlash = null;
+          this.emitState();
+        }
+      }, 1500);
 
       this.stopRoundTimer();
       audioManager.playCorrect();
+      audioManager.resumeSong();
+      if (this.gameState.songState) {
+        this.gameState.songState.isPlaying = true;
+      }
 
       const boostTag = wasBoosted ? ' 🔥 (2X BOOST!)' : '';
-      this.gameState.statusText = `✅ **${player.username}** hat richtig geantwortet (+${gain} Pkt.${boostTag})! 🎉`;
-      await this.updateDiscordMessage();
-      this.emitState();
+      this.gameState.statusText = `✅ **${player.username}** hat richtig geantwortet (+${gain} Pkt.${boostTag})! Song läuft weiter.`;
 
-      const hasWon = this.checkVictory(playerScore);
+      // Clear active player, lock buzzer because round is resolved, song keeps playing until host manually advances
+      this.gameState.activePlayer = null;
+      this.gameState.queue = [];
+      this.gameState.isLocked = true;
+      this.gameState.isEvaluating = false;
 
-      this.start3SecondCooldown(async () => {
-        this.gameState.queue = [];
-        this.gameState.activePlayer = null;
-        if (!hasWon) {
-          this.gameState.statusText = `✅ Gelöst von **${player.username}**! Starte nächste Runde.`;
-          this.gameState.isLocked = false;
-        }
-        await this.updateDiscordMessage();
-        this.emitState();
-      });
+      this.checkVictory(playerScore);
 
-    } else if (action === 'skip') {
-      this.gameState.statusText = `⏭️ **${player.username}** wurde übersprungen.`;
-      if (this.gameState.queue.length > 0) {
-        this.gameState.activePlayer = this.gameState.queue.shift();
-        this.startAnswerCountdown(10);
-      } else {
-        this.gameState.activePlayer = null;
-        this.gameState.isLocked = false;
-        if (this.gameState.roundTimer) {
-          this.gameState.roundTimer.paused = false;
-        }
-      }
       await this.updateDiscordMessage();
       this.emitState();
     }
@@ -1296,38 +1321,156 @@ class BotManager extends EventEmitter {
   // --- SONG MODE HELPERS ---
   async scanMusicFolder(folderPath) {
     const res = await scanAudioFolder(folderPath);
-    if (res.success) {
+    if (res.success && res.files) {
+      res.files.sort((a, b) => {
+        const baseA = path.basename(a);
+        const baseB = path.basename(b);
+        return baseA.localeCompare(baseB, undefined, { numeric: true, sensitivity: 'base' });
+      });
       this.currentMusicFolder = folderPath;
       this.availableMusicFiles = res.files;
+      this.currentSongIndex = -1;
+      await this.prepareNextSong();
     }
     return res;
   }
 
-  async pickRandomSong(genre = null) {
-    let pool = this.availableMusicFiles;
-    if (genre && this.currentMusicFolder) {
-      const genrePath = path.join(this.currentMusicFolder, genre);
-      pool = this.availableMusicFiles.filter(f => f.startsWith(genrePath));
+  setPlaylistMode(mode) {
+    const validMode = (mode === 'numbered') ? 'numbered' : 'shuffle';
+    this.playlistMode = validMode;
+    this.gameState.playlistMode = validMode;
+    if (!this.manuallyStagedNextSong) {
+      this.prepareNextSong();
+    } else {
+      this.emitState();
+    }
+    return { success: true, mode: validMode };
+  }
+
+  async prepareNextSong(forcedFilePath = null) {
+    if (!this.availableMusicFiles || this.availableMusicFiles.length === 0) {
+      this.gameState.nextSong = null;
+      this.emitState();
+      return null;
     }
 
-    if (!pool || pool.length === 0) {
-      return { success: false, error: 'Keine Songs gefunden' };
+    let targetFile = null;
+    if (forcedFilePath) {
+      const normForced = path.normalize(forcedFilePath).toLowerCase();
+      const match = this.availableMusicFiles.find(f => path.normalize(f).toLowerCase() === normForced);
+      if (match || fs.existsSync(forcedFilePath)) {
+        targetFile = match || forcedFilePath;
+        this.manuallyStagedNextSong = true;
+        const idx = this.availableMusicFiles.indexOf(targetFile);
+        if (idx !== -1) {
+          this.currentSongIndex = idx;
+        }
+      }
     }
 
-    const chosen = pool[Math.floor(Math.random() * pool.length)];
-    const tags = await extractAudioTags(chosen);
+    if (!targetFile) {
+      this.manuallyStagedNextSong = false;
+      if (this.playlistMode === 'numbered') {
+        this.currentSongIndex = (this.currentSongIndex + 1) % this.availableMusicFiles.length;
+        targetFile = this.availableMusicFiles[this.currentSongIndex];
+      } else {
+        let randomIdx = Math.floor(Math.random() * this.availableMusicFiles.length);
+        if (this.availableMusicFiles.length > 1 && randomIdx === this.currentSongIndex) {
+          randomIdx = (randomIdx + 1) % this.availableMusicFiles.length;
+        }
+        this.currentSongIndex = randomIdx;
+        targetFile = this.availableMusicFiles[randomIdx];
+      }
+    }
 
-    this.gameState.songState = {
+    if (!targetFile) return null;
+
+    const tags = await extractAudioTags(targetFile);
+    this.gameState.nextSong = {
+      filePath: targetFile,
       title: tags.title,
       artist: tags.artist,
       fullTitle: tags.fullTitle,
-      censoredTitle: tags.censoredTitle,
-      revealed: false,
-      filePath: chosen
+      censoredTitle: tags.censoredTitle
     };
 
     this.emitState();
-    return { success: true, song: this.gameState.songState };
+    return this.gameState.nextSong;
+  }
+
+  async stageSpecificNextSong(filePath) {
+    const res = await this.prepareNextSong(filePath);
+    return { success: !!res, nextSong: res };
+  }
+
+  async playNextSong() {
+    if (!this.gameState.nextSong && this.availableMusicFiles.length > 0) {
+      await this.prepareNextSong();
+    }
+
+    if (!this.gameState.nextSong) {
+      return { success: false, error: 'Kein nächster Song vorhanden.' };
+    }
+
+    const currentToPlay = this.gameState.nextSong;
+    this.gameState.songState = {
+      title: currentToPlay.title,
+      artist: currentToPlay.artist,
+      fullTitle: currentToPlay.fullTitle,
+      censoredTitle: currentToPlay.censoredTitle,
+      revealed: false,
+      filePath: currentToPlay.filePath,
+      isPlaying: true
+    };
+
+    // Play in Discord Voice if connected
+    audioManager.playSong(currentToPlay.filePath);
+
+    // Auto-advance subsequent preview
+    this.manuallyStagedNextSong = false;
+    await this.prepareNextSong();
+
+    // Reset round states for the new song
+    this.gameState.roundLockedPlayers = {};
+    this.gameState.activePlayer = null;
+    this.gameState.queue = [];
+    this.gameState.isLocked = false;
+    this.gameState.screenFlash = null;
+    this.gameState.statusText = '🎵 Song läuft! Drücke den Buzzer, wenn du die Antwort kennst!';
+
+    this.emitState();
+    return { success: true, song: this.gameState.songState, nextSong: this.gameState.nextSong };
+  }
+
+  pauseSong() {
+    audioManager.pauseSong();
+    if (this.gameState.songState) {
+      this.gameState.songState.isPlaying = false;
+    }
+    this.emitState();
+    return { success: true };
+  }
+
+  resumeSong() {
+    audioManager.resumeSong();
+    if (this.gameState.songState) {
+      this.gameState.songState.isPlaying = true;
+    }
+    this.emitState();
+    return { success: true };
+  }
+
+  stopSong() {
+    audioManager.stop();
+    if (this.gameState.songState) {
+      this.gameState.songState.isPlaying = false;
+    }
+    this.emitState();
+    return { success: true };
+  }
+
+  async pickRandomSong(genre = null) {
+    return await this.playNextSong();
   }
 
   setManualSong(artist, title) {
@@ -1936,6 +2079,10 @@ class BotManager extends EventEmitter {
   }
 
   manualBuzzPlayer(playerId, username = null) {
+    if (this.gameState.roundLockedPlayers && this.gameState.roundLockedPlayers[playerId]) {
+      return { success: false, error: 'Spieler ist für diese Runde gesperrt.' };
+    }
+
     let player = this.gameState.scores[playerId];
     if (!player) {
       const displayName = username || (playerId === 'host-regie-buzzer' ? (this.hostName || 'Regie (Dome)') : 'Spieler');
@@ -1950,6 +2097,11 @@ class BotManager extends EventEmitter {
         isCustom: true
       };
       this.gameState.scores[player.id] = player;
+    }
+
+    audioManager.pauseSong();
+    if (this.gameState.songState) {
+      this.gameState.songState.isPlaying = false;
     }
 
     if (this.gameState.roundTimer) {
@@ -1979,7 +2131,7 @@ class BotManager extends EventEmitter {
     this.gameState.statusText = `🚨 **${player.username}** hat gebuzzert!${boostTag}`;
 
     audioManager.playSound('buzzer');
-    this.startAnswerCountdown(10);
+    this.startAnswerCountdown(15);
     this.emitState();
     this.updateDiscordMessage();
     return { success: true, player: this.gameState.activePlayer };
@@ -2013,7 +2165,7 @@ class BotManager extends EventEmitter {
     if (idx !== -1) {
       const player = this.gameState.queue.splice(idx, 1)[0];
       this.gameState.activePlayer = player;
-      this.startAnswerCountdown(10);
+      this.startAnswerCountdown(15);
       this.emitState();
       return { success: true, player };
     }
