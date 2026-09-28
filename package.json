@@ -1,6 +1,6 @@
 {
   "name": "mannis-box",
-  "version": "4.8.27",
+  "version": "4.8.28",
   "description": "MannisBox - Discord Musik-Quiz Buzzer Desktop App & Discord Bot",
   "main": "src/main.js",
   "scripts": {

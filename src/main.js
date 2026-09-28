@@ -58,7 +58,7 @@ function createWindow() {
     height: 900,
     minWidth: 1080,
     minHeight: 720,
-    title: "Manni's Box — Discord Buzzer & Stream Master V4.8.027",
+    title: "Manni's Box — Discord Buzzer & Stream Master V4.8.028",
     icon: iconPath,
     backgroundColor: '#12131a',
     frame: false,

@@ -1352,27 +1352,29 @@ class BotManager extends EventEmitter {
   }
 
   async prepareNextSong(forcedFilePath = null) {
-    if (!this.availableMusicFiles || this.availableMusicFiles.length === 0) {
-      this.gameState.nextSong = null;
-      this.emitState();
-      return null;
-    }
-
     let targetFile = null;
     if (forcedFilePath) {
+      if (!this.availableMusicFiles) this.availableMusicFiles = [];
       const normForced = path.normalize(forcedFilePath).toLowerCase();
       const match = this.availableMusicFiles.find(f => path.normalize(f).toLowerCase() === normForced);
-      if (match || fs.existsSync(forcedFilePath)) {
-        targetFile = match || forcedFilePath;
+      if (match) {
+        targetFile = match;
+      } else if (fs.existsSync(forcedFilePath)) {
+        targetFile = forcedFilePath;
+        this.availableMusicFiles.push(forcedFilePath);
+      }
+      if (targetFile) {
         this.manuallyStagedNextSong = true;
-        const idx = this.availableMusicFiles.indexOf(targetFile);
-        if (idx !== -1) {
-          this.currentSongIndex = idx;
-        }
+        this.currentSongIndex = this.availableMusicFiles.indexOf(targetFile);
       }
     }
 
     if (!targetFile) {
+      if (!this.availableMusicFiles || this.availableMusicFiles.length === 0) {
+        this.gameState.nextSong = null;
+        this.emitState();
+        return null;
+      }
       this.manuallyStagedNextSong = false;
       if (this.playlistMode === 'numbered') {
         this.currentSongIndex = (this.currentSongIndex + 1) % this.availableMusicFiles.length;

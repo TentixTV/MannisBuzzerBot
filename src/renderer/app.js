@@ -919,6 +919,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(() => document.body.classList.remove('screen-shake-boost'), 650);
         screenFlashLayer.className = 'screen-flash-layer flash-glow-boost';
         setTimeout(() => { screenFlashLayer.className = 'screen-flash-layer'; }, 850);
+
+        const splash = document.getElementById('boostSuperchargeSplash');
+        if (splash) {
+          splash.classList.remove('hidden', 'splash-pop');
+          void splash.offsetWidth;
+          splash.classList.add('splash-pop');
+          setTimeout(() => {
+            splash.classList.remove('splash-pop');
+            splash.classList.add('hidden');
+          }, 950);
+        }
       }
     }
     lastBoostActive = isBoostActive;
@@ -1976,12 +1987,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnToggleBoost.addEventListener('click', async () => {
       try {
         const willBeActive = !currentGameState?.isBoostActive;
-        if (willBeActive && window.ue5StageInstance) {
-          window.ue5StageInstance.triggerBoostSupercharge();
-          document.body.classList.add('screen-shake-boost');
-          setTimeout(() => document.body.classList.remove('screen-shake-boost'), 650);
-          screenFlashLayer.className = 'screen-flash-layer flash-glow-boost';
-          setTimeout(() => { screenFlashLayer.className = 'screen-flash-layer'; }, 850);
+        if (willBeActive) {
+          const splash = document.getElementById('boostSuperchargeSplash');
+          if (splash) {
+            splash.classList.remove('hidden', 'splash-pop');
+            void splash.offsetWidth;
+            splash.classList.add('splash-pop');
+            setTimeout(() => {
+              splash.classList.remove('splash-pop');
+              splash.classList.add('hidden');
+            }, 950);
+          }
+          if (window.ue5StageInstance) {
+            window.ue5StageInstance.triggerBoostSupercharge();
+            document.body.classList.add('screen-shake-boost');
+            setTimeout(() => document.body.classList.remove('screen-shake-boost'), 650);
+            screenFlashLayer.className = 'screen-flash-layer flash-glow-boost';
+            setTimeout(() => { screenFlashLayer.className = 'screen-flash-layer'; }, 850);
+          }
         }
         await window.mannisBoxAPI.toggleBoost();
       } catch (err) {
@@ -2515,28 +2538,85 @@ document.addEventListener('DOMContentLoaded', async () => {
       songSearchResults.innerHTML = matches.map(filePath => {
         const title = getCleanFileName(filePath);
         return `
-          <div class="folder-search-item" data-path="${escapeHtml(filePath)}">
-            <span class="folder-search-item-title" title="${escapeHtml(title)}" style="display: flex; align-items: center; gap: 6px;">${SVG_MUSIC}<span>${escapeHtml(title)}</span></span>
-            <span style="font-size: 10px; color: #38bdf8; font-weight: 700; flex-shrink: 0; display: flex; align-items: center; gap: 3px;"><span>Als Nächster</span><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+          <div class="folder-search-item" data-path="${escapeHtml(filePath)}" data-title="${escapeHtml(title)}">
+            <div class="folder-search-item-info">
+              <span class="folder-search-item-title" title="${escapeHtml(title)}">${SVG_MUSIC}<span>${escapeHtml(title)}</span></span>
+              <span class="folder-search-item-sub">${escapeHtml(filePath)}</span>
+            </div>
+            <div class="folder-search-actions">
+              <button class="btn-search-stage" title="Als nächsten Song vormerken" data-path="${escapeHtml(filePath)}" data-title="${escapeHtml(title)}">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                <span>Vormerken</span>
+              </button>
+              <button class="btn-search-play" title="Diesen Song sofort starten" data-path="${escapeHtml(filePath)}" data-title="${escapeHtml(title)}">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Starten</span>
+              </button>
+            </div>
           </div>
         `;
       }).join('');
       songSearchResults.classList.remove('hidden');
 
       songSearchResults.querySelectorAll('.folder-search-item').forEach(item => {
-        item.addEventListener('click', async (e) => {
+        const stageBtn = item.querySelector('.btn-search-stage');
+        const playBtn = item.querySelector('.btn-search-play');
+
+        const doStage = async (e) => {
           e.stopPropagation();
           const chosenPath = item.getAttribute('data-path');
+          const title = item.getAttribute('data-title') || getCleanFileName(chosenPath);
           songSearchResults.classList.add('hidden');
-          txtSearchSong.value = '';
+          txtSearchSong.value = title;
 
           // Stage as Next Song (does not play directly)
           const res = await window.mannisBoxAPI.stageNextSong(chosenPath);
           if (res && res.success && res.nextSong) {
-            if (lblNextSongTitle) lblNextSongTitle.textContent = res.nextSong.fullTitle;
+            if (lblNextSongTitle) {
+              lblNextSongTitle.textContent = res.nextSong.fullTitle || title;
+              lblNextSongTitle.title = res.nextSong.fullTitle || title;
+            }
             btnPickRandomSong.disabled = false;
+            const slotCard = document.getElementById('nextSongSlotCard');
+            if (slotCard) {
+              slotCard.classList.remove('staged-pulse');
+              void slotCard.offsetWidth;
+              slotCard.classList.add('staged-pulse');
+            }
           }
-        });
+        };
+
+        const doPlay = async (e) => {
+          e.stopPropagation();
+          const chosenPath = item.getAttribute('data-path');
+          const title = item.getAttribute('data-title') || getCleanFileName(chosenPath);
+          songSearchResults.classList.add('hidden');
+          txtSearchSong.value = title;
+
+          const res = await window.mannisBoxAPI.selectSpecificSong(chosenPath);
+          if (res && res.success && res.song) {
+            lblAudioTrackTitle.textContent = res.song.fullTitle;
+            if (arenaSongTitleText) {
+              arenaSongTitleText.textContent = res.song.fullTitle;
+            }
+            const streamUrl = `http://localhost:8888/api/audio?path=${encodeURIComponent(res.song.filePath)}`;
+            localAudioPlayer.src = streamUrl;
+            localAudioPlayer.volume = parseFloat(rngAudioPlayerVolume.value);
+            try {
+              await localAudioPlayer.play();
+              setPlayPauseIcon(true);
+            } catch (err) {
+              console.warn('Auto-play error:', err);
+            }
+            if (!currentGameState?.isRoundActive) {
+              await window.mannisBoxAPI.startRound();
+            }
+          }
+        };
+
+        if (stageBtn) stageBtn.addEventListener('click', doStage);
+        if (playBtn) playBtn.addEventListener('click', doPlay);
+        item.addEventListener('click', doStage);
       });
     });
   }
@@ -2567,7 +2647,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       hitsterSearchResults.innerHTML = matches.map(filePath => {
         const title = getCleanFileName(filePath);
         return `
-          <div class="folder-search-item" data-path="${escapeHtml(filePath)}">
+          <div class="folder-search-item" data-path="${escapeHtml(filePath)}" data-title="${escapeHtml(title)}">
             <span class="folder-search-item-title" title="${escapeHtml(title)}" style="display: flex; align-items: center; gap: 6px;">${SVG_RADIO}<span>${escapeHtml(title)}</span></span>
             <span style="font-size: 10px; color: #f59e0b; font-weight: 700; flex-shrink: 0; display: flex; align-items: center; gap: 3px;"><span>Karte wählen</span><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
           </div>
@@ -2579,8 +2659,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         item.addEventListener('click', async (e) => {
           e.stopPropagation();
           const chosenPath = item.getAttribute('data-path');
+          const title = item.getAttribute('data-title') || getCleanFileName(chosenPath);
           hitsterSearchResults.classList.add('hidden');
-          txtSearchHitster.value = '';
+          txtSearchHitster.value = title;
 
           const res = await window.mannisBoxAPI.selectSpecificHitster(chosenPath);
           if (res && res.success && res.card) {
