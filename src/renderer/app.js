@@ -116,6 +116,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let lastActivePlayerId = null;
   let wasAudioPausedByBuzzer = false;
+  let lastScoreboardSignature = '';
+  let lastTimelineSignature = '';
+  let lastShelvesSignature = '';
 
   const localAudioPlayer = document.getElementById('localAudioPlayer');
   const btnAudioPlayPause = document.getElementById('btnAudioPlayPause');
@@ -705,6 +708,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 3.5 Hitster Player Shelves Rendering (Real Hitster Rules & Progress to 10 cards)
   function renderHitsterPlayerShelves(state) {
     if (!hitsterPlayerShelvesContainer) return;
+    if (state && state.gameMode && state.gameMode !== 'hitster') return;
 
     // Reset local cache if scores are empty
     if (state && (!state.scores || Object.keys(state.scores).length === 0)) {
@@ -726,6 +730,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       });
     }
+
+    const currentShelvesSig = JSON.stringify({
+      shelves: state?.hitsterState?.playerShelves,
+      scores: state?.scores,
+      active: state?.activePlayer?.username,
+      voice: state?.voiceMembers?.length
+    });
+    if (currentShelvesSig === lastShelvesSignature) return;
+    lastShelvesSignature = currentShelvesSig;
 
     const allPlayersMap = {};
     if (state && state.scores) {
@@ -942,7 +955,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.ue5StageInstance) window.ue5StageInstance.triggerBuzzerShockwave();
       }
       if (victoryWinnerAvatar) {
-        victoryWinnerAvatar.src = state.winner.avatar || '../../App.png';
+        const winnerAvatar = state.winner.avatar || '../../App.png';
+        if (victoryWinnerAvatar.getAttribute('data-rawsrc') !== winnerAvatar) {
+          victoryWinnerAvatar.setAttribute('data-rawsrc', winnerAvatar);
+          victoryWinnerAvatar.src = winnerAvatar;
+        }
       }
       if (victoryWinnerName) {
         victoryWinnerName.textContent = state.winner.username || 'Champion';
@@ -1027,64 +1044,68 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Render Interactive Arena Deck
       arenaHitsterTimelineDeck.classList.toggle('hidden', state.gameMode !== 'hitster');
       if (hitsterSlotContainer) {
-        let slotHtml = '';
-        if (timeline.length === 0) {
-          slotHtml = `
-            <button class="hitster-slot-btn" data-slot="0">
-              <span>${SVG_TARGET} ERSTE KARTE</span>
-              <small>Hier platzieren</small>
-            </button>
-          `;
-        } else {
-          slotHtml += `
-            <button class="hitster-slot-btn" data-slot="0">
-              <span>${SVG_TARGET} VOR ${timeline[0].year}</span>
-              <small>Älter als ${timeline[0].year}</small>
-            </button>
-          `;
-
-          for (let i = 0; i < timeline.length; i++) {
-            const tc = timeline[i];
+        const curTlSig = JSON.stringify(timeline);
+        if (curTlSig !== lastTimelineSignature) {
+          lastTimelineSignature = curTlSig;
+          let slotHtml = '';
+          if (timeline.length === 0) {
+            slotHtml = `
+              <button class="hitster-slot-btn" data-slot="0">
+                <span>${SVG_TARGET} ERSTE KARTE</span>
+                <small>Hier platzieren</small>
+              </button>
+            `;
+          } else {
             slotHtml += `
-              <div class="hitster-placed-card">
-                <span class="hitster-placed-year">${SVG_DISC} ${tc.year}</span>
-                <span class="hitster-placed-title" title="${escapeHtml(tc.title)}">${escapeHtml(tc.title)}</span>
-                <span class="hitster-placed-artist" title="${escapeHtml(tc.artist || '')}">${escapeHtml(tc.artist || '')}</span>
-              </div>
+              <button class="hitster-slot-btn" data-slot="0">
+                <span>${SVG_TARGET} VOR ${timeline[0].year}</span>
+                <small>Älter als ${timeline[0].year}</small>
+              </button>
             `;
 
-            if (i < timeline.length - 1) {
-              const nextTc = timeline[i + 1];
+            for (let i = 0; i < timeline.length; i++) {
+              const tc = timeline[i];
               slotHtml += `
-                <button class="hitster-slot-btn" data-slot="${i + 1}">
-                  <span>${SVG_TARGET} DAZWISCHEN</span>
-                  <small>${tc.year} – ${nextTc.year}</small>
-                </button>
+                <div class="hitster-placed-card">
+                  <span class="hitster-placed-year">${SVG_DISC} ${tc.year}</span>
+                  <span class="hitster-placed-title" title="${escapeHtml(tc.title)}">${escapeHtml(tc.title)}</span>
+                  <span class="hitster-placed-artist" title="${escapeHtml(tc.artist || '')}">${escapeHtml(tc.artist || '')}</span>
+                </div>
               `;
-            } else {
-              slotHtml += `
-                <button class="hitster-slot-btn" data-slot="${timeline.length}">
-                  <span>${SVG_TARGET} NACH ${tc.year}</span>
-                  <small>Neuer als ${tc.year}</small>
-                </button>
-              `;
+
+              if (i < timeline.length - 1) {
+                const nextTc = timeline[i + 1];
+                slotHtml += `
+                  <button class="hitster-slot-btn" data-slot="${i + 1}">
+                    <span>${SVG_TARGET} DAZWISCHEN</span>
+                    <small>${tc.year} – ${nextTc.year}</small>
+                  </button>
+                `;
+              } else {
+                slotHtml += `
+                  <button class="hitster-slot-btn" data-slot="${timeline.length}">
+                    <span>${SVG_TARGET} NACH ${tc.year}</span>
+                    <small>Neuer als ${tc.year}</small>
+                  </button>
+                `;
+              }
             }
           }
-        }
-        hitsterSlotContainer.innerHTML = slotHtml;
+          hitsterSlotContainer.innerHTML = slotHtml;
 
-        hitsterSlotContainer.querySelectorAll('.hitster-slot-btn').forEach((btn) => {
-          btn.addEventListener('click', async () => {
-            const slotIdx = parseInt(btn.getAttribute('data-slot'), 10);
-            const targetPlayer = selHitsterActivePlayer?.value || currentGameState?.activePlayer?.username || '';
-            const res = await window.mannisBoxAPI.placeHitsterCard(slotIdx, targetPlayer);
-            if (res && res.player && res.correct) {
-              if (!playerHitsterCards[res.player.username]) playerHitsterCards[res.player.username] = [];
-              playerHitsterCards[res.player.username] = [...(res.player.cards || [])];
-              renderHitsterPlayerShelves(currentGameState);
-            }
+          hitsterSlotContainer.querySelectorAll('.hitster-slot-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              const slotIdx = parseInt(btn.getAttribute('data-slot'), 10);
+              const targetPlayer = selHitsterActivePlayer?.value || currentGameState?.activePlayer?.username || '';
+              const res = await window.mannisBoxAPI.placeHitsterCard(slotIdx, targetPlayer);
+              if (res && res.player && res.correct) {
+                if (!playerHitsterCards[res.player.username]) playerHitsterCards[res.player.username] = [];
+                playerHitsterCards[res.player.username] = [...(res.player.cards || [])];
+                renderHitsterPlayerShelves(currentGameState);
+              }
+            });
           });
-        });
+        }
       }
 
       // Render Real Hitster Player Shelves
@@ -1145,10 +1166,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Cinema Theater 16:9 Screen & Progressive Blur
       const imgPath = wp.imagePath || wp.currentImage;
       if (imgPath) {
-        arenaWpCinemaImg.src = `http://localhost:8888/api/image?path=${encodeURIComponent(imgPath)}`;
+        if (arenaWpCinemaImg.getAttribute('data-rawsrc') !== imgPath) {
+          arenaWpCinemaImg.setAttribute('data-rawsrc', imgPath);
+          arenaWpCinemaImg.src = `http://localhost:8888/api/image?path=${encodeURIComponent(imgPath)}`;
+        }
         arenaWpCinemaImg.style.display = 'block';
         if (arenaWpScreenPlaceholder) arenaWpScreenPlaceholder.style.display = 'none';
       } else {
+        arenaWpCinemaImg.removeAttribute('data-rawsrc');
         arenaWpCinemaImg.style.display = 'none';
         if (arenaWpScreenPlaceholder) arenaWpScreenPlaceholder.style.display = 'flex';
       }
@@ -1281,7 +1306,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       activeBuzzerCard.classList.remove('hidden');
       buzzerPlaceholder.classList.add('hidden');
 
-      activePlayerAvatar.src = state.activePlayer.avatar || '../../App.png';
+      const newAvatar = state.activePlayer.avatar || '../../App.png';
+      if (activePlayerAvatar.getAttribute('data-rawsrc') !== newAvatar) {
+        activePlayerAvatar.setAttribute('data-rawsrc', newAvatar);
+        activePlayerAvatar.src = newAvatar;
+      }
       activePlayerName.textContent = state.activePlayer.username || 'Unbekannt';
       activePlayerTime.textContent = state.activePlayer.timeOffset ? state.activePlayer.timeOffset : '1. Platz';
 
@@ -1409,99 +1438,103 @@ document.addEventListener('DOMContentLoaded', async () => {
     const scoreEntries = Object.values(state.scores || {}).sort((a, b) => b.points - a.points);
     playerCountBadge.textContent = `${scoreEntries.length} Spieler`;
 
-    if (scoreEntries.length === 0) {
-      scoreboardList.innerHTML = `
-        <div class="scoreboard-empty">
-          <svg class="empty-trophy-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34M18 2H6v7a6 6 0 0 0 12 0V2z"></path>
-          </svg>
-          <p>Noch keine Punkte vergeben.<br>Starte eine Runde!</p>
-        </div>
-      `;
-    } else {
-      scoreboardList.innerHTML = scoreEntries.map((p, idx) => {
-        let rankClass = '';
-        let medal = `#${idx + 1}`;
-        if (idx === 0) { rankClass = 'rank-1'; medal = '#1'; }
-        else if (idx === 1) { rankClass = 'rank-2'; medal = '#2'; }
-        else if (idx === 2) { rankClass = 'rank-3'; medal = '#3'; }
-
-        return `
-          <div class="scoreboard-item ${rankClass}" data-player-id="${p.id}" data-player-name="${escapeHtml(p.username)}">
-            <div class="scoreboard-main-row">
-              <div class="player-rank-info">
-                <span class="rank-badge">${medal}</span>
-                <img src="${p.avatar || '../../App.png'}" class="player-avatar-thumb" alt="Avatar">
-                <div class="player-names-wrap">
-                  <span class="player-uname" title="${escapeHtml(p.username)}">${escapeHtml(p.username)}</span>
-                  <span class="player-substats">${SVG_CHECK} ${p.correct || 0} | ${SVG_CROSS} ${p.wrong || 0}</span>
-                </div>
-              </div>
-              <div class="player-score-pill tag-score-interactive" title="Klicke hier, um Punkte direkt anzupassen">${p.points} Pkt. ${SVG_PENCIL}</div>
-            </div>
-
-            <!-- Slide-Down Hover Drawer -->
-            <div class="scoreboard-action-drawer">
-              <button class="btn-drawer-action btn-drawer-minus" data-action="minus" title="1 Punkt abziehen">-1</button>
-              <button class="btn-drawer-action btn-drawer-plus" data-action="plus" title="1 Punkt hinzufügen">+1</button>
-              <button class="btn-drawer-action btn-drawer-buzz" data-action="buzz" title="Für diesen Spieler buzzern">${SVG_BUZZER} Buzz</button>
-              <button class="btn-drawer-action" data-action="rename" title="Namen ändern">${SVG_PENCIL}</button>
-              <button class="btn-drawer-action btn-drawer-ban" data-action="ban" title="Spieler sperren">${SVG_BAN}</button>
-              <button class="btn-drawer-action btn-drawer-del" data-action="del" title="Spieler entfernen">${SVG_TRASH}</button>
-            </div>
+    const currentScoresSignature = scoreEntries.map(p => `${p.id}:${p.points}:${p.correct}:${p.wrong}:${p.username}`).join('|');
+    if (currentScoresSignature !== lastScoreboardSignature) {
+      lastScoreboardSignature = currentScoresSignature;
+      if (scoreEntries.length === 0) {
+        scoreboardList.innerHTML = `
+          <div class="scoreboard-empty">
+            <svg class="empty-trophy-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34M18 2H6v7a6 6 0 0 0 12 0V2z"></path>
+            </svg>
+            <p>Noch keine Punkte vergeben.<br>Starte eine Runde!</p>
           </div>
         `;
-      }).join('');
+      } else {
+        scoreboardList.innerHTML = scoreEntries.map((p, idx) => {
+          let rankClass = '';
+          let medal = `#${idx + 1}`;
+          if (idx === 0) { rankClass = 'rank-1'; medal = '#1'; }
+          else if (idx === 1) { rankClass = 'rank-2'; medal = '#2'; }
+          else if (idx === 2) { rankClass = 'rank-3'; medal = '#3'; }
 
-      // Add listeners for drawer buttons and interactive score pills
-      scoreboardList.querySelectorAll('.scoreboard-item').forEach((el) => {
-        const playerId = el.getAttribute('data-player-id');
-        const playerName = el.getAttribute('data-player-name');
+          return `
+            <div class="scoreboard-item ${rankClass}" data-player-id="${p.id}" data-player-name="${escapeHtml(p.username)}">
+              <div class="scoreboard-main-row">
+                <div class="player-rank-info">
+                  <span class="rank-badge">${medal}</span>
+                  <img src="${p.avatar || '../../App.png'}" class="player-avatar-thumb" alt="Avatar">
+                  <div class="player-names-wrap">
+                    <span class="player-uname" title="${escapeHtml(p.username)}">${escapeHtml(p.username)}</span>
+                    <span class="player-substats">${SVG_CHECK} ${p.correct || 0} | ${SVG_CROSS} ${p.wrong || 0}</span>
+                  </div>
+                </div>
+                <div class="player-score-pill tag-score-interactive" title="Klicke hier, um Punkte direkt anzupassen">${p.points} Pkt. ${SVG_PENCIL}</div>
+              </div>
 
-        el.querySelector('.player-score-pill')?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const p = state.scores?.[playerId];
-          const pts = p ? p.points : 0;
-          openQuickScorePopup({ id: playerId, name: playerName, points: pts }, e.currentTarget);
+              <!-- Slide-Down Hover Drawer -->
+              <div class="scoreboard-action-drawer">
+                <button class="btn-drawer-action btn-drawer-minus" data-action="minus" title="1 Punkt abziehen">-1</button>
+                <button class="btn-drawer-action btn-drawer-plus" data-action="plus" title="1 Punkt hinzufügen">+1</button>
+                <button class="btn-drawer-action btn-drawer-buzz" data-action="buzz" title="Für diesen Spieler buzzern">${SVG_BUZZER} Buzz</button>
+                <button class="btn-drawer-action" data-action="rename" title="Namen ändern">${SVG_PENCIL}</button>
+                <button class="btn-drawer-action btn-drawer-ban" data-action="ban" title="Spieler sperren">${SVG_BAN}</button>
+                <button class="btn-drawer-action btn-drawer-del" data-action="del" title="Spieler entfernen">${SVG_TRASH}</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Add listeners for drawer buttons and interactive score pills
+        scoreboardList.querySelectorAll('.scoreboard-item').forEach((el) => {
+          const playerId = el.getAttribute('data-player-id');
+          const playerName = el.getAttribute('data-player-name');
+
+          el.querySelector('.player-score-pill')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const p = state.scores?.[playerId];
+            const pts = p ? p.points : 0;
+            openQuickScorePopup({ id: playerId, name: playerName, points: pts }, e.currentTarget);
+          });
+
+          el.querySelector('[data-action="minus"]')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await window.mannisBoxAPI.adjustPlayerScore(playerId, -1);
+          });
+
+          el.querySelector('[data-action="plus"]')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await window.mannisBoxAPI.adjustPlayerScore(playerId, 1);
+          });
+
+          el.querySelector('[data-action="buzz"]')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await window.mannisBoxAPI.manualBuzzPlayer(playerId);
+          });
+
+          el.querySelector('[data-action="rename"]')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const newName = await showCustomPrompt(`Neuer Name für "${playerName}":`, playerName, 'Spieler umbenennen');
+            if (newName && newName.trim() && newName.trim() !== playerName) {
+              await window.mannisBoxAPI.renamePlayer(playerId, newName.trim());
+            }
+          });
+
+          el.querySelector('[data-action="del"]')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (await showCustomConfirm(`Spieler "${playerName}" wirklich entfernen?`, 'Spieler entfernen')) {
+              await window.mannisBoxAPI.removePlayer(playerId);
+            }
+          });
+
+          el.querySelector('[data-action="ban"]')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (await showCustomConfirm(`Möchtest du ${playerName} wirklich für das Quiz sperren?`, 'Spieler sperren')) {
+              await window.mannisBoxAPI.banPlayer(playerId, playerName);
+            }
+          });
         });
-
-        el.querySelector('[data-action="minus"]')?.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          await window.mannisBoxAPI.adjustPlayerScore(playerId, -1);
-        });
-
-        el.querySelector('[data-action="plus"]')?.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          await window.mannisBoxAPI.adjustPlayerScore(playerId, 1);
-        });
-
-        el.querySelector('[data-action="buzz"]')?.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          await window.mannisBoxAPI.manualBuzzPlayer(playerId);
-        });
-
-        el.querySelector('[data-action="rename"]')?.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const newName = await showCustomPrompt(`Neuer Name für "${playerName}":`, playerName, 'Spieler umbenennen');
-          if (newName && newName.trim() && newName.trim() !== playerName) {
-            await window.mannisBoxAPI.renamePlayer(playerId, newName.trim());
-          }
-        });
-
-        el.querySelector('[data-action="del"]')?.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          if (await showCustomConfirm(`Spieler "${playerName}" wirklich entfernen?`, 'Spieler entfernen')) {
-            await window.mannisBoxAPI.removePlayer(playerId);
-          }
-        });
-
-        el.querySelector('[data-action="ban"]')?.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          if (await showCustomConfirm(`Möchtest du ${playerName} wirklich für das Quiz sperren?`, 'Spieler sperren')) {
-            await window.mannisBoxAPI.banPlayer(playerId, playerName);
-          }
-        });
-      });
+      }
     }
 
     renderBannedListModal(state.bannedPlayers || {});

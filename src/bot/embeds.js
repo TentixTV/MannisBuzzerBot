@@ -92,7 +92,7 @@ function createBuzzerEmbed(state) {
     const pts = isBoostActive ? ((wallpaperState.points || 50) * 2) : (wallpaperState.points || 50);
     embed.addFields({
       name: '🖼️ Aktuelle Schärfe-Stufe',
-      value: `**Stufe ${wallpaperState.stage || 1}** (${pts} Punkte erreichbar${isBoostActive ? ' 🔥 BOOST' : ''})\n*Bild schärft sich alle 10 Sekunden!*`,
+      value: `**Stufe ${wallpaperState.stage || 1}** (${pts} Punkte erreichbar${isBoostActive ? ' 🔥 BOOST' : ''})\n*Bild schärft sich live im Stream!*`,
       inline: false
     });
   } else if (gameMode === 'song' && songState) {

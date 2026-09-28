@@ -1023,13 +1023,7 @@ class BotManager extends EventEmitter {
 
           let files = [];
           let imageAttachmentName = null;
-          if (this.gameState.gameMode === 'wallpaper' && this.gameState.wallpaperState) {
-            const imgPath = this.gameState.wallpaperState.currentImage || this.gameState.wallpaperState.sharpImage;
-            if (imgPath && fs.existsSync(imgPath)) {
-              imageAttachmentName = `wallpaper_${Date.now()}${path.extname(imgPath) || '.jpg'}`;
-              files.push(new AttachmentBuilder(imgPath, { name: imageAttachmentName }));
-            }
-          }
+          // Wallpaper image is stream/in-app exclusive and must NEVER be uploaded to Discord
 
           const embed = createBuzzerEmbed({
             roundNumber: this.gameState.roundNumber,
@@ -1907,13 +1901,7 @@ class BotManager extends EventEmitter {
     try {
       let files = [];
       let imageAttachmentName = null;
-      if (this.gameState.gameMode === 'wallpaper' && this.gameState.wallpaperState) {
-        const imgPath = this.gameState.wallpaperState.currentImage || this.gameState.wallpaperState.sharpImage;
-        if (imgPath && fs.existsSync(imgPath)) {
-          imageAttachmentName = `wallpaper_${Date.now()}${path.extname(imgPath) || '.jpg'}`;
-          files.push(new AttachmentBuilder(imgPath, { name: imageAttachmentName }));
-        }
-      }
+      // Wallpaper image is stream/in-app exclusive and must NEVER be uploaded to Discord
 
       const embed = createBuzzerEmbed({
         roundNumber: this.gameState.roundNumber,

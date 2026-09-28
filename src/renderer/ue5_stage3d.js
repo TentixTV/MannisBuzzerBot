@@ -12,7 +12,6 @@ class UE5Stage3D {
       alpha: true,
       antialias: false,
       powerPreference: 'high-performance',
-      desynchronized: true,
       preserveDrawingBuffer: false,
       failIfMajorPerformanceCaveat: false
     };
@@ -52,11 +51,15 @@ class UE5Stage3D {
     this.initGeometry();
     this.onResize();
 
-    window.addEventListener('resize', () => this.onResize());
+    window.addEventListener('resize', () => this.onResize(), { passive: true });
+    let lastMouseTime = 0;
     window.addEventListener('mousemove', (e) => {
+      const now = performance.now();
+      if (now - lastMouseTime < 16) return;
+      lastMouseTime = now;
       this.mouse.targetX = (e.clientX / window.innerWidth - 0.5) * 2;
       this.mouse.targetY = (e.clientY / window.innerHeight - 0.5) * 2;
-    });
+    }, { passive: true });
 
     this.lastTimestamp = performance.now();
     this.render = this.render.bind(this);
@@ -260,10 +263,12 @@ class UE5Stage3D {
 
   onResize() {
     if (!this.canvas || !this.gl) return;
-    // Native pixel ratio capped at 1.0 to eliminate fill-rate bottlenecks on 1440p / 4K
-    const dpr = 1.0;
-    const targetW = Math.round(window.innerWidth * dpr);
-    const targetH = Math.round(window.innerHeight * dpr);
+    // Cap background WebGL canvas to max 1920x1080 to eliminate fill-rate bottlenecks on 1440p / 4K
+    const maxW = 1920;
+    const maxH = 1080;
+    const scale = Math.min(1.0, maxW / Math.max(1, window.innerWidth), maxH / Math.max(1, window.innerHeight));
+    const targetW = Math.max(640, Math.round(window.innerWidth * scale));
+    const targetH = Math.max(360, Math.round(window.innerHeight * scale));
     if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
       this.canvas.width = targetW;
       this.canvas.height = targetH;

@@ -3178,6 +3178,7 @@ body {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  display: none !important;
 }
 
 .startup-gate-content {
@@ -4069,6 +4070,8 @@ body {
               0 0 80px rgba(239, 68, 68, 0.5),
               inset 0 4px 10px rgba(255, 255, 255, 0.7),
               inset 0 -6px 14px rgba(127, 29, 29, 0.8) !important;
+  transform: translateZ(0);
+  will-change: transform, filter;
   animation: boostedDomePulse 1.2s infinite alternate ease-in-out !important;
 }
 

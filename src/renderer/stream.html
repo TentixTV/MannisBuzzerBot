@@ -1037,83 +1037,97 @@
         const timeline = state.hitsterState.timeline || [];
         const timelineEl = document.getElementById('streamHitsterTimeline');
         if (timelineEl) {
-          if (timeline.length > 0) {
-            timelineEl.innerHTML = timeline.map(c => `
-              <div style="background: #1e1b4b; border: 2px solid #fbbf24; border-radius: 8px; padding: 4px 10px; display: flex; flex-direction: column; align-items: center; min-width: 90px;">
-                <span style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; font-family: monospace;">${escapeHtml(c.year)}</span>
-                <span style="font-size: 0.75rem; font-weight: 800; color: #fff; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(c.title)}</span>
-              </div>
-            `).join('');
-          } else {
-            timelineEl.innerHTML = '<span style="font-size: 0.85rem; color: #64748b;">Noch keine Karten platziert</span>';
+          const streamTlSig = JSON.stringify(timeline);
+          if (timelineEl.getAttribute('data-sig') !== streamTlSig) {
+            timelineEl.setAttribute('data-sig', streamTlSig);
+            if (timeline.length > 0) {
+              timelineEl.innerHTML = timeline.map(c => `
+                <div style="background: #1e1b4b; border: 2px solid #fbbf24; border-radius: 8px; padding: 4px 10px; display: flex; flex-direction: column; align-items: center; min-width: 90px;">
+                  <span style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; font-family: monospace;">${escapeHtml(c.year)}</span>
+                  <span style="font-size: 0.75rem; font-weight: 800; color: #fff; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(c.title)}</span>
+                </div>
+              `).join('');
+            } else {
+              timelineEl.innerHTML = '<span style="font-size: 0.85rem; color: #64748b;">Noch keine Karten platziert</span>';
+            }
           }
         }
 
         const shelvesEl = document.getElementById('streamHitsterShelves');
         if (shelvesEl) {
           const shelves = state.hitsterState.playerShelves || {};
-          const playerIds = Object.keys(shelves);
-          if (playerIds.length > 0) {
-            const target = state.goal || 10;
-            shelvesEl.innerHTML = playerIds.map(pId => {
-              const shelf = shelves[pId];
-              const pName = shelf.username || (state.scores && state.scores[pId] ? state.scores[pId].username : 'Spieler');
-              const cards = shelf.cards || [];
-              return `
-                <div style="background: rgba(30, 27, 75, 0.9); border: 1.5px solid #a78bfa; border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; align-items: flex-start; min-width: 150px;">
-                  <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 4px; gap: 8px;">
-                    <span style="font-size: 0.8rem; font-weight: 800; color: #fff;">${escapeHtml(pName)}</span>
-                    <span style="font-size: 0.72rem; font-weight: 900; color: #fbbf24; background: rgba(251, 191, 36, 0.2); padding: 1px 6px; border-radius: 4px;">${cards.length} / ${target}</span>
+          const streamShelvesSig = JSON.stringify({ shelves, goal: state.goal });
+          if (shelvesEl.getAttribute('data-sig') !== streamShelvesSig) {
+            shelvesEl.setAttribute('data-sig', streamShelvesSig);
+            const playerIds = Object.keys(shelves);
+            if (playerIds.length > 0) {
+              const target = state.goal || 10;
+              shelvesEl.innerHTML = playerIds.map(pId => {
+                const shelf = shelves[pId];
+                const pName = shelf.username || (state.scores && state.scores[pId] ? state.scores[pId].username : 'Spieler');
+                const cards = shelf.cards || [];
+                return `
+                  <div style="background: rgba(30, 27, 75, 0.9); border: 1.5px solid #a78bfa; border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; align-items: flex-start; min-width: 150px;">
+                    <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 4px; gap: 8px;">
+                      <span style="font-size: 0.8rem; font-weight: 800; color: #fff;">${escapeHtml(pName)}</span>
+                      <span style="font-size: 0.72rem; font-weight: 900; color: #fbbf24; background: rgba(251, 191, 36, 0.2); padding: 1px 6px; border-radius: 4px;">${cards.length} / ${target}</span>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                      ${cards.length > 0 ? cards.map(c => `
+                        <span style="background: #4c1d95; color: #fde047; font-size: 0.7rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid #7c3aed;" title="${escapeHtml(c.title || '')}">
+                          ${escapeHtml(String(c.year || ''))}
+                        </span>
+                      `).join('') : '<span style="font-size: 0.7rem; color: #64748b;">Noch keine Karten</span>'}
+                    </div>
                   </div>
-                  <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                    ${cards.length > 0 ? cards.map(c => `
-                      <span style="background: #4c1d95; color: #fde047; font-size: 0.7rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid #7c3aed;" title="${escapeHtml(c.title || '')}">
-                        ${escapeHtml(String(c.year || ''))}
-                      </span>
-                    `).join('') : '<span style="font-size: 0.7rem; color: #64748b;">Noch keine Karten</span>'}
-                  </div>
-                </div>
-              `;
-            }).join('');
-          } else {
-            shelvesEl.innerHTML = '<span style="font-size: 0.8rem; color: #64748b;">Keine Mitspieler-Karten</span>';
+                `;
+              }).join('');
+            } else {
+              shelvesEl.innerHTML = '<span style="font-size: 0.8rem; color: #64748b;">Keine Mitspieler-Karten</span>';
+            }
           }
         }
       }
 
       // 9. Player Leaderboard with Avatar & Buzzer Indicator
       const playerList = document.getElementById('streamPlayerList');
-      if (state.scores && Object.keys(state.scores).length > 0) {
-        const sorted = Object.values(state.scores).sort((a, b) => {
-          if (state.gameMode === 'hitster') {
-            const countA = (a.cards && a.cards.length) ? a.cards.length : (a.points || 0);
-            const countB = (b.cards && b.cards.length) ? b.cards.length : (b.points || 0);
-            return countB - countA;
+      if (playerList) {
+        const streamScoresSig = JSON.stringify({ scores: state.scores, activeId: state.activePlayer?.id, goal: state.goal, mode: state.gameMode });
+        if (playerList.getAttribute('data-sig') !== streamScoresSig) {
+          playerList.setAttribute('data-sig', streamScoresSig);
+          if (state.scores && Object.keys(state.scores).length > 0) {
+            const sorted = Object.values(state.scores).sort((a, b) => {
+              if (state.gameMode === 'hitster') {
+                const countA = (a.cards && a.cards.length) ? a.cards.length : (a.points || 0);
+                const countB = (b.cards && b.cards.length) ? b.cards.length : (b.points || 0);
+                return countB - countA;
+              }
+              return (b.points || 0) - (a.points || 0);
+            });
+
+            playerList.innerHTML = sorted.map(p => {
+              const isBuzzed = state.activePlayer && (state.activePlayer.id === p.id);
+              const scoreDisplay = state.gameMode === 'hitster'
+                ? `${(p.cards && p.cards.length) ? p.cards.length : (p.points || 0)} / ${state.goal || 10} Karten`
+                : `${p.points || 0} Pkt`;
+
+              return `
+                <div class="stream-player-card ${isBuzzed ? 'stream-player-buzzed' : ''}">
+                  <div class="stream-avatar-wrap">
+                    <img src="${p.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" class="stream-player-avatar" />
+                  </div>
+                  <div class="stream-player-name">${escapeHtml(p.username)}</div>
+                  <div class="stream-buzzer-pill">
+                    ${isBuzzed ? 'BUZZER' : 'BUZZER'}
+                  </div>
+                  <div class="stream-player-score">${scoreDisplay}</div>
+                </div>
+              `;
+            }).join('');
+          } else {
+            playerList.innerHTML = `<span style="font-size: 0.8rem; color: #6b7280; font-weight: 700;">Warte auf Mitspieler...</span>`;
           }
-          return (b.points || 0) - (a.points || 0);
-        });
-
-        playerList.innerHTML = sorted.map(p => {
-          const isBuzzed = state.activePlayer && (state.activePlayer.id === p.id);
-          const scoreDisplay = state.gameMode === 'hitster'
-            ? `${(p.cards && p.cards.length) ? p.cards.length : (p.points || 0)} / ${state.goal || 10} Karten`
-            : `${p.points || 0} Pkt`;
-
-          return `
-            <div class="stream-player-card ${isBuzzed ? 'stream-player-buzzed' : ''}">
-              <div class="stream-avatar-wrap">
-                <img src="${p.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" class="stream-player-avatar" />
-              </div>
-              <div class="stream-player-name">${escapeHtml(p.username)}</div>
-              <div class="stream-buzzer-pill">
-                ${isBuzzed ? 'BUZZER' : 'BUZZER'}
-              </div>
-              <div class="stream-player-score">${scoreDisplay}</div>
-            </div>
-          `;
-        }).join('');
-      } else {
-        playerList.innerHTML = `<span style="font-size: 0.8rem; color: #6b7280; font-weight: 700;">Warte auf Mitspieler...</span>`;
+        }
       }
     }
 
