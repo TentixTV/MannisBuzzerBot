@@ -115,13 +115,36 @@ async function main() {
       }
     });
     console.log(`Found existing release ID: ${release.id}`);
+    const updatePayload = JSON.stringify({
+      name: `MannisBox ${TAG} — Wallpaper Cinema & Stream Engine Update`,
+      body: `## MannisBox ${TAG} — Wallpaper Cinema & Stream Engine Update\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen in ${TAG}:\n- **Wallpaper im Stream Overlay:** Vollständig repariert und eingebunden mit 16:9 Kinoleinwand, automatischer 4-Stufen Schärfung, Projektor-Bezel und Fortschrittsbalken.\n- **Wallpaper Zeiten & Punkte Konfigurator:** Dauer pro Stufe (Sekunden) und Punkte frei konfigurierbar. Automatische Summierung der Zeitbereiche (z.B. 0-10s, 10-25s, 25-40s...) und dynamische Countdown-Synchronisierung.\n- **120 FPS High-Refresh Engine:** Keine Garbage-Collection-Ruckler mehr im WebGL-Loop, GPU Rasterization & Hardwarebeschleunigung aktiviert, butterweiche 60-120+ FPS ohne 30 FPS Lock.\n- **Reine Vektor-SVG-Umstellung:** Sämtliche Symbole und Pfeile sind gestochen scharfe Vektor-SVGs (Null fehlerhafte Emojis).\n- **Playlist-Modi:** Umschalten zwischen Shuffle und mp3Tag-Nummerierung (01, 02...)\n- **Next Track Slot:** Vorbereitung & Vorschau auf den nächsten Song`,
+      draft: false,
+      prerelease: false
+    });
+    try {
+      await request({
+        hostname: 'api.github.com',
+        path: `/repos/${OWNER}/${REPO}/releases/${release.id}`,
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${TOKEN}`,
+          'User-Agent': 'MannisBox-Uploader',
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(updatePayload)
+        }
+      }, updatePayload);
+      console.log(`✓ Updated release notes for ${TAG}`);
+    } catch (e) {
+      console.warn('Could not patch release notes:', e.message);
+    }
   } catch (err) {
     console.log(`Release does not exist yet. Creating new release for ${TAG}...`);
     const releasePayload = JSON.stringify({
       tag_name: TAG,
       target_commitish: 'main',
-      name: `MannisBox ${TAG} — Song Quiz & Stream Engine Update`,
-      body: `## 🎮 MannisBox ${TAG} — Song Quiz & Stream Engine Update\n\n### ⚡ One-Click Instant Download:\n- [📦 MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [🗜️ MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### 🌟 Neuerungen in v4.8.026:\n- **Playlist-Modi:** Umschalten zwischen Shuffle und mp3Tag-Nummerierung (01, 02...)\n- **Next Track Slot:** Vorbereitung & Vorschau auf den nächsten Song\n- **Song-Suche:** Geklickter Titel wandert in den Nächster-Song-Slot statt sofort zu starten\n- **Echtes 2. Fenster für Stream-Ansicht:** Eigenständiges OBS Overlay Fenster\n- **Stream Overlay Layout:** 15s Countdown oben rechts, sanftes VU-Meter, verdeckter Songtitel (wird erst bei Richtig oder Abbruch aufgedeckt)\n- **Buzzer Audio Flow:** Musik stoppt bei Buzzer, Runden-Sperre für Mitspieler bei Fehlantworten (Fall 2), Weiterspielen bei Fall 1\n- **Clean Layout:** Genres und Warteschlange entfernt für maximale Übersicht`,
+      name: `MannisBox ${TAG} — Wallpaper Cinema & Stream Engine Update`,
+      body: `## MannisBox ${TAG} — Wallpaper Cinema & Stream Engine Update\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen in ${TAG}:\n- **Wallpaper im Stream Overlay:** Vollständig repariert und eingebunden mit 16:9 Kinoleinwand, automatischer 4-Stufen Schärfung, Projektor-Bezel und Fortschrittsbalken.\n- **Wallpaper Zeiten & Punkte Konfigurator:** Dauer pro Stufe (Sekunden) und Punkte frei konfigurierbar. Automatische Summierung der Zeitbereiche (z.B. 0-10s, 10-25s, 25-40s...) und dynamische Countdown-Synchronisierung.\n- **120 FPS High-Refresh Engine:** Keine Garbage-Collection-Ruckler mehr im WebGL-Loop, GPU Rasterization & Hardwarebeschleunigung aktiviert, butterweiche 60-120+ FPS ohne 30 FPS Lock.\n- **Reine Vektor-SVG-Umstellung:** Sämtliche Symbole und Pfeile sind gestochen scharfe Vektor-SVGs (Null fehlerhafte Emojis).\n- **Playlist-Modi:** Umschalten zwischen Shuffle und mp3Tag-Nummerierung (01, 02...)\n- **Next Track Slot:** Vorbereitung & Vorschau auf den nächsten Song`,
       draft: false,
       prerelease: false
     });

@@ -264,6 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let loadedWallpaperRounds = [];
   let editingScorePlayer = null;
   let customWallpaperStagePoints = { 1: 4, 2: 3, 3: 2, 4: 1 };
+  let customWallpaperStageTimes = { 1: 10, 2: 10, 3: 10, 4: 10 };
 
   // Bespoke Vector SVG Icons (No broken emojis)
   const SVG_CHIP = `<svg class="svg-chip-icon" viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="10" stroke="#f59e0b" stroke-width="2" fill="#78350f" stroke-dasharray="3.2 2"/><circle cx="12" cy="12" r="6.5" stroke="#fbbf24" stroke-width="1.5" fill="#1e1b4b"/><circle cx="12" cy="12" r="3" fill="#fbbf24"/></svg>`;
@@ -1091,21 +1092,44 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (state.wallpaperStagePoints) {
         customWallpaperStagePoints = { ...state.wallpaperStagePoints };
       }
-      const p1 = customWallpaperStagePoints[1] ?? 4;
-      const p2 = customWallpaperStagePoints[2] ?? 3;
-      const p3 = customWallpaperStagePoints[3] ?? 2;
-      const p4 = customWallpaperStagePoints[4] ?? 1;
-      const el1 = document.getElementById('lblWpStage1Pts');
-      const el2 = document.getElementById('lblWpStage2Pts');
-      const el3 = document.getElementById('lblWpStage3Pts');
-      const el4 = document.getElementById('lblWpStage4Pts');
-      if (el1) el1.textContent = `${p1} Pkt`;
-      if (el2) el2.textContent = `${p2} Pkt`;
-      if (el3) el3.textContent = `${p3} Pkt`;
-      if (el4) el4.textContent = `${p4} Pkt`;
+      if (state.wallpaperStageTimes) {
+        customWallpaperStageTimes = { ...state.wallpaperStageTimes };
+      }
 
-      arenaWpStageText.textContent = `Stufe ${st} (${wp.points || 4} Pkt)`;
-      lblWpCorrectPointsSub.textContent = `+${state.activePlayer?.potentialPoints || wp.points || 4} Pkt`;
+      const times = customWallpaperStageTimes || { 1: 10, 2: 10, 3: 10, 4: 10 };
+      const pts = customWallpaperStagePoints || { 1: 4, 2: 3, 3: 2, 4: 1 };
+      const t1 = times[1] || 10;
+      const t2 = t1 + (times[2] || 10);
+      const t3 = t2 + (times[3] || 10);
+      const t4 = t3 + (times[4] || 10);
+
+      const ranges = [
+        `0-${t1}s`,
+        `${t1}-${t2}s`,
+        `${t2}-${t3}s`,
+        `${t3}-${t4}s`
+      ];
+
+      for (let i = 1; i <= 4; i++) {
+        const rangeEl = document.getElementById(`lblWpStage${i}Range`);
+        const ptsEl = document.getElementById(`lblWpStage${i}Pts`);
+        const cardEl = document.getElementById(`wpCard${i}`);
+        if (rangeEl) rangeEl.textContent = ranges[i - 1];
+        if (ptsEl) ptsEl.textContent = `${pts[i] || 0} Pkt`;
+        if (cardEl) {
+          cardEl.setAttribute('data-label', ranges[i - 1]);
+          cardEl.title = `Stufe ${i}: ${ranges[i - 1]} (${pts[i] || 0} Pkt) - Klicken zum Anpassen!`;
+        }
+      }
+
+      const stagesHeader = document.getElementById('lblWpStagesHeader');
+      if (stagesHeader) {
+        stagesHeader.textContent = `Schärfe-Stufen (${t4}s):`;
+      }
+
+      const curStagePoints = wp.points !== undefined ? wp.points : (pts[st] !== undefined ? pts[st] : 4);
+      arenaWpStageText.textContent = `Stufe ${st} (${curStagePoints} Pkt)`;
+      lblWpCorrectPointsSub.textContent = `+${state.activePlayer?.potentialPoints || curStagePoints} Pkt`;
 
       // Cinema Theater 16:9 Screen & Progressive Blur
       const imgPath = wp.imagePath || wp.currentImage;
@@ -1130,7 +1154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         if (arenaWpStageBadge) arenaWpStageBadge.textContent = 'AUFGELÖST';
         if (lblWpNextStageTimer) lblWpNextStageTimer.textContent = 'Film aufgedeckt';
-        if (lblWpRadialSeconds) lblWpRadialSeconds.textContent = '✓';
+        if (lblWpRadialSeconds) lblWpRadialSeconds.textContent = '100%';
       } else {
         arenaWpCinemaImg.className = `cinema-wallpaper-image blur-stage-${st}`;
         arenaWpResolvedTitle.textContent = '';
@@ -1140,15 +1164,27 @@ document.addEventListener('DOMContentLoaded', async () => {
           arenaWpClapperTitle.classList.remove('film-revealed');
           arenaWpClapperTitle.classList.add('film-blurred');
         }
-        if (arenaWpStageBadge) arenaWpStageBadge.textContent = `STUFE ${st} • ${wp.points || 4} PUNKTE`;
+        if (arenaWpStageBadge) arenaWpStageBadge.textContent = `STUFE ${st} • ${curStagePoints} PUNKTE`;
 
-        // 10-Second Countdown Radial Meter
+        // Dynamic Stage Countdown Radial Meter based on configured seconds
         if (state.roundTimer && state.roundTimer.active) {
-          const rem = Math.max(0, state.roundTimer.remaining);
-          const inStage = Math.ceil(rem % 10) || 10;
-          if (lblWpRadialSeconds) lblWpRadialSeconds.textContent = inStage + 's';
-          if (lblWpNextStageTimer) lblWpNextStageTimer.textContent = `Nächste Stufe in ${inStage}s`;
-          const offset = (113.1 * (1 - inStage / 10)).toFixed(1);
+          const elapsed = state.roundTimer.elapsed || 0;
+          let stageDuration = 10;
+          let nextThreshold = t1;
+          if (st === 1) { nextThreshold = t1; stageDuration = times[1] || 10; }
+          else if (st === 2) { nextThreshold = t2; stageDuration = times[2] || 10; }
+          else if (st === 3) { nextThreshold = t3; stageDuration = times[3] || 10; }
+          else { nextThreshold = t4; stageDuration = times[4] || 10; }
+
+          const inStageRemaining = Math.max(0, Math.ceil(nextThreshold - elapsed));
+          if (lblWpRadialSeconds) lblWpRadialSeconds.textContent = inStageRemaining + 's';
+          if (lblWpNextStageTimer) {
+            lblWpNextStageTimer.textContent = (st >= 4)
+              ? `Endet in ${inStageRemaining}s`
+              : `Nächste Stufe in ${inStageRemaining}s`;
+          }
+          const progressFrac = Math.max(0, Math.min(1, 1 - (inStageRemaining / Math.max(1, stageDuration))));
+          const offset = (113.1 * progressFrac).toFixed(1);
           if (circleWpProgress) circleWpProgress.style.strokeDashoffset = offset;
         } else {
           if (lblWpRadialSeconds) lblWpRadialSeconds.textContent = '--s';
@@ -2212,7 +2248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (filePath) {
       selectedWpImagePath = filePath;
       btnUploadWp.disabled = false;
-      btnSelectWpImage.textContent = '✓ Bild gewählt';
+      btnSelectWpImage.innerHTML = '<svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Bild gewählt</span>';
     }
   });
 
@@ -2480,7 +2516,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `
           <div class="folder-search-item" data-path="${escapeHtml(filePath)}">
             <span class="folder-search-item-title" title="${escapeHtml(title)}" style="display: flex; align-items: center; gap: 6px;">${SVG_MUSIC}<span>${escapeHtml(title)}</span></span>
-            <span style="font-size: 10px; color: #38bdf8; font-weight: 700; flex-shrink: 0;">Als Nächster ➔</span>
+            <span style="font-size: 10px; color: #38bdf8; font-weight: 700; flex-shrink: 0; display: flex; align-items: center; gap: 3px;"><span>Als Nächster</span><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
           </div>
         `;
       }).join('');
@@ -2532,7 +2568,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `
           <div class="folder-search-item" data-path="${escapeHtml(filePath)}">
             <span class="folder-search-item-title" title="${escapeHtml(title)}" style="display: flex; align-items: center; gap: 6px;">${SVG_RADIO}<span>${escapeHtml(title)}</span></span>
-            <span style="font-size: 10px; color: #f59e0b; font-weight: 700; flex-shrink: 0;">Karte ➔</span>
+            <span style="font-size: 10px; color: #f59e0b; font-weight: 700; flex-shrink: 0; display: flex; align-items: center; gap: 3px;"><span>Karte wählen</span><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
           </div>
         `;
       }).join('');
@@ -2594,7 +2630,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `
           <div class="folder-search-item" data-title="${escapeHtml(r.movieTitle)}">
             <span class="folder-search-item-title" title="${escapeHtml(r.movieTitle)}" style="display: flex; align-items: center; gap: 6px;">${SVG_FILM}<span>${escapeHtml(r.movieTitle)}</span></span>
-            <span style="font-size: 10px; color: #fbbf24; font-weight: 700; flex-shrink: 0;">Laden ➔</span>
+            <span style="font-size: 10px; color: #fbbf24; font-weight: 700; flex-shrink: 0; display: flex; align-items: center; gap: 3px;"><span>Laden</span><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
           </div>
         `;
       }).join('');
@@ -2703,16 +2739,220 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Interactive Stage Cards in Wallpaper Quiz ("Unten links bei Schärfestufen")
+  // 14. WALLPAPER STAGE & TIME CONFIGURATOR MODAL
+  const wpStagesConfigModal = document.getElementById('wpStagesConfigModal');
+  const btnWpStagesModalClose = document.getElementById('btnWpStagesModalClose');
+  const btnOpenWpCustomizer = document.getElementById('btnOpenWpCustomizer');
+  const lblWpModalTotalSeconds = document.getElementById('lblWpModalTotalSeconds');
+  const lblWpModalFlow = document.getElementById('lblWpModalFlow');
+  const btnWpStagesReset = document.getElementById('btnWpStagesReset');
+  const btnWpStagesSave = document.getElementById('btnWpStagesSave');
+
+  const btnPreset10s = document.getElementById('btnPreset10s');
+  const btnPreset15s = document.getElementById('btnPreset15s');
+  const btnPresetBlitz = document.getElementById('btnPresetBlitz');
+
+  let modalTimes = { 1: 10, 2: 10, 3: 10, 4: 10 };
+  let modalPoints = { 1: 4, 2: 3, 3: 2, 4: 1 };
+
+  function recalculateModalRanges() {
+    const t1 = Math.max(1, parseInt(modalTimes[1], 10) || 10);
+    const t2 = t1 + Math.max(1, parseInt(modalTimes[2], 10) || 10);
+    const t3 = t2 + Math.max(1, parseInt(modalTimes[3], 10) || 10);
+    const t4 = t3 + Math.max(1, parseInt(modalTimes[4], 10) || 10);
+
+    const r1 = document.getElementById('lblWpModalRange1');
+    const r2 = document.getElementById('lblWpModalRange2');
+    const r3 = document.getElementById('lblWpModalRange3');
+    const r4 = document.getElementById('lblWpModalRange4');
+
+    if (r1) r1.textContent = `0 – ${t1}s`;
+    if (r2) r2.textContent = `${t1} – ${t2}s`;
+    if (r3) r3.textContent = `${t2} – ${t3}s`;
+    if (r4) r4.textContent = `${t3} – ${t4}s`;
+
+    if (lblWpModalTotalSeconds) lblWpModalTotalSeconds.textContent = `${t4}s`;
+    if (lblWpModalFlow) {
+      lblWpModalFlow.textContent = `0-${t1}s -> ${t1}-${t2}s -> ${t2}-${t3}s -> ${t3}-${t4}s`;
+    }
+  }
+
+  function syncModalInputsFromState() {
+    modalTimes = { ...customWallpaperStageTimes };
+    modalPoints = { ...customWallpaperStagePoints };
+
+    for (let i = 1; i <= 4; i++) {
+      const timeInp = document.getElementById(`inpWpStageTime${i}`);
+      const ptsInp = document.getElementById(`inpWpStagePts${i}`);
+      if (timeInp) timeInp.value = modalTimes[i] || 10;
+      if (ptsInp) ptsInp.value = modalPoints[i] !== undefined ? modalPoints[i] : (5 - i);
+    }
+    recalculateModalRanges();
+  }
+
+  function openWallpaperStagesModal(targetStage = 1) {
+    syncModalInputsFromState();
+    if (wpStagesConfigModal) {
+      wpStagesConfigModal.classList.remove('hidden');
+      const targetInp = document.getElementById(`inpWpStageTime${targetStage}`);
+      if (targetInp) {
+        setTimeout(() => {
+          targetInp.focus();
+          targetInp.select();
+        }, 50);
+      }
+    }
+  }
+
+  function closeWallpaperStagesModal() {
+    if (wpStagesConfigModal) {
+      wpStagesConfigModal.classList.add('hidden');
+    }
+  }
+
+  if (btnWpStagesModalClose) {
+    btnWpStagesModalClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeWallpaperStagesModal();
+    });
+  }
+
+  if (btnOpenWpCustomizer) {
+    btnOpenWpCustomizer.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openWallpaperStagesModal(1);
+    });
+  }
+
+  // Interactive Stage Cards in Wallpaper Quiz open the modal
   document.querySelectorAll('.wp-stage-card.tag-score-interactive').forEach((card) => {
     card.addEventListener('click', (e) => {
       e.stopPropagation();
       const stage = parseInt(card.getAttribute('data-stage'), 10) || 1;
-      const label = card.getAttribute('data-label') || '';
-      const curPts = customWallpaperStagePoints[stage] ?? (5 - stage);
-      openQuickScorePopup({ stage, label, points: curPts }, card, true);
+      openWallpaperStagesModal(stage);
     });
   });
+
+  // Modal Stepper & Input event listeners
+  document.querySelectorAll('#wpStagesConfigModal .btn-stepper').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = btn.getAttribute('data-action');
+      const stage = parseInt(btn.getAttribute('data-stage'), 10) || 1;
+      const delta = parseInt(btn.getAttribute('data-delta'), 10) || 0;
+
+      if (action === 'time') {
+        const inp = document.getElementById(`inpWpStageTime${stage}`);
+        const cur = parseInt(inp.value, 10) || 10;
+        const val = Math.max(1, Math.min(180, cur + delta));
+        inp.value = val;
+        modalTimes[stage] = val;
+        recalculateModalRanges();
+      } else if (action === 'points') {
+        const inp = document.getElementById(`inpWpStagePts${stage}`);
+        const cur = parseInt(inp.value, 10) || 0;
+        const val = Math.max(0, Math.min(50, cur + delta));
+        inp.value = val;
+        modalPoints[stage] = val;
+      }
+    });
+  });
+
+  for (let i = 1; i <= 4; i++) {
+    const timeInp = document.getElementById(`inpWpStageTime${i}`);
+    const ptsInp = document.getElementById(`inpWpStagePts${i}`);
+    if (timeInp) {
+      timeInp.addEventListener('input', () => {
+        const val = Math.max(1, parseInt(timeInp.value, 10) || 1);
+        modalTimes[i] = val;
+        recalculateModalRanges();
+      });
+    }
+    if (ptsInp) {
+      ptsInp.addEventListener('input', () => {
+        const val = Math.max(0, parseInt(ptsInp.value, 10) || 0);
+        modalPoints[i] = val;
+      });
+    }
+  }
+
+  // Presets
+  if (btnPreset10s) {
+    btnPreset10s.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modalTimes = { 1: 10, 2: 10, 3: 10, 4: 10 };
+      modalPoints = { 1: 4, 2: 3, 3: 2, 4: 1 };
+      for (let i = 1; i <= 4; i++) {
+        const ti = document.getElementById(`inpWpStageTime${i}`);
+        const pi = document.getElementById(`inpWpStagePts${i}`);
+        if (ti) ti.value = 10;
+        if (pi) pi.value = 5 - i;
+      }
+      recalculateModalRanges();
+    });
+  }
+
+  if (btnPreset15s) {
+    btnPreset15s.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modalTimes = { 1: 15, 2: 15, 3: 15, 4: 15 };
+      modalPoints = { 1: 4, 2: 3, 3: 2, 4: 1 };
+      for (let i = 1; i <= 4; i++) {
+        const ti = document.getElementById(`inpWpStageTime${i}`);
+        const pi = document.getElementById(`inpWpStagePts${i}`);
+        if (ti) ti.value = 15;
+        if (pi) pi.value = 5 - i;
+      }
+      recalculateModalRanges();
+    });
+  }
+
+  if (btnPresetBlitz) {
+    btnPresetBlitz.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modalTimes = { 1: 5, 2: 5, 3: 10, 4: 10 };
+      modalPoints = { 1: 4, 2: 3, 3: 2, 4: 1 };
+      const t1 = document.getElementById('inpWpStageTime1');
+      const t2 = document.getElementById('inpWpStageTime2');
+      const t3 = document.getElementById('inpWpStageTime3');
+      const t4 = document.getElementById('inpWpStageTime4');
+      if (t1) t1.value = 5;
+      if (t2) t2.value = 5;
+      if (t3) t3.value = 10;
+      if (t4) t4.value = 10;
+      for (let i = 1; i <= 4; i++) {
+        const pi = document.getElementById(`inpWpStagePts${i}`);
+        if (pi) pi.value = 5 - i;
+      }
+      recalculateModalRanges();
+    });
+  }
+
+  if (btnWpStagesReset) {
+    btnWpStagesReset.addEventListener('click', (e) => {
+      e.stopPropagation();
+      btnPreset10s?.click();
+    });
+  }
+
+  if (btnWpStagesSave) {
+    btnWpStagesSave.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      for (let i = 1; i <= 4; i++) {
+        const tVal = Math.max(1, parseInt(document.getElementById(`inpWpStageTime${i}`)?.value, 10) || 10);
+        const pVal = Math.max(0, parseInt(document.getElementById(`inpWpStagePts${i}`)?.value, 10) || 0);
+        modalTimes[i] = tVal;
+        modalPoints[i] = pVal;
+      }
+      customWallpaperStageTimes = { ...modalTimes };
+      customWallpaperStagePoints = { ...modalPoints };
+
+      await window.mannisBoxAPI.setWallpaperStageTimes(customWallpaperStageTimes);
+      await window.mannisBoxAPI.setWallpaperStagePoints(customWallpaperStagePoints);
+
+      closeWallpaperStagesModal();
+    });
+  }
 
   if (lblHostScore) {
     lblHostScore.addEventListener('click', (e) => {
@@ -2736,6 +2976,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Global click outside to dismiss popups and search dropdowns
   document.addEventListener('click', (e) => {
+    if (wpStagesConfigModal && !wpStagesConfigModal.classList.contains('hidden')) {
+      const modalContent = wpStagesConfigModal.querySelector('.wp-stages-modal-card');
+      if (modalContent && !modalContent.contains(e.target) && !e.target.closest('#btnOpenWpCustomizer') && !e.target.closest('.wp-stage-card')) {
+        closeWallpaperStagesModal();
+      }
+    }
     if (quickScoreEditorPopup && !quickScoreEditorPopup.classList.contains('hidden')) {
       if (!quickScoreEditorPopup.contains(e.target) && !e.target.closest('.tag-score-interactive')) {
         closeQuickScorePopup();

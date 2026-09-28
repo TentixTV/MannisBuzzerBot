@@ -27,18 +27,29 @@ function censorText(text, mask = '█') {
   return text.split('').map(c => /[a-zA-Z0-9äöüÄÖÜß]/.test(c) ? mask : c).join('');
 }
 
-function calculateWallpaperPoints(elapsedSeconds) {
-  if (elapsedSeconds < 10) return 4;
-  if (elapsedSeconds < 20) return 3;
-  if (elapsedSeconds < 30) return 2;
-  return 1;
+function calculateWallpaperPoints(elapsedSeconds, customPoints = null, customTimes = null) {
+  const pts = customPoints || { 1: 4, 2: 3, 3: 2, 4: 1 };
+  const times = customTimes || { 1: 10, 2: 10, 3: 10, 4: 10 };
+  const t1 = times[1] || 10;
+  const t2 = t1 + (times[2] || 10);
+  const t3 = t2 + (times[3] || 10);
+  const t4 = t3 + (times[4] || 10);
+  if (elapsedSeconds < t1) return pts[1] !== undefined ? pts[1] : 4;
+  if (elapsedSeconds < t2) return pts[2] !== undefined ? pts[2] : 3;
+  if (elapsedSeconds < t3) return pts[3] !== undefined ? pts[3] : 2;
+  return pts[4] !== undefined ? pts[4] : 1;
 }
 
-function getWallpaperStage(elapsedSeconds) {
-  if (elapsedSeconds < 10) return 1;
-  if (elapsedSeconds < 20) return 2;
-  if (elapsedSeconds < 30) return 3;
-  if (elapsedSeconds < 40) return 4;
+function getWallpaperStage(elapsedSeconds, customTimes = null) {
+  const times = customTimes || { 1: 10, 2: 10, 3: 10, 4: 10 };
+  const t1 = times[1] || 10;
+  const t2 = t1 + (times[2] || 10);
+  const t3 = t2 + (times[3] || 10);
+  const t4 = t3 + (times[4] || 10);
+  if (elapsedSeconds < t1) return 1;
+  if (elapsedSeconds < t2) return 2;
+  if (elapsedSeconds < t3) return 3;
+  if (elapsedSeconds < t4) return 4;
   return 5;
 }
 

@@ -8,13 +8,26 @@ class UE5Stage3D {
     this.canvas = document.getElementById(canvasId);
     if (!this.canvas) return;
 
-    this.gl = this.canvas.getContext('webgl', { alpha: true, antialias: true }) ||
-              this.canvas.getContext('experimental-webgl', { alpha: true, antialias: true });
+    const glAttribs = {
+      alpha: true,
+      antialias: false,
+      powerPreference: 'high-performance',
+      desynchronized: true,
+      preserveDrawingBuffer: false,
+      failIfMajorPerformanceCaveat: false
+    };
+    this.gl = this.canvas.getContext('webgl', glAttribs) ||
+              this.canvas.getContext('experimental-webgl', glAttribs);
 
     if (!this.gl) {
       console.warn('[UE5 Stage 3D] WebGL not available, fallback to 2D canvas');
       return;
     }
+
+    // Preallocated Float32Array matrix buffers for zero-allocation 120+ FPS rendering
+    this.pMatrix = new Float32Array(16);
+    this.vMatrix = new Float32Array(16);
+    this.mvpMatrix = new Float32Array(16);
 
     this.currentMode = 'standby';
     this.mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
@@ -247,10 +260,14 @@ class UE5Stage3D {
 
   onResize() {
     if (!this.canvas || !this.gl) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.canvas.width = window.innerWidth * dpr;
-    this.canvas.height = window.innerHeight * dpr;
-    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+    const targetW = Math.round(window.innerWidth * dpr);
+    const targetH = Math.round(window.innerHeight * dpr);
+    if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
+      this.canvas.width = targetW;
+      this.canvas.height = targetH;
+      this.gl.viewport(0, 0, targetW, targetH);
+    }
   }
 
   setGameMode(mode, isBoost = false) {
@@ -299,7 +316,12 @@ class UE5Stage3D {
   render(timestamp) {
     requestAnimationFrame(this.render);
 
-    const dt = (timestamp - this.lastTimestamp) / 1000;
+    if (document.hidden) {
+      this.lastTimestamp = timestamp;
+      return;
+    }
+
+    const dt = Math.min((timestamp - this.lastTimestamp) / 1000, 0.05);
     this.lastTimestamp = timestamp;
     this.time += dt;
 
@@ -328,36 +350,30 @@ class UE5Stage3D {
 
     const gl = this.gl;
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // Additive cyberpunk luminescence
 
-    // Compute Perspective & View Matrix
+    // Compute Perspective & View Matrix in-place (ZERO allocations)
     const aspect = this.canvas.width / this.canvas.height;
     const fov = 60 * (Math.PI / 180);
     const near = 0.5;
     const far = 500.0;
-    const f = 1.0 / Math.tan(fov / 2);
+    this.setPerspectiveMatrix(this.pMatrix, fov, aspect, near, far);
 
-    const pMatrix = [
-      f / aspect, 0, 0, 0,
-      0, f, 0, 0,
-      0, 0, (far + near) / (near - far), -1,
-      0, 0, (2 * far * near) / (near - far), 0
-    ];
-
-    // Camera LookAt
+    // Camera LookAt in-place
     const camX = this.mouse.x * 14;
     const camY = 16 - this.mouse.y * 9;
     const camZ = 55;
+    this.setLookAtMatrix(this.vMatrix, camX, camY, camZ, 0, 2, 0, 0, 1, 0);
 
-    const vMatrix = this.createLookAtMatrix(camX, camY, camZ, 0, 2, 0, 0, 1, 0);
-    const mvp = this.multiplyMatrices(pMatrix, vMatrix);
+    // MVP = P * V (in-place)
+    this.multiplyMatrices(this.mvpMatrix, this.pMatrix, this.vMatrix);
 
     // 1. Draw Horizon Grid
     gl.useProgram(this.gridProgram);
-    gl.uniformMatrix4fv(this.gUniMatrix, false, new Float32Array(mvp));
+    gl.uniformMatrix4fv(this.gUniMatrix, false, this.mvpMatrix);
     gl.uniform1f(this.gUniTime, this.time);
     gl.uniform1f(this.gUniBoost, this.boostCurrent);
     gl.uniform3f(this.gUniGridColor, this.activeColor.r, this.activeColor.g, this.activeColor.b);
@@ -369,7 +385,7 @@ class UE5Stage3D {
 
     // 2. Draw 2,000 Niagara Particles
     gl.useProgram(this.particleProgram);
-    gl.uniformMatrix4fv(this.pUniMatrix, false, new Float32Array(mvp));
+    gl.uniformMatrix4fv(this.pUniMatrix, false, this.mvpMatrix);
     gl.uniform1f(this.pUniTime, this.time);
     gl.uniform1f(this.pUniShockwave, this.shockwave);
     gl.uniform1f(this.pUniBoost, this.boostCurrent);
@@ -388,7 +404,16 @@ class UE5Stage3D {
     gl.drawArrays(gl.POINTS, 0, this.particleCount);
   }
 
-  createLookAtMatrix(eyeX, eyeY, eyeZ, targetX, targetY, targetZ, upX, upY, upZ) {
+  setPerspectiveMatrix(out, fov, aspect, near, far) {
+    const f = 1.0 / Math.tan(fov / 2);
+    out[0] = f / aspect; out[1] = 0; out[2] = 0; out[3] = 0;
+    out[4] = 0; out[5] = f; out[6] = 0; out[7] = 0;
+    out[8] = 0; out[9] = 0; out[10] = (far + near) / (near - far); out[11] = -1;
+    out[12] = 0; out[13] = 0; out[14] = (2 * far * near) / (near - far); out[15] = 0;
+    return out;
+  }
+
+  setLookAtMatrix(out, eyeX, eyeY, eyeZ, targetX, targetY, targetZ, upX, upY, upZ) {
     let z0 = eyeX - targetX, z1 = eyeY - targetY, z2 = eyeZ - targetZ;
     let len = Math.hypot(z0, z1, z2);
     if (len > 0) { z0 /= len; z1 /= len; z2 /= len; }
@@ -399,27 +424,23 @@ class UE5Stage3D {
 
     let y0 = z1 * x2 - z2 * x1, y1 = z2 * x0 - z0 * x2, y2 = z0 * x1 - z1 * x0;
 
-    return [
-      x0, y0, z0, 0,
-      x1, y1, z1, 0,
-      x2, y2, z2, 0,
-      -(x0 * eyeX + x1 * eyeY + x2 * eyeZ),
-      -(y0 * eyeX + y1 * eyeY + y2 * eyeZ),
-      -(z0 * eyeX + z1 * eyeY + z2 * eyeZ),
-      1
-    ];
+    out[0] = x0; out[1] = y0; out[2] = z0; out[3] = 0;
+    out[4] = x1; out[5] = y1; out[6] = z1; out[7] = 0;
+    out[8] = x2; out[9] = y2; out[10] = z2; out[11] = 0;
+    out[12] = -(x0 * eyeX + x1 * eyeY + x2 * eyeZ);
+    out[13] = -(y0 * eyeX + y1 * eyeY + y2 * eyeZ);
+    out[14] = -(z0 * eyeX + z1 * eyeY + z2 * eyeZ);
+    out[15] = 1;
+    return out;
   }
 
-  multiplyMatrices(a, b) {
-    const out = new Array(16);
+  multiplyMatrices(out, a, b) {
     for (let i = 0; i < 4; i++) {
-      for (let j = 0; j < 4; j++) {
-        out[j * 4 + i] = 
-          a[0 * 4 + i] * b[j * 4 + 0] +
-          a[1 * 4 + i] * b[j * 4 + 1] +
-          a[2 * 4 + i] * b[j * 4 + 2] +
-          a[3 * 4 + i] * b[j * 4 + 3];
-      }
+      const a0 = a[i], a1 = a[4 + i], a2 = a[8 + i], a3 = a[12 + i];
+      out[i]      = a0 * b[0]  + a1 * b[1]  + a2 * b[2]  + a3 * b[3];
+      out[4 + i]  = a0 * b[4]  + a1 * b[5]  + a2 * b[6]  + a3 * b[7];
+      out[8 + i]  = a0 * b[8]  + a1 * b[9]  + a2 * b[10] + a3 * b[11];
+      out[12 + i] = a0 * b[12] + a1 * b[13] + a2 * b[14] + a3 * b[15];
     }
     return out;
   }

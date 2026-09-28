@@ -1,5 +1,16 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+
+// Hardware Acceleration & High-Refresh Rate (120Hz/144Hz/240Hz) Support
+app.commandLine.appendSwitch('disable-frame-rate-limit');
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('force-high-performance-gpu');
+app.commandLine.appendSwitch('enable-accelerated-2d-canvas');
+app.commandLine.appendSwitch('enable-accelerated-video-decode');
+app.commandLine.appendSwitch('enable-native-gpu-memory-buffers');
+
 const botManager = require('./bot/botManager');
 const StreamServer = require('./streamServer');
 const { loadConfig, saveConfig } = require('./config/configManager');
@@ -26,6 +37,7 @@ function openStreamWindow() {
     backgroundColor: '#12131a',
     autoHideMenuBar: true,
     webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true
     }
@@ -89,6 +101,9 @@ function createWindow() {
   botManager.on('game-state', (state) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('game-state', state);
+    }
+    if (streamWindow && !streamWindow.isDestroyed()) {
+      streamWindow.webContents.send('game-state', state);
     }
     if (streamServer) {
       streamServer.broadcast(state);
@@ -441,6 +456,10 @@ ipcMain.handle('select-specific-wallpaper', (event, titleOrIndex) => {
 
 ipcMain.handle('set-wallpaper-stage-points', (event, pointsObj) => {
   return botManager.setWallpaperStagePoints(pointsObj);
+});
+
+ipcMain.handle('set-wallpaper-stage-times', (event, timesObj) => {
+  return botManager.setWallpaperStageTimes(timesObj);
 });
 
 ipcMain.handle('open-stream-window', () => {

@@ -115,6 +115,7 @@ class BotManager extends EventEmitter {
         stages: {}
       },
       wallpaperStagePoints: { 1: 4, 2: 3, 3: 2, 4: 1 },
+      wallpaperStageTimes: { 1: 10, 2: 10, 3: 10, 4: 10 },
       hitsterState: {
         currentCard: {
           title: '',
@@ -838,7 +839,7 @@ class BotManager extends EventEmitter {
       // Wallpaper stage progression
       if (this.gameState.gameMode === 'wallpaper') {
         const prevStage = this.gameState.wallpaperState.stage;
-        const stage = getWallpaperStage(t.elapsed);
+        const stage = this.getWallpaperStage(t.elapsed);
         const points = this.getWallpaperPoints(t.elapsed);
         this.gameState.wallpaperState.stage = stage;
         this.gameState.wallpaperState.points = points;
@@ -851,8 +852,9 @@ class BotManager extends EventEmitter {
           this.updateDiscordMessage();
         }
 
-        // Auto resolve at 40s
-        if (t.elapsed >= 40 && !this.gameState.wallpaperState.resolved) {
+        // Auto resolve when total stage time elapsed
+        const totalWpTime = this.getWallpaperTotalDuration();
+        if (t.elapsed >= totalWpTime && !this.gameState.wallpaperState.resolved) {
           this.resolveWallpaper();
           this.setBuzzerLocked(true);
         }
@@ -984,10 +986,12 @@ class BotManager extends EventEmitter {
 
     // Mode-specific reset
     if (this.gameState.gameMode === 'wallpaper') {
-      duration = 40;
+      duration = this.getWallpaperTotalDuration();
       this.gameState.wallpaperState.resolved = false;
       this.gameState.wallpaperState.stage = 1;
-      this.gameState.wallpaperState.points = 4;
+      this.gameState.wallpaperState.points = (this.gameState.wallpaperStagePoints && this.gameState.wallpaperStagePoints[1] !== undefined)
+        ? this.gameState.wallpaperStagePoints[1]
+        : 4;
       if (this.currentWallpaperRound?.stages) {
         this.gameState.wallpaperState.currentImage = this.currentWallpaperRound.stages[1] || this.currentWallpaperRound.sharpImage;
       }
@@ -1618,12 +1622,17 @@ class BotManager extends EventEmitter {
     this.emitState();
   }
 
+  getWallpaperTotalDuration() {
+    const times = this.gameState.wallpaperStageTimes || { 1: 10, 2: 10, 3: 10, 4: 10 };
+    return (times[1] || 10) + (times[2] || 10) + (times[3] || 10) + (times[4] || 10);
+  }
+
+  getWallpaperStage(elapsedSeconds) {
+    return getWallpaperStage(elapsedSeconds, this.gameState.wallpaperStageTimes);
+  }
+
   getWallpaperPoints(elapsedSeconds) {
-    const pts = this.gameState.wallpaperStagePoints || { 1: 4, 2: 3, 3: 2, 4: 1 };
-    if (elapsedSeconds < 10) return pts[1] !== undefined ? pts[1] : 4;
-    if (elapsedSeconds < 20) return pts[2] !== undefined ? pts[2] : 3;
-    if (elapsedSeconds < 30) return pts[3] !== undefined ? pts[3] : 2;
-    return pts[4] !== undefined ? pts[4] : 1;
+    return calculateWallpaperPoints(elapsedSeconds, this.gameState.wallpaperStagePoints, this.gameState.wallpaperStageTimes);
   }
 
   setWallpaperStagePoints(pointsObj) {
@@ -1641,6 +1650,30 @@ class BotManager extends EventEmitter {
       }
       this.emitState();
       return { success: true, points: this.gameState.wallpaperStagePoints };
+    }
+    return { success: false };
+  }
+
+  setWallpaperStageTimes(timesObj) {
+    if (!this.gameState.wallpaperStageTimes) {
+      this.gameState.wallpaperStageTimes = { 1: 10, 2: 10, 3: 10, 4: 10 };
+    }
+    if (timesObj && typeof timesObj === 'object') {
+      this.gameState.wallpaperStageTimes = { ...this.gameState.wallpaperStageTimes, ...timesObj };
+      if (this.gameState.gameMode === 'wallpaper') {
+        const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
+        this.gameState.wallpaperState.stage = this.getWallpaperStage(elapsed);
+        this.gameState.wallpaperState.points = this.getWallpaperPoints(elapsed);
+        if (this.gameState.roundTimer && this.gameState.roundTimer.active) {
+          this.gameState.roundTimer.duration = this.getWallpaperTotalDuration();
+          this.gameState.roundTimer.remaining = Math.max(0, this.gameState.roundTimer.duration - elapsed);
+        }
+        if (this.gameState.activePlayer) {
+          this.gameState.activePlayer.potentialPoints = this.gameState.wallpaperState.points;
+        }
+      }
+      this.emitState();
+      return { success: true, times: this.gameState.wallpaperStageTimes };
     }
     return { success: false };
   }

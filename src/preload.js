@@ -64,6 +64,7 @@ contextBridge.exposeInMainWorld('mannisBoxAPI', {
   selectSpecificHitster: (filePath) => ipcRenderer.invoke('select-specific-hitster', filePath),
   selectSpecificWallpaper: (titleOrIndex) => ipcRenderer.invoke('select-specific-wallpaper', titleOrIndex),
   setWallpaperStagePoints: (pointsObj) => ipcRenderer.invoke('set-wallpaper-stage-points', pointsObj),
+  setWallpaperStageTimes: (timesObj) => ipcRenderer.invoke('set-wallpaper-stage-times', timesObj),
   openStreamWindow: () => ipcRenderer.invoke('open-stream-window'),
   setPlaylistMode: (mode) => ipcRenderer.invoke('set-playlist-mode', mode),
   prepareNextSong: () => ipcRenderer.invoke('prepare-next-song'),

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:8888 http://127.0.0.1:8888 https://cdn.discordapp.com https://fonts.googleapis.com https://fonts.gstatic.com data: blob:;" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' http: https: data: blob:;" />
   <title>MannisBox - OBS Stream Overlay</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -441,25 +441,83 @@
     </div>
 
     <!-- 2. Wallpaper Center Stage -->
-    <div id="stageWallpaper" class="stream-glass-card" style="padding: 16px 20px; display: none; flex-direction: column; align-items: center; gap: 10px; max-width: 800px;">
-      <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
-        <span id="wpStageTag" style="background: #3b82f6; color: #fff; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 6px;">
-          Stufe 1 (50 Punkte)
-        </span>
-        <span style="font-size: 0.75rem; color: #9ca3af; font-weight: 700;">
-          Schärfung alle 10 Sekunden
-        </span>
+    <div id="stageWallpaper" class="stream-glass-card cinema-stream-stage" style="padding: 14px 20px; display: none; flex-direction: column; align-items: center; gap: 10px; width: 100%; max-width: 760px; box-sizing: border-box;">
+      <!-- Cinema Clapperboard Header in Stream -->
+      <div class="cinema-clapperboard-header" style="width: 100%; box-sizing: border-box; margin: 0;">
+        <div class="clapperboard-stripes"></div>
+        <div class="clapperboard-content" style="padding: 6px 14px; display: flex; justify-content: space-between; align-items: center;">
+          <div class="clapperboard-title-group" style="display: flex; align-items: center; gap: 8px;">
+            <span class="clapperboard-badge" style="font-size: 0.72rem; padding: 2px 8px; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; border-radius: 4px; color: #fbbf24; font-weight: 900; letter-spacing: 1px; display: flex; align-items: center; gap: 4px;">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+              <span>FILM-QUIZ</span>
+            </span>
+            <span style="font-weight: 800; font-size: 0.72rem; color: #94a3b8;">FILM:</span>
+            <span id="streamWpClapperTitle" class="clapperboard-film-text film-blurred" style="font-size: 0.85rem; font-weight: 800; color: #f1f5f9;">Film gesucht...</span>
+          </div>
+          <div class="clapperboard-stage-group" style="display: flex; align-items: center; gap: 10px;">
+            <span id="streamWpStageBadge" class="clapperboard-points-pill" style="font-size: 0.75rem; padding: 3px 10px; background: #3b82f6; border-radius: 6px; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 4px;">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <span id="streamWpStageBadgeText">STUFE 1 • 4 PUNKTE</span>
+            </span>
+            <span id="streamWpNextStageTimer" style="font-size: 0.72rem; color: #94a3b8; font-weight: 700;">Nächste Stufe in 10s</span>
+          </div>
+        </div>
       </div>
 
-      <div style="position: relative; border-radius: 12px; overflow: hidden; border: 2px solid #2a2c3d; max-height: 440px; display: flex; justify-content: center; background: #000;">
-        <img id="wpImage" src="" style="max-height: 440px; max-width: 100%; object-fit: contain; transition: filter 0.4s ease;" />
-        
-        <!-- Reveal Overlay -->
-        <div id="wpRevealOverlay" style="display: none; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.7); flex-direction: column; align-items: center; justify-content: center;">
-          <div style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: #f59e0b; letter-spacing: 2px;">Film Aufgelöst</div>
-          <div id="wpMovieName" style="font-size: 2.4rem; font-weight: 900; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.8); margin-top: 6px;">
-            Filmtitel
+      <!-- Cinema 16:9 Viewport & Projection Screen -->
+      <div class="cinema-theater-screen-rig" style="width: 100%;">
+        <div class="cinema-screen-bezel" style="position: relative; border-radius: 14px; overflow: hidden; background: #07080d; border: 2px solid #2e3552; box-shadow: 0 14px 38px rgba(0,0,0,0.8), 0 0 30px rgba(56, 189, 248, 0.15);">
+          <div class="cinema-projector-light"></div>
+          
+          <div class="cinema-screen-viewport" style="position: relative; width: 100%; height: 380px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000;">
+            <img id="wpImage" src="" alt="Wallpaper" class="cinema-wallpaper-image blur-stage-1" style="max-height: 380px; width: 100%; height: 100%; object-fit: contain; display: none; transition: filter 0.45s ease;" />
+            
+            <!-- Robust Sleek Placeholder when no image is loaded yet -->
+            <div id="wpPlaceholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #64748b; padding: 24px; text-align: center;">
+              <div style="background: rgba(30, 34, 52, 0.7); border: 1.5px solid #3b4260; border-radius: 50%; width: 68px; height: 68px; display: flex; align-items: center; justify-content: center; color: #60a5fa; box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);">
+                <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+              </div>
+              <div style="font-size: 1.15rem; font-weight: 900; color: #e2e8f0; letter-spacing: 0.5px;">BEREIT FÜR NÄCHSTEN FILM...</div>
+              <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">Warte auf Wallpaper-Auswahl durch den Spielleiter</div>
+            </div>
+
+            <!-- Stage Countdown Radial Overlay (Top Right of Screen) -->
+            <div id="streamWpRadialOverlay" class="cinema-timer-meter-overlay" style="display: none; position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(10, 12, 19, 0.85); border-radius: 50%; width: 48px; height: 48px; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.6); border: 1.5px solid rgba(255,255,255,0.15);">
+              <span id="streamWpRadialSec" style="font-family: monospace; font-size: 0.85rem; font-weight: 900; color: #f59e0b;">10s</span>
+            </div>
+
+            <!-- Reveal Overlay -->
+            <div id="wpRevealOverlay" style="display: none; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(4px); flex-direction: column; align-items: center; justify-content: center; z-index: 25; text-align: center; padding: 20px;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 900; text-transform: uppercase; color: #fbbf24; letter-spacing: 2px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/></svg>
+                <span>FILM AUFGELÖST!</span>
+              </div>
+              <div id="wpMovieName" style="font-size: 2.2rem; font-weight: 900; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.9); margin-top: 6px; max-width: 90%;">
+                Filmtitel
+              </div>
+              <div style="font-size: 0.8rem; color: #34d399; font-weight: 800; margin-top: 4px;">Bild 100% scharf gestellt</div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 4-Stage Horizontal Progress Strip in Stream -->
+      <div id="streamWpStagesStrip" style="width: 100%; display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 2px;">
+        <div id="streamWpStrip1" class="stream-wp-strip-card" style="flex: 1; text-align: center; padding: 4px 8px; background: rgba(30, 34, 52, 0.8); border: 1.5px solid #2a2e45; border-radius: 8px; transition: all 0.3s ease;">
+          <div id="streamWpStripRange1" style="font-size: 0.7rem; font-weight: 800; color: #94a3b8;">0-10s</div>
+          <div id="streamWpStripPts1" style="font-size: 0.8rem; font-weight: 900; color: #60a5fa;">4 Pkt</div>
+        </div>
+        <div id="streamWpStrip2" class="stream-wp-strip-card" style="flex: 1; text-align: center; padding: 4px 8px; background: rgba(30, 34, 52, 0.8); border: 1.5px solid #2a2e45; border-radius: 8px; transition: all 0.3s ease;">
+          <div id="streamWpStripRange2" style="font-size: 0.7rem; font-weight: 800; color: #94a3b8;">10-20s</div>
+          <div id="streamWpStripPts2" style="font-size: 0.8rem; font-weight: 900; color: #60a5fa;">3 Pkt</div>
+        </div>
+        <div id="streamWpStrip3" class="stream-wp-strip-card" style="flex: 1; text-align: center; padding: 4px 8px; background: rgba(30, 34, 52, 0.8); border: 1.5px solid #2a2e45; border-radius: 8px; transition: all 0.3s ease;">
+          <div id="streamWpStripRange3" style="font-size: 0.7rem; font-weight: 800; color: #94a3b8;">20-30s</div>
+          <div id="streamWpStripPts3" style="font-size: 0.8rem; font-weight: 900; color: #60a5fa;">2 Pkt</div>
+        </div>
+        <div id="streamWpStrip4" class="stream-wp-strip-card" style="flex: 1; text-align: center; padding: 4px 8px; background: rgba(30, 34, 52, 0.8); border: 1.5px solid #2a2e45; border-radius: 8px; transition: all 0.3s ease;">
+          <div id="streamWpStripRange4" style="font-size: 0.7rem; font-weight: 800; color: #94a3b8;">30-40s</div>
+          <div id="streamWpStripPts4" style="font-size: 0.8rem; font-weight: 900; color: #60a5fa;">1 Pkt</div>
         </div>
       </div>
     </div>
@@ -478,10 +536,10 @@
         <div id="streamHitster3DCard" class="hitster-card-3d">
           <div class="hitster-card-face card-face-front">
             <div class="card-foil-sheen"></div>
-            <div class="card-corner-star tl">★</div>
-            <div class="card-corner-star tr">★</div>
-            <div class="card-corner-star bl">★</div>
-            <div class="card-corner-star br">★</div>
+            <div class="card-corner-star tl"><svg viewBox="0 0 24 24" width="8" height="8" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="card-corner-star tr"><svg viewBox="0 0 24 24" width="8" height="8" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="card-corner-star bl"><svg viewBox="0 0 24 24" width="8" height="8" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="card-corner-star br"><svg viewBox="0 0 24 24" width="8" height="8" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
             <div class="card-front-emblem">
               <span class="card-secret-q" style="font-size: 32px;">????</span>
               <small class="card-secret-sub">GEHEIM</small>
@@ -490,10 +548,10 @@
           </div>
           <div class="hitster-card-face card-face-back">
             <div class="card-gold-sheen"></div>
-            <div class="card-corner-star tl">★</div>
-            <div class="card-corner-star tr">★</div>
-            <div class="card-corner-star bl">★</div>
-            <div class="card-corner-star br">★</div>
+            <div class="card-corner-star tl"><svg viewBox="0 0 24 24" width="8" height="8" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="card-corner-star tr"><svg viewBox="0 0 24 24" width="8" height="8" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="card-corner-star bl"><svg viewBox="0 0 24 24" width="8" height="8" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="card-corner-star br"><svg viewBox="0 0 24 24" width="8" height="8" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
             <div class="card-revealed-wrap">
               <div class="card-revealed-crown">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="vertical-align:middle;margin-right:4px;"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/></svg>
@@ -760,28 +818,145 @@
       if (state.wallpaperState) {
         const wp = state.wallpaperState;
         const img = document.getElementById('wpImage');
-        const stageTag = document.getElementById('wpStageTag');
+        const placeholder = document.getElementById('wpPlaceholder');
+        const stageBadgeText = document.getElementById('streamWpStageBadgeText');
+        const nextStageTimer = document.getElementById('streamWpNextStageTimer');
+        const radialOverlay = document.getElementById('streamWpRadialOverlay');
+        const radialSec = document.getElementById('streamWpRadialSec');
+        const clapperTitle = document.getElementById('streamWpClapperTitle');
         const revealOverlay = document.getElementById('wpRevealOverlay');
         const movieName = document.getElementById('wpMovieName');
 
-        const imgPath = wp.imagePath || wp.currentImage;
+        const imgPath = wp.currentImage || wp.imagePath || wp.sharpImage;
         if (imgPath) {
-          img.src = `${baseApiUrl}/api/image?path=${encodeURIComponent(imgPath)}`;
-        }
-        const st = Math.min(5, Math.max(1, wp.stage || 1));
-        const blurPixels = [32, 18, 8, 2.5, 0];
-        stageTag.innerText = `Stufe ${st} (${wp.points || 50} Punkte)`;
+          let imageSrc = '';
+          if (imgPath.startsWith('data:') || imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
+            imageSrc = imgPath;
+          } else {
+            imageSrc = `${baseApiUrl}/api/image?path=${encodeURIComponent(imgPath)}`;
+          }
 
+          if (img.getAttribute('data-rawsrc') !== imgPath) {
+            img.setAttribute('data-rawsrc', imgPath);
+            img.src = imageSrc;
+          }
+          img.style.display = 'block';
+          if (placeholder) placeholder.style.display = 'none';
+        } else {
+          img.style.display = 'none';
+          if (placeholder) placeholder.style.display = 'flex';
+        }
+
+        const times = state.wallpaperStageTimes || { 1: 10, 2: 10, 3: 10, 4: 10 };
+        const pts = state.wallpaperStagePoints || { 1: 4, 2: 3, 3: 2, 4: 1 };
+        const elapsed = (state.roundTimer && state.roundTimer.active) ? (state.roundTimer.elapsed || 0) : 0;
+        const t1 = times[1] || 10;
+        const t2 = t1 + (times[2] || 10);
+        const t3 = t2 + (times[3] || 10);
+        const t4 = t3 + (times[4] || 10);
+
+        const st = Math.min(5, Math.max(1, wp.stage || 1));
+        const currentPoints = wp.points !== undefined ? wp.points : (pts[st] !== undefined ? pts[st] : 4);
+
+        if (stageBadgeText) {
+          if (wp.resolved) {
+            stageBadgeText.innerText = 'AUFGELÖST';
+          } else {
+            stageBadgeText.innerText = `STUFE ${st} • ${currentPoints} ${currentPoints === 1 ? 'PUNKT' : 'PUNKTE'}`;
+          }
+        }
+
+        if (nextStageTimer) {
+          if (wp.resolved) {
+            nextStageTimer.innerText = 'Runde beendet';
+            if (radialOverlay) radialOverlay.style.display = 'none';
+          } else if (state.roundTimer && state.roundTimer.active) {
+            let nextThreshold = t1;
+            if (st === 1) nextThreshold = t1;
+            else if (st === 2) nextThreshold = t2;
+            else if (st === 3) nextThreshold = t3;
+            else nextThreshold = t4;
+
+            const secLeft = Math.max(0, Math.ceil(nextThreshold - elapsed));
+            if (st >= 4) {
+              const totalLeft = Math.max(0, Math.ceil(t4 - elapsed));
+              nextStageTimer.innerText = `Endet in ${totalLeft}s`;
+            } else {
+              nextStageTimer.innerText = `Stufe ${st + 1} in ${secLeft}s`;
+            }
+
+            if (radialOverlay && radialSec) {
+              radialOverlay.style.display = 'flex';
+              radialSec.innerText = `${Math.max(0, Math.ceil(t4 - elapsed))}s`;
+            }
+          } else {
+            nextStageTimer.innerText = 'Bereit';
+            if (radialOverlay) radialOverlay.style.display = 'none';
+          }
+        }
+
+        if (clapperTitle) {
+          if (wp.resolved) {
+            clapperTitle.classList.remove('film-blurred');
+            clapperTitle.innerText = wp.movieTitle || 'Film Aufgelöst';
+            clapperTitle.style.color = '#34d399';
+          } else {
+            clapperTitle.classList.add('film-blurred');
+            clapperTitle.innerText = wp.movieTitle ? '██████████' : 'Film gesucht...';
+            clapperTitle.style.color = '#f1f5f9';
+          }
+        }
+
+        const blurPixels = [32, 18, 8, 2.5, 0];
         if (wp.resolved) {
           img.style.filter = 'blur(0px)';
-          revealOverlay.style.display = 'flex';
-          movieName.innerText = wp.movieTitle || 'Film Aufgelöst';
-          if (wp.sharpImage) {
-            img.src = `${baseApiUrl}/api/image?path=${encodeURIComponent(wp.sharpImage)}`;
+          if (revealOverlay) revealOverlay.style.display = 'flex';
+          if (movieName) movieName.innerText = wp.movieTitle || 'Film Aufgelöst';
+          if (wp.sharpImage && imgPath !== wp.sharpImage) {
+            const sharpSrc = (wp.sharpImage.startsWith('data:') || wp.sharpImage.startsWith('http'))
+              ? wp.sharpImage
+              : `${baseApiUrl}/api/image?path=${encodeURIComponent(wp.sharpImage)}`;
+            img.src = sharpSrc;
           }
         } else {
           img.style.filter = `blur(${blurPixels[st - 1]}px)`;
-          revealOverlay.style.display = 'none';
+          if (revealOverlay) revealOverlay.style.display = 'none';
+        }
+
+        // Update 4-stage strip cards
+        const stageRanges = [
+          `0-${t1}s`,
+          `${t1}-${t2}s`,
+          `${t2}-${t3}s`,
+          `${t3}-${t4}s`
+        ];
+
+        for (let i = 1; i <= 4; i++) {
+          const stripCard = document.getElementById(`streamWpStrip${i}`);
+          const stripRange = document.getElementById(`streamWpStripRange${i}`);
+          const stripPts = document.getElementById(`streamWpStripPts${i}`);
+          if (stripRange) stripRange.innerText = stageRanges[i - 1];
+          if (stripPts) stripPts.innerText = `${pts[i] || 0} Pkt`;
+
+          if (stripCard) {
+            if (wp.resolved) {
+              stripCard.style.borderColor = '#2a2e45';
+              stripCard.style.background = 'rgba(30, 34, 52, 0.5)';
+              stripCard.style.boxShadow = 'none';
+            } else if (st === i) {
+              stripCard.style.borderColor = '#60a5fa';
+              stripCard.style.background = 'rgba(59, 130, 246, 0.25)';
+              stripCard.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.4)';
+            } else if (st > i) {
+              stripCard.style.borderColor = '#334155';
+              stripCard.style.background = 'rgba(15, 23, 42, 0.6)';
+              stripCard.style.boxShadow = 'none';
+            } else {
+              stripCard.style.borderColor = '#2a2e45';
+              stripCard.style.background = 'rgba(30, 34, 52, 0.8)';
+              stripCard.style.boxShadow = 'none';
+            }
+          }
         }
       }
 
