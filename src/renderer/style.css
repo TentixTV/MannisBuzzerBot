@@ -695,6 +695,7 @@ body {
 
 .arena-header {
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .arena-title-wrap {
@@ -759,13 +760,16 @@ body {
   border-radius: var(--radius-md);
   padding: 10px 16px;
   text-align: center;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .arena-status-banner p {
   font-size: 14px;
   font-weight: 700;
   color: #cbd5e1;
+  margin: 0;
+  line-height: 1.35;
 }
 
 .buzzer-spotlight-container {
@@ -2599,6 +2603,7 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .arena-banner-song {
@@ -3957,15 +3962,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
-  margin-bottom: 12px;
-  background: radial-gradient(ellipse at 50% 50%, rgba(45, 15, 15, 0.95) 0%, rgba(20, 8, 8, 0.98) 100%);
+  padding: 12px 20px;
+  min-height: 64px;
+  margin-bottom: 14px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(45, 15, 15, 0.96) 0%, rgba(20, 8, 8, 0.98) 100%);
   border: 1.5px solid #f59e0b;
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: 0 0 25px rgba(249, 115, 22, 0.5), inset 0 0 15px rgba(239, 68, 68, 0.35);
   animation: boostBannerPulse 1.4s infinite alternate ease-in-out;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 @keyframes boostBannerPulse {
@@ -3984,6 +3992,9 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  width: 40px;
+  height: 48px;
+  overflow: visible;
 }
 
 .boost-banner-center {
@@ -3992,16 +4003,24 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 2px;
+  gap: 4px;
+  flex: 1;
+  padding: 0 14px;
+  min-width: 0;
+  overflow: visible;
 }
 
 .boost-banner-title {
   font-family: var(--font-display);
   font-size: 15px;
+  line-height: 1.25;
   font-weight: 900;
   letter-spacing: 1.5px;
   color: #fff;
   text-shadow: 0 0 14px rgba(249, 115, 22, 0.95), 0 2px 4px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
 }
 
 .boost-title-highlight {
@@ -4011,22 +4030,29 @@ body {
 
 .boost-banner-desc {
   font-size: 11.5px;
+  line-height: 1.35;
   font-weight: 700;
   color: #fdba74;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
 }
 
 .boost-pts-tag {
   background: rgba(239, 68, 68, 0.25);
   border: 1px solid #ef4444;
   color: #fca5a5;
-  padding: 1px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
   font-size: 10.5px;
   font-weight: 800;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .boost-pts-tag.gold {
@@ -5380,8 +5406,9 @@ body {
 }
 
 .flame-2d-canvas.banner-flame {
-  width: 32px;
-  height: 38px;
+  width: 34px;
+  height: 42px;
+  overflow: visible;
 }
 
 .flame-2d-canvas.splash-flame {

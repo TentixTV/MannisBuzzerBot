@@ -13,7 +13,7 @@ if (!TOKEN) {
 }
 const OWNER = 'TentixTV';
 const REPO = 'MannisBuzzerBot';
-const TAG = 'v4.8.028';
+const TAG = 'v4.8.029';
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
