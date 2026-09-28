@@ -1,15 +1,20 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 
+// Global Crash Prevention & Uncaught Exception Handlers
+process.on('uncaughtException', (err) => {
+  console.error('[Main Uncaught Exception]', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.warn('[Main Unhandled Rejection]', reason);
+});
+
 // Hardware Acceleration & High-Refresh Rate (60Hz / 120Hz / 144Hz+) VSync Support
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-accelerated-2d-canvas');
 app.commandLine.appendSwitch('enable-accelerated-video-decode');
-app.commandLine.appendSwitch('use-angle', 'd3d11');
-app.commandLine.appendSwitch('enable-zero-copy');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
-app.commandLine.appendSwitch('enable-features', 'CanvasOopRasterization,VaapiVideoDecoder');
 
 const botManager = require('./bot/botManager');
 const StreamServer = require('./streamServer');
@@ -61,7 +66,7 @@ function createWindow() {
     height: 900,
     minWidth: 1080,
     minHeight: 720,
-    title: "Manni's Box — Discord Buzzer & Stream Master V4.8.030",
+    title: "Manni's Box — Discord Buzzer & Stream Master V4.8.031",
     icon: iconPath,
     backgroundColor: '#12131a',
     frame: false,

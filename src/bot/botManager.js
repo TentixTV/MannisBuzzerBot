@@ -785,12 +785,40 @@ class BotManager extends EventEmitter {
         selfMute: false
       });
 
+      connection.on('error', (err) => {
+        console.warn('[Bot] Voice Connection error:', err.message);
+      });
+
+      connection.on(VoiceConnectionStatus.Disconnected, async () => {
+        try {
+          await Promise.race([
+            entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+            entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+          ]);
+        } catch (error) {
+          try { connection.destroy(); } catch (e) {}
+          if (this.currentVoiceConnection === connection) {
+            this.leaveVoice();
+          }
+        }
+      });
+
+      try {
+        await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+      } catch (timeoutErr) {
+        console.warn('[Bot] Voice Connection timeout / abort:', timeoutErr.message);
+        try { connection.destroy(); } catch (e) {}
+        this.currentVoiceConnection = null;
+        audioManager.setConnection(null);
+        this.emit('voice-status', { connected: false, error: timeoutErr.message });
+        return { success: false, error: timeoutErr.message };
+      }
+
       this.currentVoiceConnection = connection;
       audioManager.setConnection(connection);
       this.gameState.currentVoiceChannelId = channelId;
       this.gameState.currentGuildId = guildId;
 
-      await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
       await this.updateVoiceMembers();
       await this.updateRichPresence();
 

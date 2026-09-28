@@ -13,7 +13,7 @@ if (!TOKEN) {
 }
 const OWNER = 'TentixTV';
 const REPO = 'MannisBuzzerBot';
-const TAG = 'v4.8.030';
+const TAG = 'v4.8.031';
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
@@ -115,9 +115,11 @@ async function main() {
       }
     });
     console.log(`Found existing release ID: ${release.id}`);
+    const releaseDescription = `## MannisBox ${TAG} — Crash Fix, Privacy & 120 FPS Performance Update\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Fixes in ${TAG}:\n- **Crash Prevention & Startup Hardening:**\n  - Abstürze nach wenigen Sekunden behoben (sauberes Timeout- und Error-Handling beim Discord Voice-Channel Beitritt).\n  - Unverträgliche Chromium/GPU-Flags (VaapiVideoDecoder, CanvasOopRasterization) entfernt.\n  - Globale Exception- und Rejection-Handler integriert, damit unerwartete Netzwerkabbrüche die App nicht beenden.\n- **Wallpaper Privacy (Anti-Cheat):**\n  - Beim Wallpaper-Modus werden die Bilder nicht mehr im Discord-Chat gepostet (verhindert Spoiler und Reverse-Search). Die schärfende Leinwand läuft exklusiv im Stream Overlay und der App.\n- **High-FPS & Stuttering Fixes:**\n  - Signature-Caching für DOM-Elemente (Scoreboard, Hitster-Shelves, Timeline) verhindert 500ms DOM-Neubauten und beseitigt Mikroruckler.\n  - WebGL Hintergrundcanvas GPU-Füllrate auf hochauflösenden Screens (1440p/4K) gedeckelt für konstante 60–144 FPS.\n  - Throttled Mousemove-Listener für Gaming-Mäuse mit hoher Polling-Rate (1000Hz+).\n- **Audio & Songauswahl:**\n  - Songauswahl beim Ordner-Suchfilter vollständig korrigiert.\n  - Optimierte 2D-Flammen Boost-Animation ohne abgeschnittene Ränder.`;
+
     const updatePayload = JSON.stringify({
-      name: `MannisBox ${TAG} — Wallpaper Cinema & Stream Engine Update`,
-      body: `## MannisBox ${TAG} — Wallpaper Cinema & Stream Engine Update\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen in ${TAG}:\n- **Wallpaper im Stream Overlay:** Vollständig repariert und eingebunden mit 16:9 Kinoleinwand, automatischer 4-Stufen Schärfung, Projektor-Bezel und Fortschrittsbalken.\n- **Wallpaper Zeiten & Punkte Konfigurator:** Dauer pro Stufe (Sekunden) und Punkte frei konfigurierbar. Automatische Summierung der Zeitbereiche (z.B. 0-10s, 10-25s, 25-40s...) und dynamische Countdown-Synchronisierung.\n- **120 FPS High-Refresh Engine:** Keine Garbage-Collection-Ruckler mehr im WebGL-Loop, GPU Rasterization & Hardwarebeschleunigung aktiviert, butterweiche 60-120+ FPS ohne 30 FPS Lock.\n- **Reine Vektor-SVG-Umstellung:** Sämtliche Symbole und Pfeile sind gestochen scharfe Vektor-SVGs (Null fehlerhafte Emojis).\n- **Playlist-Modi:** Umschalten zwischen Shuffle und mp3Tag-Nummerierung (01, 02...)\n- **Next Track Slot:** Vorbereitung & Vorschau auf den nächsten Song`,
+      name: `MannisBox ${TAG} — Crash Fix, Privacy & 120 FPS Performance Update`,
+      body: releaseDescription,
       draft: false,
       prerelease: false
     });
@@ -140,11 +142,13 @@ async function main() {
     }
   } catch (err) {
     console.log(`Release does not exist yet. Creating new release for ${TAG}...`);
+    const releaseDescription = `## MannisBox ${TAG} — Crash Fix, Privacy & 120 FPS Performance Update\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Fixes in ${TAG}:\n- **Crash Prevention & Startup Hardening:**\n  - Abstürze nach wenigen Sekunden behoben (sauberes Timeout- und Error-Handling beim Discord Voice-Channel Beitritt).\n  - Unverträgliche Chromium/GPU-Flags (VaapiVideoDecoder, CanvasOopRasterization) entfernt.\n  - Globale Exception- und Rejection-Handler integriert, damit unerwartete Netzwerkabbrüche die App nicht beenden.\n- **Wallpaper Privacy (Anti-Cheat):**\n  - Beim Wallpaper-Modus werden die Bilder nicht mehr im Discord-Chat gepostet (verhindert Spoiler und Reverse-Search). Die schärfende Leinwand läuft exklusiv im Stream Overlay und der App.\n- **High-FPS & Stuttering Fixes:**\n  - Signature-Caching für DOM-Elemente (Scoreboard, Hitster-Shelves, Timeline) verhindert 500ms DOM-Neubauten und beseitigt Mikroruckler.\n  - WebGL Hintergrundcanvas GPU-Füllrate auf hochauflösenden Screens (1440p/4K) gedeckelt für konstante 60–144 FPS.\n  - Throttled Mousemove-Listener für Gaming-Mäuse mit hoher Polling-Rate (1000Hz+).\n- **Audio & Songauswahl:**\n  - Songauswahl beim Ordner-Suchfilter vollständig korrigiert.\n  - Optimierte 2D-Flammen Boost-Animation ohne abgeschnittene Ränder.`;
+
     const releasePayload = JSON.stringify({
       tag_name: TAG,
       target_commitish: 'main',
-      name: `MannisBox ${TAG} — Wallpaper Cinema & Stream Engine Update`,
-      body: `## MannisBox ${TAG} — Wallpaper Cinema & Stream Engine Update\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen in ${TAG}:\n- **Wallpaper im Stream Overlay:** Vollständig repariert und eingebunden mit 16:9 Kinoleinwand, automatischer 4-Stufen Schärfung, Projektor-Bezel und Fortschrittsbalken.\n- **Wallpaper Zeiten & Punkte Konfigurator:** Dauer pro Stufe (Sekunden) und Punkte frei konfigurierbar. Automatische Summierung der Zeitbereiche (z.B. 0-10s, 10-25s, 25-40s...) und dynamische Countdown-Synchronisierung.\n- **120 FPS High-Refresh Engine:** Keine Garbage-Collection-Ruckler mehr im WebGL-Loop, GPU Rasterization & Hardwarebeschleunigung aktiviert, butterweiche 60-120+ FPS ohne 30 FPS Lock.\n- **Reine Vektor-SVG-Umstellung:** Sämtliche Symbole und Pfeile sind gestochen scharfe Vektor-SVGs (Null fehlerhafte Emojis).\n- **Playlist-Modi:** Umschalten zwischen Shuffle und mp3Tag-Nummerierung (01, 02...)\n- **Next Track Slot:** Vorbereitung & Vorschau auf den nächsten Song`,
+      name: `MannisBox ${TAG} — Crash Fix, Privacy & 120 FPS Performance Update`,
+      body: releaseDescription,
       draft: false,
       prerelease: false
     });
