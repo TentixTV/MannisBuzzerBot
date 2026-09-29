@@ -2095,7 +2095,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       screenFlashLayer.className = 'screen-flash-layer flash-glow-red';
       setTimeout(() => { screenFlashLayer.className = 'screen-flash-layer'; }, 400);
 
-      await window.mannisBoxAPI.manualBuzzPlayer('host-regie-buzzer', 'Regie (Dome)');
+      await window.mannisBoxAPI.manualBuzzPlayer('host-regie-buzzer', 'Regie');
     });
   }
 

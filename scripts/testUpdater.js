@@ -54,8 +54,8 @@ console.log('[STEP 4] Verifying GPU flags in main.js...');
 const mainJs = fs.readFileSync(path.join(__dirname, '../src/main.js'), 'utf8');
 assert.strictEqual(mainJs.includes('ignore-gpu-blocklist'), true, 'main.js must append ignore-gpu-blocklist');
 assert.strictEqual(mainJs.includes('check-for-updates'), true, 'main.js must have check-for-updates IPC handler');
-assert.strictEqual(mainJs.includes('V5.0.003'), true, 'main.js window title must be V5.0.003');
-console.log('✓ Check 4 Passed: main.js has GPU flag, version 5.0.003 and update handler.\n');
+assert.strictEqual(mainJs.includes('V5.0.004'), true, 'main.js window title must be V5.0.004');
+console.log('✓ Check 4 Passed: main.js has GPU flag, version 5.0.004 and update handler.\n');
 
 // Unit test 5: DOM & UI elements in Electron window
 app.whenReady().then(async () => {
@@ -140,9 +140,9 @@ app.whenReady().then(async () => {
   `);
 
   console.log('UI Checks result:', uiChecks);
-  assert.strictEqual(uiChecks.titlebarVersion, 'V5.0.003', 'Titlebar version must be V5.0.003');
-  assert.strictEqual(uiChecks.headerVersion, 'V5.0.003', 'Header version must be V5.0.003');
-  assert.strictEqual(uiChecks.lblSettingsCurrentVersion, 'V5.0.003', 'Settings version pill must be V5.0.003');
+  assert.strictEqual(uiChecks.titlebarVersion, 'V5.0.004', 'Titlebar version must be V5.0.004');
+  assert.strictEqual(uiChecks.headerVersion, 'V5.0.004', 'Header version must be V5.0.004');
+  assert.strictEqual(uiChecks.lblSettingsCurrentVersion, 'V5.0.004', 'Settings version pill must be V5.0.004');
   assert.strictEqual(uiChecks.hasHeaderUpdateBtn, true, 'Header update button must exist in DOM');
   assert.strictEqual(uiChecks.hasUpdateModal, true, 'Update modal must exist in DOM');
   assert.strictEqual(uiChecks.hasZipBtn, true, 'ZIP download button must exist');

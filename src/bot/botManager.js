@@ -2551,7 +2551,7 @@ class BotManager extends EventEmitter {
 
     let player = isRegie ? null : this.gameState.scores[playerId];
     if (!player) {
-      const displayName = username || (isRegie ? 'Regie (Dome)' : 'Spieler');
+      const displayName = username || (isRegie ? 'Regie' : 'Spieler');
       player = {
         id: playerId || 'host-regie-buzzer',
         username: displayName,

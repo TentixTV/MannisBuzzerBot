@@ -68,9 +68,9 @@ console.log('[TEST 5] Verifying manual buzz as host-regie-buzzer...');
 botManager.gameState.isRoundActive = true;
 botManager.gameState.isLocked = false;
 botManager.gameState.scores = {};
-const resBuzz = botManager.manualBuzzPlayer('host-regie-buzzer', 'Regie (Dome)');
+const resBuzz = botManager.manualBuzzPlayer('host-regie-buzzer', 'Regie');
 assert.strictEqual(resBuzz.success, true, 'manualBuzzPlayer for Regie must succeed');
-assert.strictEqual(resBuzz.player.username, 'Regie (Dome)');
+assert.strictEqual(resBuzz.player.username, 'Regie');
 assert.strictEqual(botManager.gameState.scores['host-regie-buzzer'], undefined, 'host-regie-buzzer must NOT be added to scores');
 console.log('✓ Test 5 Passed: Regie buzz does not pollute contestant scoreboard.\n');
 
