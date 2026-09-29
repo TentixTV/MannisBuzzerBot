@@ -1,6 +1,6 @@
 {
   "name": "mannis-box",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "MannisBox - Discord Musik-Quiz Buzzer Desktop App & Discord Bot",
   "main": "src/main.js",
   "scripts": {
@@ -21,7 +21,7 @@
   "author": "Manni",
   "license": "ISC",
   "dependencies": {
-    "@discordjs/voice": "^0.18.0",
+    "@discordjs/voice": "^0.19.2",
     "@noble/ciphers": "^2.4.0",
     "discord.js": "^14.18.0",
     "ffmpeg-static": "^5.2.0",

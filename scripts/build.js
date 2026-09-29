@@ -56,7 +56,7 @@ async function build() {
     out: distDir,
     overwrite: true,
     asar: {
-      unpack: '**/{ffmpeg-static,opusscript}/**'
+      unpack: '**/{ffmpeg-static,opusscript,@snazzah}/**'
     },
     prune: true,
     ignore: (filePath) => {

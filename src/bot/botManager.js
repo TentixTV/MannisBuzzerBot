@@ -47,8 +47,15 @@ class BotManager extends EventEmitter {
     this.config = loadConfig();
     this.isReady = false;
     this.currentVoiceConnection = null;
+    this.voiceJoinPromise = null;
+    this.voiceReconnectTimeout = null;
     this.isVoiceIntentionallyLeft = false;
     this.voiceWatchdogInterval = null;
+    this.modeGoals = {
+      song: 50,
+      wallpaper: 50,
+      hitster: 10
+    };
     this.cooldownTimer = null;
     this.roundTicker = null;
     this.hostName = '';
@@ -224,10 +231,13 @@ class BotManager extends EventEmitter {
     }
 
     this.gameState.gameMode = mode;
-    if (mode === 'hitster' && this.gameState.goal === 50) {
-      this.gameState.goal = 10;
-    } else if ((mode === 'song' || mode === 'wallpaper') && this.gameState.goal === 10) {
-      this.gameState.goal = 50;
+    if (!this.modeGoals) {
+      this.modeGoals = { song: 50, wallpaper: 50, hitster: 10 };
+    }
+    if (this.modeGoals[mode]) {
+      this.gameState.goal = this.modeGoals[mode];
+    } else {
+      this.gameState.goal = (mode === 'hitster' ? 10 : 50);
     }
     this.gameState.isLocked = false;
     this.gameState.activePlayer = null;
@@ -268,8 +278,32 @@ class BotManager extends EventEmitter {
 
   setGoal(target) {
     const num = Math.max(1, parseInt(target, 10) || 50);
+    const mode = this.gameState.gameMode || 'song';
+    if (!this.modeGoals) {
+      this.modeGoals = { song: 50, wallpaper: 50, hitster: 10 };
+    }
+    this.modeGoals[mode] = num;
     this.gameState.goal = num;
     this.gameState.statusText = `🎯 Spielziel wurde auf ${num} ${this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte'} gesetzt!`;
+
+    // Bug 3: Immediate victory check for all players
+    if (this.gameState.scores && !this.gameState.winner) {
+      const isHitster = this.gameState.gameMode === 'hitster';
+      const sorted = Object.values(this.gameState.scores).sort((a, b) => {
+        if (isHitster) {
+          const aCards = (a.cards && Array.isArray(a.cards)) ? a.cards.length : (typeof a.cards === 'number' ? a.cards : (a.points || 0));
+          const bCards = (b.cards && Array.isArray(b.cards)) ? b.cards.length : (typeof b.cards === 'number' ? b.cards : (b.points || 0));
+          return bCards - aCards;
+        }
+        return (b.points || 0) - (a.points || 0);
+      });
+      for (const player of sorted) {
+        if (this.checkVictory(player)) {
+          break;
+        }
+      }
+    }
+
     this.updateDiscordMessage();
     this.emitState();
     return { success: true, goal: num };
@@ -411,7 +445,8 @@ class BotManager extends EventEmitter {
     // Non-privileged intents: 100% reliable without 'Used disallowed intents' error
     const intents = [
       GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildVoiceStates
+      GatewayIntentBits.GuildVoiceStates,
+      GatewayIntentBits.GuildMessages
     ];
 
     this.client = new Client({ intents });
@@ -534,13 +569,9 @@ class BotManager extends EventEmitter {
         if (!newState.channelId) {
           // Bot was disconnected from voice channel
           console.warn('[Bot] Bot was disconnected from voice channel.');
+          this.emit('voice-status', { connected: false });
           if (!this.isVoiceIntentionallyLeft && this.config.guildId && this.config.voiceChannelId) {
-            console.log('[Bot] Auto-reconnecting to voice channel in 1s...');
-            setTimeout(() => {
-              if (!this.isVoiceIntentionallyLeft) {
-                this.joinVoice(this.config.guildId, this.config.voiceChannelId).catch(() => {});
-              }
-            }, 1000);
+            this.scheduleVoiceReconnect(1500);
           }
         } else if (newState.channelId !== this.gameState.currentVoiceChannelId) {
           // Bot was moved to a different voice channel
@@ -565,13 +596,28 @@ class BotManager extends EventEmitter {
 
     this.client.on('interactionCreate', async (interaction) => {
       try {
+        const sendReply = async (opts) => {
+          const data = typeof opts === 'string' ? { content: opts } : opts;
+          try {
+            if (interaction.deferred) {
+              return await interaction.editReply(data);
+            } else if (interaction.replied) {
+              return await interaction.followUp(data);
+            } else {
+              return await interaction.reply(data);
+            }
+          } catch (e) {
+            console.warn('[Bot] Failed to send interaction reply:', e.message);
+          }
+        };
+
         if (interaction.isButton()) {
           if (interaction.customId === 'mannisbox_buzzer') {
             await this.handleBuzzerInteraction(interaction);
           } else if (interaction.customId === 'mannisbox_boost') {
             const isHost = !this.config.hostId || interaction.user.id === this.config.hostId || interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
             if (!isHost) {
-              await interaction.reply({
+              await sendReply({
                 content: '⛔ Nur der Spielleiter (Host) kann den 2X Boost aktivieren oder deaktivieren!',
                 ephemeral: true
               });
@@ -580,7 +626,7 @@ class BotManager extends EventEmitter {
             const res = this.toggleBoost();
             const standbyNote = (!this.gameState.gameMode || this.gameState.gameMode === 'standby') 
               ? '\n*(Hinweis: Aktuell im Standby. Bitte wähle in der App ein Spiel aus!)*' : '';
-            await interaction.reply({
+            await sendReply({
               content: (res.isBoostActive 
                 ? '🔥 **BOOST AKTIVIERT!** Die Punkte der nächsten korrekten Antwort zählen DOPPELT (2x)!' 
                 : '❄️ Boost wurde deaktiviert.') + standbyNote,
@@ -588,15 +634,15 @@ class BotManager extends EventEmitter {
             });
           } else if (interaction.customId === 'mannisbox_goal') {
             const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
-            await interaction.reply({
+            await sendReply({
               content: `🎯 **Aktuelles Spielziel:** \`${this.gameState.goal} ${unit}\`\nWer dieses Ziel zuerst erreicht, holt sich den Champion-Sieg!`,
               ephemeral: true
             });
           } else if (interaction.customId === 'mannisbox_score') {
             const { formatDiscordLeaderboard } = require('./embeds');
             const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
-            await interaction.reply({
-              content: `📊 **Live-Rangliste (Ziel: ${this.gameState.goal} ${unit}):**\n${formatDiscordLeaderboard(this.gameState.scores, this.gameState.goal)}`,
+            await sendReply({
+              content: `📊 **Live-Rangliste (Ziel: ${this.gameState.goal} ${unit}):**\n${formatDiscordLeaderboard(this.gameState.scores, this.gameState.goal, this.gameState.gameMode)}`,
               ephemeral: true
             });
           } else if (interaction.customId === 'mannisbox_hitster_chip') {
@@ -605,12 +651,12 @@ class BotManager extends EventEmitter {
             const avatar = interaction.user.displayAvatarURL({ extension: 'png', size: 128 });
             const res = this.challengeHitsterChip(userId, username, avatar);
             if (res.success) {
-              await interaction.reply({
+              await sendReply({
                 content: `⚔️ **[CHIP GEWORFEN]** <@${userId}> hat als ERSTER den Spielchip geworfen und fechtet an!\n⏱️ Zeit: \`${res.challenge.timeFormatted}\` | Verbleibende Chips: **${res.challenge.remainingChips}**`,
                 ephemeral: false
               });
             } else {
-              await interaction.reply({
+              await sendReply({
                 content: `⚠️ ${res.error || 'Aktion nicht möglich.'}`,
                 ephemeral: true
               });
@@ -618,12 +664,27 @@ class BotManager extends EventEmitter {
           }
         } else if (interaction.isChatInputCommand()) {
           const { commandName } = interaction;
+          const isHost = !this.config.hostId || interaction.user.id === this.config.hostId || interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
+
+          // Bug 4: Immediate deferReply to immune against Discord 3s token timeout
+          let ephemeral = true;
+          if (commandName === 'score') {
+            ephemeral = false;
+          } else if (commandName === 'boost' && isHost) {
+            ephemeral = false;
+          } else if (commandName === 'goal' && isHost && interaction.options.getInteger('target') > 0) {
+            ephemeral = false;
+          }
+
+          if (!interaction.deferred && !interaction.replied) {
+            await interaction.deferReply({ ephemeral }).catch(() => {});
+          }
+
           if (commandName === 'buzzer') {
             await this.handleBuzzerInteraction(interaction);
           } else if (commandName === 'boost') {
-            const isHost = !this.config.hostId || interaction.user.id === this.config.hostId || interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
             if (!isHost) {
-              await interaction.reply({
+              await sendReply({
                 content: '⛔ Nur der Spielleiter (Host) kann den 2X Boost steuern!',
                 ephemeral: true
               });
@@ -632,7 +693,7 @@ class BotManager extends EventEmitter {
             const res = this.toggleBoost();
             const standbyNote = (!this.gameState.gameMode || this.gameState.gameMode === 'standby') 
               ? '\n*(Hinweis: Aktuell im Standby. Bitte wähle in der App ein Spiel aus!)*' : '';
-            await interaction.reply({
+            await sendReply({
               content: (res.isBoostActive 
                 ? '🔥 **BOOST-RUNDE AKTIVIERT!** Alle Punkte auf die nächste richtige Antwort zählen DOPPELT (2x)!' 
                 : '❄️ Boost deaktiviert.') + standbyNote,
@@ -641,9 +702,8 @@ class BotManager extends EventEmitter {
           } else if (commandName === 'goal') {
             const target = interaction.options.getInteger('target');
             if (target && target > 0) {
-              const isHost = !this.config.hostId || interaction.user.id === this.config.hostId || interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
               if (!isHost) {
-                await interaction.reply({
+                await sendReply({
                   content: '⛔ Nur der Spielleiter (Host) kann das Spielziel verändern!',
                   ephemeral: true
                 });
@@ -653,25 +713,26 @@ class BotManager extends EventEmitter {
               const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
               const standbyNote = (!this.gameState.gameMode || this.gameState.gameMode === 'standby') 
                 ? ' *(Hinweis: MannisBox befindet sich im Standby)*' : '';
-              await interaction.reply({
+              await sendReply({
                 content: `🎯 **Neues Spielziel gesetzt:** \`${target} ${unit}\`! Möge der Beste gewinnen!${standbyNote}`,
                 ephemeral: false
               });
             } else {
               const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
-              await interaction.reply({
+              await sendReply({
                 content: `🎯 **Aktuelles Spielziel:** \`${this.gameState.goal} ${unit}\``,
                 ephemeral: true
               });
             }
           } else if (commandName === 'score') {
             const { formatDiscordLeaderboard } = require('./embeds');
-            await interaction.reply({
-              content: `🏆 **Aktuelle Rangliste (Ziel: ${this.gameState.goal}):**\n${formatDiscordLeaderboard(this.gameState.scores, this.gameState.goal)}`,
+            const unit = this.gameState.gameMode === 'hitster' ? 'Karten' : 'Punkte';
+            await sendReply({
+              content: `🏆 **Aktuelle Rangliste (Ziel: ${this.gameState.goal} ${unit}):**\n${formatDiscordLeaderboard(this.gameState.scores, this.gameState.goal, this.gameState.gameMode)}`,
               ephemeral: false
             });
           } else if (commandName === 'help') {
-            await interaction.reply({ embeds: [createHelpEmbed(this.gameState)], ephemeral: true });
+            await sendReply({ embeds: [createHelpEmbed(this.gameState)], ephemeral: true });
           }
         }
       } catch (err) {
@@ -720,7 +781,7 @@ class BotManager extends EventEmitter {
           }
         } else if (lower === 'score' || lower === 'punkte') {
           const { formatDiscordLeaderboard } = require('./embeds');
-          await msg.reply(`🏆 **Live-Rangliste:**\n${formatDiscordLeaderboard(this.gameState.scores, this.gameState.goal)}`);
+          await msg.reply(`🏆 **Live-Rangliste:**\n${formatDiscordLeaderboard(this.gameState.scores, this.gameState.goal, this.gameState.gameMode)}`);
         } else if (lower === 'help') {
           await msg.reply({ embeds: [createHelpEmbed(this.gameState)] });
         }
@@ -747,6 +808,10 @@ class BotManager extends EventEmitter {
 
   async stop() {
     this.stopVoiceWatchdog();
+    if (this.voiceReconnectTimeout) {
+      clearTimeout(this.voiceReconnectTimeout);
+      this.voiceReconnectTimeout = null;
+    }
     this.stopRoundTimer();
     if (this.cooldownTimer) {
       clearInterval(this.cooldownTimer);
@@ -815,34 +880,59 @@ class BotManager extends EventEmitter {
     }
   }
 
+  scheduleVoiceReconnect(delayMs = 2000) {
+    if (this.isVoiceIntentionallyLeft) return;
+    if (this.voiceReconnectTimeout) {
+      clearTimeout(this.voiceReconnectTimeout);
+    }
+    this.voiceReconnectTimeout = setTimeout(async () => {
+      this.voiceReconnectTimeout = null;
+      if (this.isVoiceIntentionallyLeft || !this.isReady) return;
+      const targetGuildId = this.config.guildId;
+      const targetChannelId = this.config.voiceChannelId;
+      if (targetGuildId && targetChannelId) {
+        console.log(`[Bot] Executing scheduled voice reconnect to channel ${targetChannelId}...`);
+        await this.joinVoice(targetGuildId, targetChannelId).catch(err => {
+          console.warn('[Bot] Scheduled voice reconnect error:', err.message);
+        });
+      }
+    }, delayMs);
+  }
+
   startVoiceWatchdog() {
     this.stopVoiceWatchdog();
     this.voiceWatchdogInterval = setInterval(async () => {
       if (!this.client || !this.isReady || this.isVoiceIntentionallyLeft) return;
+      if (this.voiceJoinPromise) return; // Connection attempt already in progress
       const targetGuildId = this.config.guildId;
       const targetChannelId = this.config.voiceChannelId;
       if (!targetGuildId || !targetChannelId) return;
 
       try {
         const existing = getVoiceConnection(targetGuildId) || this.currentVoiceConnection;
-        const isHealthy = existing && (
-          existing.state.status === VoiceConnectionStatus.Ready ||
+
+        // If in handshake (Signalling or Connecting), do NOT touch or destroy the connection!
+        if (existing && (
           existing.state.status === VoiceConnectionStatus.Signalling ||
           existing.state.status === VoiceConnectionStatus.Connecting
-        );
-
-        const guild = this.client.guilds.cache.get(targetGuildId);
-        const voiceChannel = guild?.channels?.cache?.get(targetChannelId);
-        const botInChannel = voiceChannel?.members?.has(this.client.user.id);
-
-        if (!isHealthy || !botInChannel) {
-          console.log('[Bot Watchdog] Voice connection dropped or bot missing from channel. Auto-reconnecting...');
-          await this.joinVoice(targetGuildId, targetChannelId);
+        )) {
+          return;
         }
+
+        // If Ready, verify channel matches
+        if (existing && existing.state.status === VoiceConnectionStatus.Ready) {
+          if (existing.joinConfig?.channelId === targetChannelId) {
+            return; // Healthy and connected to the configured channel
+          }
+        }
+
+        // Connection dropped, missing, or mismatched channel
+        console.log('[Bot Watchdog] Voice connection dropped or out of sync. Scheduling reconnect...');
+        this.scheduleVoiceReconnect(1000);
       } catch (err) {
         console.warn('[Bot Watchdog] Heartbeat check warning:', err.message);
       }
-    }, 4000);
+    }, 15000);
   }
 
   stopVoiceWatchdog() {
@@ -853,119 +943,147 @@ class BotManager extends EventEmitter {
   }
 
   async joinVoice(guildId, channelId) {
-    if (!this.client || !this.isReady) {
-      return { success: false, error: 'Bot nicht bereit' };
-    }
-    if (!guildId || !channelId) {
-      return { success: false, error: 'Server oder Voice-Kanal nicht angegeben' };
+    if (this.voiceJoinPromise) {
+      console.log('[Bot] Voice join already in progress, awaiting existing promise...');
+      return this.voiceJoinPromise;
     }
 
-    this.isVoiceIntentionallyLeft = false;
-
-    // Check if an existing connection for this guild is already active and healthy in the target channel
-    const existing = getVoiceConnection(guildId) || this.currentVoiceConnection;
-    if (existing && existing.state.status === VoiceConnectionStatus.Ready) {
-      if (this.gameState.currentVoiceChannelId === channelId && existing.joinConfig?.channelId === channelId) {
-        this.currentVoiceConnection = existing;
-        audioManager.setConnection(existing);
-        await this.updateVoiceMembers();
-        await this.updateRichPresence();
-        this.emit('voice-status', { connected: true, guildId, channelId });
-        return { success: true, reused: true };
+    this.voiceJoinPromise = (async () => {
+      if (!this.client || !this.isReady) {
+        return { success: false, error: 'Bot nicht bereit' };
       }
-    }
-
-    try {
-      const guild = await this.client.guilds.fetch(guildId);
-      const voiceChannel = await guild.channels.fetch(channelId);
-      if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
-        return { success: false, error: 'Voice-Kanal nicht gefunden' };
+      if (!guildId || !channelId) {
+        return { success: false, error: 'Server oder Voice-Kanal nicht angegeben' };
       }
 
-      // If an existing connection exists and is in a different channel or destroyed, clean it
-      if (existing && existing !== this.currentVoiceConnection) {
-        try { existing.destroy(); } catch (e) {}
-      }
+      this.isVoiceIntentionallyLeft = false;
 
-      const connection = joinVoiceChannel({
-        channelId: voiceChannel.id,
-        guildId: guild.id,
-        adapterCreator: guild.voiceAdapterCreator,
-        selfDeaf: false,
-        selfMute: false
-      });
-
-      if (!connection._mannisListenersAttached) {
-        connection._mannisListenersAttached = true;
-
-        connection.on('error', (err) => {
-          console.warn('[Bot] Voice Connection error:', err.message);
-        });
-
-        connection.on(VoiceConnectionStatus.Disconnected, async () => {
-          console.warn('[Bot] Voice connection disconnected. Evaluating reconnection...');
-          if (this.isVoiceIntentionallyLeft) return;
-
-          try {
-            // Give Discord gateway a short window to automatically recover (e.g. channel switch / server region change)
-            await Promise.race([
-              entersState(connection, VoiceConnectionStatus.Signalling, 4_000),
-              entersState(connection, VoiceConnectionStatus.Connecting, 4_000),
-            ]);
-            console.log('[Bot] Voice connection recovered signaling/connecting automatically.');
-          } catch (error) {
-            if (this.isVoiceIntentionallyLeft) return;
-            console.warn('[Bot] Voice connection did not recover within 4s. Attempting rejoin...');
-            try {
-              if (connection.state.status !== VoiceConnectionStatus.Destroyed) {
-                connection.rejoin();
-              }
-            } catch (rejoinErr) {
-              console.warn('[Bot] Voice rejoin error:', rejoinErr.message);
-            }
-          }
-        });
-
-        connection.on(VoiceConnectionStatus.Destroyed, () => {
-          if (this.currentVoiceConnection === connection) {
-            this.currentVoiceConnection = null;
-            audioManager.setConnection(null);
-          }
-          if (!this.isVoiceIntentionallyLeft) {
-            console.warn('[Bot] Voice connection destroyed unexpectedly. Scheduling reconnect...');
-            setTimeout(() => {
-              if (!this.isVoiceIntentionallyLeft && this.config.guildId && this.config.voiceChannelId) {
-                this.joinVoice(this.config.guildId, this.config.voiceChannelId).catch(() => {});
-              }
-            }, 1500);
-          }
-        });
+      // Check if an existing connection for this guild is already active and healthy in the target channel
+      const existing = getVoiceConnection(guildId) || this.currentVoiceConnection;
+      if (existing && existing.state.status === VoiceConnectionStatus.Ready) {
+        if (this.gameState.currentVoiceChannelId === channelId && existing.joinConfig?.channelId === channelId) {
+          this.currentVoiceConnection = existing;
+          audioManager.setConnection(existing);
+          await this.updateVoiceMembers();
+          await this.updateRichPresence();
+          this.emit('voice-status', { connected: true, guildId, channelId });
+          return { success: true, reused: true };
+        }
       }
 
       try {
-        await entersState(connection, VoiceConnectionStatus.Ready, 12_000);
-      } catch (timeoutErr) {
-        console.warn('[Bot] Voice Connection ready wait timeout (will retry in background):', timeoutErr.message);
+        const guild = await this.client.guilds.fetch(guildId);
+        const voiceChannel = await guild.channels.fetch(channelId);
+        if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
+          return { success: false, error: 'Voice-Kanal nicht gefunden' };
+        }
+
+        // If an existing connection exists and is in a different channel, clean it
+        if (existing && existing !== this.currentVoiceConnection && existing.joinConfig?.channelId !== channelId) {
+          try { existing.destroy(); } catch (e) {}
+        }
+
+        const connection = joinVoiceChannel({
+          channelId: voiceChannel.id,
+          guildId: guild.id,
+          adapterCreator: guild.voiceAdapterCreator,
+          selfDeaf: false,
+          selfMute: false
+        });
+
+        // Assign immediately so other checks don't see it as null during handshake
+        this.currentVoiceConnection = connection;
+        audioManager.setConnection(connection);
+        this.gameState.currentVoiceChannelId = channelId;
+        this.gameState.currentGuildId = guildId;
+
+        if (!connection._mannisListenersAttached) {
+          connection._mannisListenersAttached = true;
+
+          connection.on('error', (err) => {
+            console.warn('[Bot] Voice Connection error:', err.message);
+          });
+
+          connection.on(VoiceConnectionStatus.Ready, async () => {
+            console.log('[Bot] Voice connection state: READY.');
+            audioManager.setConnection(connection);
+            await this.updateVoiceMembers();
+            await this.updateRichPresence();
+            this.emit('voice-status', { connected: true, guildId, channelId });
+          });
+
+          connection.on(VoiceConnectionStatus.Disconnected, async () => {
+            console.warn('[Bot] Voice connection disconnected. Evaluating reconnection...');
+            this.emit('voice-status', { connected: false });
+            if (this.isVoiceIntentionallyLeft) return;
+
+            try {
+              // Give Discord gateway a short window to automatically recover
+              await Promise.race([
+                entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+                entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+              ]);
+              console.log('[Bot] Voice connection recovered signaling/connecting automatically.');
+            } catch (error) {
+              if (this.isVoiceIntentionallyLeft) return;
+              console.warn('[Bot] Voice connection did not recover within 5s. Scheduling reconnect...');
+              try {
+                if (connection.state.status !== VoiceConnectionStatus.Destroyed) {
+                  connection.destroy();
+                }
+              } catch (e) {}
+              this.scheduleVoiceReconnect(1500);
+            }
+          });
+
+          connection.on(VoiceConnectionStatus.Destroyed, () => {
+            this.emit('voice-status', { connected: false });
+            if (this.currentVoiceConnection === connection) {
+              this.currentVoiceConnection = null;
+              audioManager.setConnection(null);
+            }
+            if (!this.isVoiceIntentionallyLeft) {
+              console.warn('[Bot] Voice connection destroyed. Scheduling debounced reconnect...');
+              this.scheduleVoiceReconnect(2000);
+            }
+          });
+        }
+
+        try {
+          await entersState(connection, VoiceConnectionStatus.Ready, 15_000);
+          this.emit('voice-status', { connected: true, guildId, channelId });
+          await this.updateVoiceMembers();
+          await this.updateRichPresence();
+          return { success: true };
+        } catch (timeoutErr) {
+          console.warn('[Bot] Voice Connection ready wait timeout:', timeoutErr.message);
+          if (connection.state.status === VoiceConnectionStatus.Ready) {
+            this.emit('voice-status', { connected: true, guildId, channelId });
+            return { success: true };
+          }
+          this.emit('voice-status', { connected: false });
+          return { success: false, error: 'Voice Timeout' };
+        }
+      } catch (err) {
+        console.error('[Bot] Join voice error:', err);
+        this.emit('voice-status', { connected: false });
+        return { success: false, error: err.message };
       }
+    })();
 
-      this.currentVoiceConnection = connection;
-      audioManager.setConnection(connection);
-      this.gameState.currentVoiceChannelId = channelId;
-      this.gameState.currentGuildId = guildId;
-
-      await this.updateVoiceMembers();
-      await this.updateRichPresence();
-
-      this.emit('voice-status', { connected: true, guildId, channelId });
-      return { success: true };
-    } catch (err) {
-      console.error('[Bot] Join voice error:', err);
-      return { success: false, error: err.message };
+    try {
+      return await this.voiceJoinPromise;
+    } finally {
+      this.voiceJoinPromise = null;
     }
   }
 
   leaveVoice() {
     this.isVoiceIntentionallyLeft = true;
+    if (this.voiceReconnectTimeout) {
+      clearTimeout(this.voiceReconnectTimeout);
+      this.voiceReconnectTimeout = null;
+    }
     const conn = this.currentVoiceConnection || (this.config.guildId ? getVoiceConnection(this.config.guildId) : null);
     if (conn) {
       try {
@@ -1090,10 +1208,6 @@ class BotManager extends EventEmitter {
       potentialPoints = 1;
     }
 
-    if (this.gameState.isBoostActive) {
-      potentialPoints *= 2;
-    }
-
     const player = { id: userId, username, avatar, timeOffset, timestamp: now, potentialPoints };
 
     this.gameState.activePlayer = player;
@@ -1124,7 +1238,20 @@ class BotManager extends EventEmitter {
       userId,
       username,
       avatar,
-      replyFn: (opts) => interaction.reply(opts)
+      replyFn: async (opts) => {
+        const data = typeof opts === 'string' ? { content: opts } : opts;
+        try {
+          if (interaction.deferred) {
+            return await interaction.editReply(data);
+          } else if (interaction.replied) {
+            return await interaction.followUp(data);
+          } else {
+            return await interaction.reply(data);
+          }
+        } catch (e) {
+          console.warn('[Bot] Failed to reply to buzzer interaction:', e.message);
+        }
+      }
     });
   }
 
@@ -2320,9 +2447,6 @@ class BotManager extends EventEmitter {
       potentialPoints = this.getWallpaperPoints(elapsed);
     } else if (this.gameState.gameMode === 'hitster') {
       potentialPoints = 1;
-    }
-    if (this.gameState.isBoostActive) {
-      potentialPoints *= 2;
     }
 
     this.gameState.activePlayer = {

@@ -10,9 +10,18 @@ function createProgressBar(current, goal) {
   return `\`[${'█'.repeat(filled)}${'░'.repeat(empty)}] ${percent}%\``;
 }
 
-function formatDiscordLeaderboard(scores, goal = 50) {
-  const sorted = Object.values(scores || {}).sort((a, b) => b.points - a.points);
-  if (sorted.length === 0) return '*Noch keine Punkte vergeben.*';
+function formatDiscordLeaderboard(scores, goal = 50, gameMode = 'song') {
+  const isHitster = gameMode === 'hitster';
+  const targetGoal = Math.max(1, goal || (isHitster ? 10 : 50));
+  const sorted = Object.values(scores || {}).sort((a, b) => {
+    if (isHitster) {
+      const aCards = (a.cards && Array.isArray(a.cards)) ? a.cards.length : (typeof a.cards === 'number' ? a.cards : (a.points || 0));
+      const bCards = (b.cards && Array.isArray(b.cards)) ? b.cards.length : (typeof b.cards === 'number' ? b.cards : (b.points || 0));
+      return bCards - aCards;
+    }
+    return (b.points || 0) - (a.points || 0);
+  });
+  if (sorted.length === 0) return isHitster ? '*Noch keine Karten vergeben.*' : '*Noch keine Punkte vergeben.*';
 
   return sorted.map((p, idx) => {
     let rankBadge = `\`#${(idx + 1).toString().padStart(2, '0')}\``;
@@ -21,10 +30,15 @@ function formatDiscordLeaderboard(scores, goal = 50) {
     else if (idx === 2) rankBadge = '🥉 **3.**';
 
     const pName = p.username.length > 18 ? p.username.substring(0, 16) + '..' : p.username;
-    const pts = p.points >= 0 ? `+${p.points}` : `${p.points}`;
-    const pBar = createProgressBar(p.points, goal);
-    
-    return `${rankBadge} **${pName}** ➔ **\`${pts} Pkt\`** ${pBar} *(✅ ${p.correct || 0} | ❌ ${p.wrong || 0})*`;
+    if (isHitster) {
+      const cardCount = (p.cards && Array.isArray(p.cards)) ? p.cards.length : (typeof p.cards === 'number' ? p.cards : (p.points || 0));
+      const pBar = createProgressBar(cardCount, targetGoal);
+      return `${rankBadge} **${pName}** ➔ **\`${cardCount} / ${targetGoal} Karten\`** ${pBar} *(✅ ${p.correct || 0} | ❌ ${p.wrong || 0})*`;
+    } else {
+      const pts = p.points >= 0 ? `+${p.points}` : `${p.points}`;
+      const pBar = createProgressBar(p.points, targetGoal);
+      return `${rankBadge} **${pName}** ➔ **\`${pts} Pkt\`** ${pBar} *(✅ ${p.correct || 0} | ❌ ${p.wrong || 0})*`;
+    }
   }).join('\n');
 }
 
@@ -129,7 +143,7 @@ function createBuzzerEmbed(state) {
 
   // Active Player & Queue
   if (activePlayer) {
-    let ptsNum = activePlayer.potentialPoints || (gameMode === 'wallpaper' ? 50 : 3);
+    let ptsNum = activePlayer.potentialPoints || (gameMode === 'wallpaper' ? 4 : 3);
     if (isBoostActive) ptsNum *= 2;
     const ptsTag = ` (${ptsNum} Pkt möglich${isBoostActive ? ' 🔥 2x' : ''})`;
     embed.addFields({
@@ -155,7 +169,7 @@ function createBuzzerEmbed(state) {
   // Live Scoreboard
   embed.addFields({
     name: `🏆 Live-Rangliste (Ziel: ${goal} ${gameMode === 'hitster' ? 'Karten' : 'Punkte'})`,
-    value: formatDiscordLeaderboard(scores, goal),
+    value: formatDiscordLeaderboard(scores, goal, gameMode),
     inline: false
   });
 
@@ -254,7 +268,7 @@ function createVictoryEmbed(winner, state = {}) {
       },
       {
         name: '📊 Abschließende Rangliste',
-        value: formatDiscordLeaderboard(scores, goal),
+        value: formatDiscordLeaderboard(scores, goal, gameMode),
         inline: false
       }
     )
@@ -312,7 +326,7 @@ function createFinalGameEndEmbed(state) {
 
   embed.addFields({
     name: '📊 Vollständige Rangliste',
-    value: formatDiscordLeaderboard(scores, goal),
+    value: formatDiscordLeaderboard(scores, goal, gameMode),
     inline: false
   });
 
