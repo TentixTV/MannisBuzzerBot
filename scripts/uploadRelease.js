@@ -13,7 +13,7 @@ if (!TOKEN) {
 }
 const OWNER = 'TentixTV';
 const REPO = 'MannisBuzzerBot';
-const TAG = 'v4.8.031';
+const TAG = 'v5.0.000';
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
@@ -103,6 +103,8 @@ function uploadAsset(uploadUrlRaw, filePath, contentType) {
 async function main() {
   console.log(`1. Checking if release for ${TAG} exists...`);
   let release = null;
+  const releaseDescription = `## MannisBox ${TAG} — Smooth 144 FPS Performance, Built-in Auto-Updater & Perfection Update\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Perfektion in ${TAG}:\n- **Integrierter Auto-Updater:**\n  - Automatischer GitHub-Release-Checker prüft im Hintergrund auf neue Updates.\n  - Schicker, animierter Update-Badge im Header und in den Einstellungen.\n  - Update-Pop-up mit direkten 1-Klick Download-Buttons (.ZIP / .RAR) und Changelog-Anzeige.\n- **Beseitigung von Rucklern & "Daumenkino" (Extreme Lag Fix):**\n  - Sämtliche software-kompositierten \`backdrop-filter: blur(...)\` Aufrufe eliminiert (Startup-Gate, Modal-Backdrops, Countdown-Overlays, Cinema-Timer, Stream-Overlay).\n  - Umstellung auf hochperformante transluzente Hintergründe für butterweiche 60–144 FPS auf Laptops und integrierten GPUs.\n- **Unreal Engine 5 Style 3D WebGL Optimierung:**\n  - \`discard;\` Befehl im Niagara-Partikel-Fragment-Shader durch sanften Alpha-Falloff ersetzt; schützt GPU Early-Z Culling vor Pipeline-Stalls.\n- **GPU Blocklist Override:**\n  - \`ignore-gpu-blocklist\` Schalter aktiviert, um CPU SwiftShader-Fallback auf älteren Systemen zu verhindern.\n- **Volle Funktionsabdeckung:**\n  - /goal, 2X /boost Supercharge-System, Hitster-Timeline, 4-Stufen Wallpaper Film-Quiz und OBS Stream Overlay in Perfektion.`;
+
   try {
     release = await request({
       hostname: 'api.github.com',
@@ -115,10 +117,9 @@ async function main() {
       }
     });
     console.log(`Found existing release ID: ${release.id}`);
-    const releaseDescription = `## MannisBox ${TAG} — Crash Fix, Privacy & 120 FPS Performance Update\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Fixes in ${TAG}:\n- **Crash Prevention & Startup Hardening:**\n  - Abstürze nach wenigen Sekunden behoben (sauberes Timeout- und Error-Handling beim Discord Voice-Channel Beitritt).\n  - Unverträgliche Chromium/GPU-Flags (VaapiVideoDecoder, CanvasOopRasterization) entfernt.\n  - Globale Exception- und Rejection-Handler integriert, damit unerwartete Netzwerkabbrüche die App nicht beenden.\n- **Wallpaper Privacy (Anti-Cheat):**\n  - Beim Wallpaper-Modus werden die Bilder nicht mehr im Discord-Chat gepostet (verhindert Spoiler und Reverse-Search). Die schärfende Leinwand läuft exklusiv im Stream Overlay und der App.\n- **High-FPS & Stuttering Fixes:**\n  - Signature-Caching für DOM-Elemente (Scoreboard, Hitster-Shelves, Timeline) verhindert 500ms DOM-Neubauten und beseitigt Mikroruckler.\n  - WebGL Hintergrundcanvas GPU-Füllrate auf hochauflösenden Screens (1440p/4K) gedeckelt für konstante 60–144 FPS.\n  - Throttled Mousemove-Listener für Gaming-Mäuse mit hoher Polling-Rate (1000Hz+).\n- **Audio & Songauswahl:**\n  - Songauswahl beim Ordner-Suchfilter vollständig korrigiert.\n  - Optimierte 2D-Flammen Boost-Animation ohne abgeschnittene Ränder.`;
 
     const updatePayload = JSON.stringify({
-      name: `MannisBox ${TAG} — Crash Fix, Privacy & 120 FPS Performance Update`,
+      name: `MannisBox ${TAG} — Smooth 144 FPS Performance, Built-in Auto-Updater & Perfection Update`,
       body: releaseDescription,
       draft: false,
       prerelease: false
@@ -142,12 +143,11 @@ async function main() {
     }
   } catch (err) {
     console.log(`Release does not exist yet. Creating new release for ${TAG}...`);
-    const releaseDescription = `## MannisBox ${TAG} — Crash Fix, Privacy & 120 FPS Performance Update\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Fixes in ${TAG}:\n- **Crash Prevention & Startup Hardening:**\n  - Abstürze nach wenigen Sekunden behoben (sauberes Timeout- und Error-Handling beim Discord Voice-Channel Beitritt).\n  - Unverträgliche Chromium/GPU-Flags (VaapiVideoDecoder, CanvasOopRasterization) entfernt.\n  - Globale Exception- und Rejection-Handler integriert, damit unerwartete Netzwerkabbrüche die App nicht beenden.\n- **Wallpaper Privacy (Anti-Cheat):**\n  - Beim Wallpaper-Modus werden die Bilder nicht mehr im Discord-Chat gepostet (verhindert Spoiler und Reverse-Search). Die schärfende Leinwand läuft exklusiv im Stream Overlay und der App.\n- **High-FPS & Stuttering Fixes:**\n  - Signature-Caching für DOM-Elemente (Scoreboard, Hitster-Shelves, Timeline) verhindert 500ms DOM-Neubauten und beseitigt Mikroruckler.\n  - WebGL Hintergrundcanvas GPU-Füllrate auf hochauflösenden Screens (1440p/4K) gedeckelt für konstante 60–144 FPS.\n  - Throttled Mousemove-Listener für Gaming-Mäuse mit hoher Polling-Rate (1000Hz+).\n- **Audio & Songauswahl:**\n  - Songauswahl beim Ordner-Suchfilter vollständig korrigiert.\n  - Optimierte 2D-Flammen Boost-Animation ohne abgeschnittene Ränder.`;
 
     const releasePayload = JSON.stringify({
       tag_name: TAG,
       target_commitish: 'main',
-      name: `MannisBox ${TAG} — Crash Fix, Privacy & 120 FPS Performance Update`,
+      name: `MannisBox ${TAG} — Smooth 144 FPS Performance, Built-in Auto-Updater & Perfection Update`,
       body: releaseDescription,
       draft: false,
       prerelease: false

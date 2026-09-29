@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎮 MannisBox — Discord Musik-Quiz, Hitster & Wallpaper Master (v4.8.026)
+# 🎮 MannisBox — Discord Musik-Quiz, Hitster & Wallpaper Master (v5.0.000)
 
 ### *Die ultimative High-End Desktop-App & Discord-Buzzer-Bot Suite*
 
@@ -8,7 +8,7 @@
 
 [![Electron](https://img.shields.io/badge/Electron-34.5.8-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://electronjs.org/)
 [![Discord.js](https://img.shields.io/badge/Discord.js-14.18.0-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.js.org/)
-[![Version](https://img.shields.io/badge/Release-v4.8.026-10B981?style=for-the-badge)](https://github.com/TentixTV/MannisBuzzerBot/releases/tag/v4.8.026)
+[![Version](https://img.shields.io/badge/Release-v5.0.000-10B981?style=for-the-badge)](https://github.com/TentixTV/MannisBuzzerBot/releases/tag/v5.0.000)
 [![Idee](https://img.shields.io/badge/Idee-ThisManniGuy-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com)
 [![Author](https://img.shields.io/badge/Entwickler-TentixTV-8B5CF6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TentixTV)
 [![License: MIT](https://img.shields.io/badge/Lizenz-MIT-F59E0B?style=for-the-badge)](LICENSE)
@@ -20,19 +20,19 @@
 
 ---
 
-## ⚡ 1-KLICK INSTALLATION & SOFORT-DOWNLOAD (v4.8.026)
+## ⚡ 1-KLICK INSTALLATION & SOFORT-DOWNLOAD (v5.0.000)
 
 Keine Installation nötig! Die App ist 100% portable. Einfach herunterladen, entpacken und sofort loslegen:
 
 <br>
 
 <p align="center">
-  <a href="https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.026/MannisBox-Windows-x64.zip" title="MannisBox als .ZIP herunterladen (1-Klick Instant Download)">
-    <img src="https://img.shields.io/badge/⚡_1--KLICK_INSTALL_(.ZIP)-MANISBOX_v4.8.026-0284c7?style=for-the-badge&logo=windows&logoColor=white" height="48" alt="1-Click Install ZIP">
+  <a href="https://github.com/TentixTV/MannisBuzzerBot/releases/download/v5.0.000/MannisBox-Windows-x64.zip" title="MannisBox als .ZIP herunterladen (1-Klick Instant Download)">
+    <img src="https://img.shields.io/badge/⚡_1--KLICK_INSTALL_(.ZIP)-MANISBOX_v5.0.000-0284c7?style=for-the-badge&logo=windows&logoColor=white" height="48" alt="1-Click Install ZIP">
   </a>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.026/MannisBox-Windows-x64.rar" title="MannisBox als .RAR herunterladen (1-Klick Instant Download)">
-    <img src="https://img.shields.io/badge/⚡_1--KLICK_INSTALL_(.RAR)-MANISBOX_v4.8.026-7c3aed?style=for-the-badge&logo=winrar&logoColor=white" height="48" alt="1-Click Install RAR">
+  <a href="https://github.com/TentixTV/MannisBuzzerBot/releases/download/v5.0.000/MannisBox-Windows-x64.rar" title="MannisBox als .RAR herunterladen (1-Klick Instant Download)">
+    <img src="https://img.shields.io/badge/⚡_1--KLICK_INSTALL_(.RAR)-MANISBOX_v5.0.000-7c3aed?style=for-the-badge&logo=winrar&logoColor=white" height="48" alt="1-Click Install RAR">
   </a>
 </p>
 
@@ -40,8 +40,8 @@ Keine Installation nötig! Die App ist 100% portable. Einfach herunterladen, ent
 
 | Paket | Format | Dateigröße | 1-Klick Sofort-Download |
 | :--- | :---: | :---: | :--- |
-| 📦 **MannisBox Windows x64** | **`.ZIP`** (Standard Windows) | ~155 MB | [**👉 Jetzt .ZIP herunterladen (1-Klick)**](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.026/MannisBox-Windows-x64.zip) |
-| 🗜️ **MannisBox Windows x64** | **`.RAR`** (Maximale Kompression) | ~114 MB | [**👉 Jetzt .RAR herunterladen (1-Klick)**](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v4.8.026/MannisBox-Windows-x64.rar) |
+| 📦 **MannisBox Windows x64** | **`.ZIP`** (Standard Windows) | ~155 MB | [**👉 Jetzt .ZIP herunterladen (1-Klick)**](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v5.0.000/MannisBox-Windows-x64.zip) |
+| 🗜️ **MannisBox Windows x64** | **`.RAR`** (Maximale Kompression) | ~114 MB | [**👉 Jetzt .RAR herunterladen (1-Klick)**](https://github.com/TentixTV/MannisBuzzerBot/releases/download/v5.0.000/MannisBox-Windows-x64.rar) |
 
 <br>
 

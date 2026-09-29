@@ -3117,7 +3117,181 @@ document.addEventListener('DOMContentLoaded', async () => {
         wpSearchResults.classList.add('hidden');
       }
     }
+    if (updateModal && !updateModal.classList.contains('hidden')) {
+      const modalContent = updateModal.querySelector('.update-modal-card');
+      if (modalContent && !modalContent.contains(e.target) && e.target !== btnHeaderUpdate && !btnHeaderUpdate?.contains(e.target)) {
+        hideUpdateModal();
+      }
+    }
   });
+
+  // ==========================================================================
+  // 14. AUTOMATIC GITHUB UPDATE CHECKER & IN-APP UPDATER (V5.0.000)
+  // ==========================================================================
+  const btnHeaderUpdate = document.getElementById('btnHeaderUpdate');
+  const updateModal = document.getElementById('updateModal');
+  const btnUpdateModalCloseX = document.getElementById('btnUpdateModalCloseX');
+  const btnUpdateModalDismiss = document.getElementById('btnUpdateModalDismiss');
+  const btnUpdateDownloadZip = document.getElementById('btnUpdateDownloadZip');
+  const btnUpdateDownloadRar = document.getElementById('btnUpdateDownloadRar');
+  const btnUpdateOpenGitHub = document.getElementById('btnUpdateOpenGitHub');
+  const updateModalVersionSub = document.getElementById('updateModalVersionSub');
+  const lblUpdateNewTag = document.getElementById('lblUpdateNewTag');
+  const lblUpdateDate = document.getElementById('lblUpdateDate');
+  const updateReleaseNotesBox = document.getElementById('updateReleaseNotesBox');
+  const btnSettingsCheckUpdate = document.getElementById('btnSettingsCheckUpdate');
+  const lblSettingsUpdateStatus = document.getElementById('lblSettingsUpdateStatus');
+  const svgUpdateRefreshIcon = document.getElementById('svgUpdateRefreshIcon');
+
+  let latestUpdateInfo = null;
+
+  function showUpdateModal(info) {
+    if (!info) return;
+    latestUpdateInfo = info;
+    if (updateModalVersionSub) updateModalVersionSub.textContent = `Version ${info.latestVersion} steht bereit`;
+    if (lblUpdateNewTag) lblUpdateNewTag.textContent = info.latestVersion || 'v5.0.000';
+    if (lblUpdateDate) {
+      if (info.publishedAt) {
+        const d = new Date(info.publishedAt);
+        lblUpdateDate.textContent = `Veröffentlicht: ${d.toLocaleDateString('de-DE')}`;
+      } else {
+        lblUpdateDate.textContent = 'Bereit zum Download';
+      }
+    }
+    if (updateReleaseNotesBox) {
+      updateReleaseNotesBox.textContent = info.releaseNotes || 'Keine Versionshinweise hinterlegt.';
+    }
+    if (updateModal) updateModal.classList.remove('hidden');
+  }
+
+  function hideUpdateModal() {
+    if (updateModal) updateModal.classList.add('hidden');
+  }
+
+  if (btnHeaderUpdate) {
+    btnHeaderUpdate.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (latestUpdateInfo) {
+        showUpdateModal(latestUpdateInfo);
+      } else {
+        btnSettingsCheckUpdate?.click();
+      }
+    });
+  }
+
+  if (btnUpdateModalCloseX) {
+    btnUpdateModalCloseX.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideUpdateModal();
+    });
+  }
+
+  if (btnUpdateModalDismiss) {
+    btnUpdateModalDismiss.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideUpdateModal();
+    });
+  }
+
+  if (btnUpdateDownloadZip) {
+    btnUpdateDownloadZip.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const url = latestUpdateInfo?.zipUrl || 'https://github.com/TentixTV/MannisBuzzerBot/releases/latest';
+      window.mannisBoxAPI.openExternal(url);
+    });
+  }
+
+  if (btnUpdateDownloadRar) {
+    btnUpdateDownloadRar.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const url = latestUpdateInfo?.rarUrl || 'https://github.com/TentixTV/MannisBuzzerBot/releases/latest';
+      window.mannisBoxAPI.openExternal(url);
+    });
+  }
+
+  if (btnUpdateOpenGitHub) {
+    btnUpdateOpenGitHub.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const url = latestUpdateInfo?.htmlUrl || 'https://github.com/TentixTV/MannisBuzzerBot/releases/latest';
+      window.mannisBoxAPI.openExternal(url);
+    });
+  }
+
+  // Push notification from main process
+  if (window.mannisBoxAPI?.onUpdateAvailable) {
+    window.mannisBoxAPI.onUpdateAvailable((info) => {
+      if (info && info.updateAvailable) {
+        latestUpdateInfo = info;
+        if (btnHeaderUpdate) btnHeaderUpdate.classList.remove('hidden');
+        if (lblSettingsUpdateStatus) {
+          lblSettingsUpdateStatus.textContent = `Update verfügbar: ${info.latestVersion}!`;
+          lblSettingsUpdateStatus.style.color = '#34d399';
+        }
+        showUpdateModal(info);
+      }
+    });
+  }
+
+  // Manual update check button in settings
+  if (btnSettingsCheckUpdate) {
+    btnSettingsCheckUpdate.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!window.mannisBoxAPI?.checkForUpdates) return;
+      if (svgUpdateRefreshIcon) svgUpdateRefreshIcon.classList.add('spin-anim');
+      if (lblSettingsUpdateStatus) {
+        lblSettingsUpdateStatus.textContent = 'Prüfe GitHub Releases...';
+        lblSettingsUpdateStatus.style.color = '#94a3b8';
+      }
+
+      try {
+        const res = await window.mannisBoxAPI.checkForUpdates();
+        if (res && res.updateAvailable) {
+          latestUpdateInfo = res;
+          if (btnHeaderUpdate) btnHeaderUpdate.classList.remove('hidden');
+          if (lblSettingsUpdateStatus) {
+            lblSettingsUpdateStatus.textContent = `Update verfügbar: ${res.latestVersion}!`;
+            lblSettingsUpdateStatus.style.color = '#34d399';
+          }
+          showUpdateModal(res);
+        } else if (res && res.success) {
+          if (lblSettingsUpdateStatus) {
+            lblSettingsUpdateStatus.textContent = `Auf dem neuesten Stand (${res.currentVersion})`;
+            lblSettingsUpdateStatus.style.color = '#10b981';
+          }
+        } else {
+          if (lblSettingsUpdateStatus) {
+            lblSettingsUpdateStatus.textContent = res?.error ? `Fehler: ${res.error}` : 'Keine Verbindung zu GitHub';
+            lblSettingsUpdateStatus.style.color = '#ef4444';
+          }
+        }
+      } catch (err) {
+        if (lblSettingsUpdateStatus) {
+          lblSettingsUpdateStatus.textContent = 'Prüfung fehlgeschlagen';
+          lblSettingsUpdateStatus.style.color = '#ef4444';
+        }
+      } finally {
+        if (svgUpdateRefreshIcon) svgUpdateRefreshIcon.classList.remove('spin-anim');
+      }
+    });
+  }
+
+  // Automatic background update check on app launch
+  setTimeout(async () => {
+    try {
+      if (window.mannisBoxAPI?.checkForUpdates) {
+        const info = await window.mannisBoxAPI.checkForUpdates();
+        if (info && info.updateAvailable) {
+          latestUpdateInfo = info;
+          if (btnHeaderUpdate) btnHeaderUpdate.classList.remove('hidden');
+          if (lblSettingsUpdateStatus) {
+            lblSettingsUpdateStatus.textContent = `Update verfügbar: ${info.latestVersion}!`;
+            lblSettingsUpdateStatus.style.color = '#34d399';
+          }
+          showUpdateModal(info);
+        }
+      }
+    } catch (e) {}
+  }, 2500);
 
   // Helper
   function escapeHtml(text) {

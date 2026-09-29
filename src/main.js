@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+const https = require('https');
 
 // Global Crash Prevention & Uncaught Exception Handlers
 process.on('uncaughtException', (err) => {
@@ -10,6 +11,7 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // Hardware Acceleration & High-Refresh Rate (60Hz / 120Hz / 144Hz+) VSync Support
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-accelerated-2d-canvas');
 app.commandLine.appendSwitch('enable-accelerated-video-decode');
@@ -66,7 +68,7 @@ function createWindow() {
     height: 900,
     minWidth: 1080,
     minHeight: 720,
-    title: "Manni's Box — Discord Buzzer & Stream Master V4.8.031",
+    title: "Manni's Box — Discord Buzzer & Stream Master V5.0.000",
     icon: iconPath,
     backgroundColor: '#12131a',
     frame: false,
@@ -127,9 +129,22 @@ function createWindow() {
     }
   });
 
-  // Auto-start bot on launch
+  // Auto-start bot on launch & check for updates
   mainWindow.webContents.on('did-finish-load', () => {
     botManager.start();
+
+    // Auto-check GitHub for updates in the background
+    setTimeout(async () => {
+      try {
+        const updateInfo = await checkGitHubRelease();
+        if (updateInfo && updateInfo.updateAvailable && mainWindow && !mainWindow.isDestroyed()) {
+          console.log(`[Updater] New release available: ${updateInfo.latestVersion}`);
+          mainWindow.webContents.send('update-available', updateInfo);
+        }
+      } catch (e) {
+        console.warn('[Updater] Auto-check error:', e.message);
+      }
+    }, 2500);
   });
 
   mainWindow.on('closed', () => {
@@ -498,5 +513,110 @@ ipcMain.handle('resume-song', () => {
 ipcMain.handle('stop-song', () => {
   return botManager.stopSong();
 });
+
+// ==========================================================================
+// GITHUB AUTO-UPDATER ENGINE (V5.0.000)
+// Checks for new GitHub releases, compares versions, returns release notes & download assets
+// ==========================================================================
+
+const CURRENT_APP_VERSION = 'v5.0.000';
+const GITHUB_REPO_PATH = 'TentixTV/MannisBuzzerBot';
+
+function compareSemver(remoteTag, localTag) {
+  const parse = (v) => (v || '').replace(/^[^\d]*/, '').split(/[.-]/).map(p => parseInt(p, 10) || 0);
+  const r = parse(remoteTag);
+  const l = parse(localTag);
+  const len = Math.max(r.length, l.length);
+  for (let i = 0; i < len; i++) {
+    const rVal = r[i] || 0;
+    const lVal = l[i] || 0;
+    if (rVal > lVal) return 1;
+    if (rVal < lVal) return -1;
+  }
+  return 0;
+}
+
+function checkGitHubRelease() {
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname: 'api.github.com',
+      path: `/repos/${GITHUB_REPO_PATH}/releases/latest`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'MannisBox-Updater',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      timeout: 6000
+    }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            const release = JSON.parse(body);
+            const remoteTag = release.tag_name || '';
+            const isNewer = compareSemver(remoteTag, CURRENT_APP_VERSION) > 0;
+            const assets = release.assets || [];
+            const zipAsset = assets.find(a => a.name && a.name.toLowerCase().endsWith('.zip'));
+            const rarAsset = assets.find(a => a.name && a.name.toLowerCase().endsWith('.rar'));
+
+            resolve({
+              success: true,
+              updateAvailable: isNewer,
+              currentVersion: CURRENT_APP_VERSION,
+              latestVersion: remoteTag,
+              releaseName: release.name || remoteTag,
+              publishedAt: release.published_at,
+              releaseNotes: release.body || '',
+              htmlUrl: release.html_url || `https://github.com/${GITHUB_REPO_PATH}/releases/latest`,
+              zipUrl: zipAsset ? zipAsset.browser_download_url : `https://github.com/${GITHUB_REPO_PATH}/releases/download/${remoteTag}/MannisBox-Windows-x64.zip`,
+              rarUrl: rarAsset ? rarAsset.browser_download_url : `https://github.com/${GITHUB_REPO_PATH}/releases/download/${remoteTag}/MannisBox-Windows-x64.rar`
+            });
+          } else {
+            resolve({
+              success: false,
+              updateAvailable: false,
+              currentVersion: CURRENT_APP_VERSION,
+              error: `HTTP ${res.statusCode}`
+            });
+          }
+        } catch (e) {
+          resolve({
+            success: false,
+            updateAvailable: false,
+            currentVersion: CURRENT_APP_VERSION,
+            error: e.message
+          });
+        }
+      });
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      resolve({
+        success: false,
+        updateAvailable: false,
+        currentVersion: CURRENT_APP_VERSION,
+        error: 'Timeout beim Verbinden mit GitHub'
+      });
+    });
+
+    req.on('error', (err) => {
+      resolve({
+        success: false,
+        updateAvailable: false,
+        currentVersion: CURRENT_APP_VERSION,
+        error: err.message
+      });
+    });
+
+    req.end();
+  });
+}
+
+ipcMain.handle('check-for-updates', async () => {
+  return await checkGitHubRelease();
+});
+
 
 

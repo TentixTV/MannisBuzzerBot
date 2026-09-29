@@ -1247,19 +1247,28 @@ class BotManager extends EventEmitter {
         this.gameState.songState.isPlaying = true;
       }
 
-      // Free the buzzer for remaining eligible players; song continues playing
-      this.gameState.activePlayer = null;
-      this.gameState.queue = [];
-      this.gameState.isLocked = false;
-      this.gameState.isEvaluating = false;
-      if (this.gameState.roundTimer) {
-        this.gameState.roundTimer.paused = false;
-      }
-
-      if (action === 'wrong') {
-        this.gameState.statusText = `❌ **${player.username}** lag falsch (${penalty} Pkt.)! Song läuft weiter, Buzzer ist wieder frei.`;
+      if (this.gameState.queue && this.gameState.queue.length > 0) {
+        const nextPlayer = this.gameState.queue.shift();
+        this.gameState.activePlayer = nextPlayer;
+        this.gameState.isLocked = true;
+        this.gameState.isEvaluating = false;
+        this.startAnswerCountdown(10);
+        this.gameState.statusText = `⏭️ Nächster Herausforderer an der Reihe: **${nextPlayer.username}**!`;
       } else {
-        this.gameState.statusText = `⏭️ **${player.username}** lag falsch (kein Abzug). Song läuft weiter, Buzzer ist wieder frei.`;
+        // Free the buzzer for remaining eligible players; song continues playing
+        this.gameState.activePlayer = null;
+        this.gameState.queue = [];
+        this.gameState.isLocked = false;
+        this.gameState.isEvaluating = false;
+        if (this.gameState.roundTimer) {
+          this.gameState.roundTimer.paused = false;
+        }
+
+        if (action === 'wrong') {
+          this.gameState.statusText = `❌ **${player.username}** lag falsch (${penalty} Pkt.)! Song läuft weiter, Buzzer ist wieder frei.`;
+        } else {
+          this.gameState.statusText = `⏭️ **${player.username}** lag falsch (kein Abzug). Song läuft weiter, Buzzer ist wieder frei.`;
+        }
       }
 
       await this.updateDiscordMessage();

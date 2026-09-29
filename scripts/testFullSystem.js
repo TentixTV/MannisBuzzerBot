@@ -40,6 +40,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('get-guilds', () => []);
   ipcMain.handle('get-channels', () => ({ text: [], voice: [] }));
   ipcMain.handle('get-game-state', () => botManager.getState());
+  ipcMain.handle('check-for-updates', () => ({ success: true, updateAvailable: false }));
   ipcMain.handle('set-game-mode', (e, mode) => botManager.setGameMode(mode));
   ipcMain.handle('toggle-boost', (e, forced) => botManager.toggleBoost(forced));
   ipcMain.handle('set-goal', (e, goal) => botManager.setGoal(goal));

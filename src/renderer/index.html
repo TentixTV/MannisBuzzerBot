@@ -70,7 +70,7 @@
       <div class="titlebar-drag-region">
         <img src="../../App.png" alt="Logo" class="titlebar-app-icon">
         <span class="titlebar-title">Manni's Box — Discord Musik-Quiz, Hitster & Wallpaper Stream Master</span>
-        <span class="titlebar-version-tag">V4.8.027</span>
+        <span class="titlebar-version-tag">V5.0.000</span>
       </div>
       <div class="titlebar-controls no-drag">
         <button id="titlebarMin" class="titlebar-btn titlebar-min" title="Minimieren">
@@ -101,7 +101,17 @@
       <div class="brand-section">
         <img src="../../App.png" alt="MannisBox" class="brand-logo">
         <div class="brand-text">
-          <h1 class="brand-title">MANNI'S BOX <span class="version-tag">V4.8.024</span></h1>
+          <h1 class="brand-title">
+            MANNI'S BOX <span class="version-tag">V5.0.000</span>
+            <button id="btnHeaderUpdate" class="btn-update-badge hidden" title="Neues Update verfügbar!">
+              <svg class="update-pulse-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>UPDATE VERFÜGBAR</span>
+            </button>
+          </h1>
           <span class="brand-subtitle">Discord Musik-Quiz, Hitster & Wallpaper Stream Master</span>
         </div>
       </div>
@@ -1348,6 +1358,30 @@
             </div>
           </div>
 
+          <!-- App Updates & Maintenance -->
+          <div class="form-group update-settings-card">
+            <div class="label-row">
+              <label style="display: flex; align-items: center; gap: 6px;">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#10b981" stroke-width="2.2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>App-Version & Updates:</span>
+              </label>
+              <span id="lblSettingsCurrentVersion" class="settings-version-pill">V5.0.000</span>
+            </div>
+            <div class="update-settings-controls">
+              <button id="btnSettingsCheckUpdate" class="btn-sub update-check-btn" type="button">
+                <svg id="svgUpdateRefreshIcon" class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span id="lblBtnCheckUpdateText">Auf Updates prüfen</span>
+              </button>
+              <span id="lblSettingsUpdateStatus" class="update-status-msg">Aktuell (V5.0.000)</span>
+            </div>
+          </div>
+
           <!-- Sound Volumes & Sound Tests -->
           <div class="form-group">
             <div class="label-row">
@@ -1766,6 +1800,83 @@
         <button id="btnWpStagesSave" class="btn-chunky btn-primary" style="padding: 8px 24px; font-size: 12px;">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           <span>Speichern &amp; Anwenden</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated In-App Update Modal (Clean Vector UI, Strictly No Emojis) -->
+  <div id="updateModal" class="custom-app-dialog-overlay hidden">
+    <div class="update-modal-card">
+      <div class="update-modal-header">
+        <div class="update-modal-title-box">
+          <div class="update-icon-pulse">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#10b981" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </div>
+          <div>
+            <div class="update-modal-main-title">NEUES UPDATE VERFÜGBAR!</div>
+            <div id="updateModalVersionSub" class="update-modal-sub-title">Version v5.0.001 steht bereit</div>
+          </div>
+        </div>
+        <button id="btnUpdateModalCloseX" class="wp-stages-modal-close" title="Schließen">&times;</button>
+      </div>
+
+      <div class="update-modal-body">
+        <div class="update-tag-banner">
+          <span class="update-tag-badge" id="lblUpdateNewTag">v5.0.001</span>
+          <span class="update-tag-date" id="lblUpdateDate">Neu erschienen</span>
+        </div>
+
+        <div class="update-notes-header">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <span>WAS IST NEU IN DIESEM UPDATE:</span>
+        </div>
+
+        <div id="updateReleaseNotesBox" class="update-notes-box">
+          Lade Release-Informationen...
+        </div>
+
+        <div class="update-download-actions">
+          <button id="btnUpdateDownloadZip" class="btn-chunky btn-update-download-zip" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>.ZIP HERUNTERLADEN (1-Klick)</span>
+          </button>
+
+          <button id="btnUpdateDownloadRar" class="btn-chunky btn-update-download-rar" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+              <line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+            <span>.RAR HERUNTERLADEN</span>
+          </button>
+
+          <button id="btnUpdateOpenGitHub" class="btn-modal-cancel btn-update-github" type="button">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            <span>Auf GitHub ansehen</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="update-modal-footer">
+        <button id="btnUpdateModalDismiss" class="btn-modal-cancel" type="button" style="margin-left: auto;">
+          Später erinnern
         </button>
       </div>
     </div>

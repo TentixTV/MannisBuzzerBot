@@ -7,7 +7,7 @@ const { calculateWallpaperPoints } = require('../src/bot/gameModes');
 
 app.whenReady().then(async () => {
   console.log('========================================================');
-  console.log('  MANNISBOX V4.8.023 — FINAL COMPREHENSIVE VERIFICATION  ');
+  console.log('  MANNISBOX V5.0.000 — FINAL COMPREHENSIVE VERIFICATION  ');
   console.log('========================================================');
 
   // TEST 1: 1-4 Points Calculation Scale
@@ -31,7 +31,7 @@ app.whenReady().then(async () => {
   botManager.manualBuzzPlayer('test-player-1', 'Gamer 1');
   assert.ok(botManager.gameState.activePlayer, 'Active player should be set');
   assert.ok(botManager.gameState.answerTimer, 'Answer timer must be created');
-  assert.strictEqual(botManager.gameState.answerTimer.remaining, 10, 'Timer must start at 10s');
+  assert.strictEqual(botManager.gameState.answerTimer.remaining, 15, 'Timer must start at 15s');
   assert.strictEqual(botManager.gameState.answerTimer.expired, false, 'Timer must not be expired initially');
 
   // Simulate timer countdown reaching 0
@@ -113,6 +113,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('window-maximize', () => true);
   ipcMain.handle('window-close', () => {});
   ipcMain.handle('window-is-maximized', () => false);
+  ipcMain.handle('check-for-updates', () => ({ success: true, updateAvailable: false }));
 
   const win = new BrowserWindow({
     width: 1280,
@@ -160,7 +161,7 @@ app.whenReady().then(async () => {
   assert.strictEqual(titlebarElements.hasMin, true, 'titlebarMin must exist');
   assert.strictEqual(titlebarElements.hasMax, true, 'titlebarMax must exist');
   assert.strictEqual(titlebarElements.hasClose, true, 'titlebarClose must exist');
-  assert.strictEqual(titlebarElements.versionTag, 'V4.8.023', 'Version tag must be V4.8.023');
+  assert.strictEqual(titlebarElements.versionTag, 'V5.0.000', 'Version tag must be V5.0.000');
   assert.strictEqual(titlebarElements.hasAnswerTimer, true, 'answerTimerBox must exist');
   assert.strictEqual(titlebarElements.hasExpiredAlert, true, 'answerExpiredAlert must exist');
   assert.strictEqual(titlebarElements.hasNextWp, true, 'btnPickNextWallpaper must exist');

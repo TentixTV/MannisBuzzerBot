@@ -105,5 +105,13 @@ contextBridge.exposeInMainWorld('mannisBoxAPI', {
     const handler = (event, data) => callback(data);
     ipcRenderer.on('bot-error', handler);
     return () => ipcRenderer.removeListener('bot-error', handler);
+  },
+
+  // App Updates (GitHub Releases)
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  onUpdateAvailable: (callback) => {
+    const handler = (event, data) => callback(data);
+    ipcRenderer.on('update-available', handler);
+    return () => ipcRenderer.removeListener('update-available', handler);
   }
 });

@@ -134,16 +134,14 @@ class UE5Stage3D {
       varying float vAlpha;
 
       void main() {
-        // High quality radial glowing sphere with hot specular core
+        // High-performance smooth radial glow without discard (preserves Early-Z on integrated GPUs)
         vec2 coord = gl_PointCoord - vec2(0.5);
         float dist = length(coord);
-        if (dist > 0.5) discard;
+        float falloff = clamp(1.0 - 2.0 * dist, 0.0, 1.0);
+        float core = clamp(1.0 - dist * 4.5, 0.0, 1.0);
+        float alpha = vAlpha * (falloff * 0.65 + core * 0.35);
 
-        float core = 1.0 - smoothstep(0.0, 0.18, dist);
-        float halo = 1.0 - smoothstep(0.12, 0.5, dist);
-        float glow = core * 0.7 + halo * 0.55;
-
-        gl_FragColor = vec4(vColor + vec3(core * 0.45), glow * vAlpha);
+        gl_FragColor = vec4(vColor + vec3(core * 0.4), alpha * falloff);
       }
     `;
 
