@@ -13,7 +13,7 @@ if (!TOKEN) {
 }
 const OWNER = 'TentixTV';
 const REPO = 'MannisBuzzerBot';
-const TAG = 'v5.0.000';
+const TAG = 'v5.0.001';
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
@@ -103,7 +103,7 @@ function uploadAsset(uploadUrlRaw, filePath, contentType) {
 async function main() {
   console.log(`1. Checking if release for ${TAG} exists...`);
   let release = null;
-  const releaseDescription = `## MannisBox ${TAG} — Smooth 144 FPS Performance, Built-in Auto-Updater & Perfection Update\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Perfektion in ${TAG}:\n- **Integrierter Auto-Updater:**\n  - Automatischer GitHub-Release-Checker prüft im Hintergrund auf neue Updates.\n  - Schicker, animierter Update-Badge im Header und in den Einstellungen.\n  - Update-Pop-up mit direkten 1-Klick Download-Buttons (.ZIP / .RAR) und Changelog-Anzeige.\n- **Beseitigung von Rucklern & "Daumenkino" (Extreme Lag Fix):**\n  - Sämtliche software-kompositierten \`backdrop-filter: blur(...)\` Aufrufe eliminiert (Startup-Gate, Modal-Backdrops, Countdown-Overlays, Cinema-Timer, Stream-Overlay).\n  - Umstellung auf hochperformante transluzente Hintergründe für butterweiche 60–144 FPS auf Laptops und integrierten GPUs.\n- **Unreal Engine 5 Style 3D WebGL Optimierung:**\n  - \`discard;\` Befehl im Niagara-Partikel-Fragment-Shader durch sanften Alpha-Falloff ersetzt; schützt GPU Early-Z Culling vor Pipeline-Stalls.\n- **GPU Blocklist Override:**\n  - \`ignore-gpu-blocklist\` Schalter aktiviert, um CPU SwiftShader-Fallback auf älteren Systemen zu verhindern.\n- **Volle Funktionsabdeckung:**\n  - /goal, 2X /boost Supercharge-System, Hitster-Timeline, 4-Stufen Wallpaper Film-Quiz und OBS Stream Overlay in Perfektion.`;
+  const releaseDescription = `## MannisBox ${TAG} — Permanent Voice Channel Keep-Alive & Auto-Reconnect Guard\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Fixes in ${TAG}:\n- **Permanenter Voice-Kanal Keep-Alive & Heartbeat Watchdog:**\n  - Der Bot bleibt beim Starten der App dauerhaft und stabil im ausgewählten Voice-Kanal verbunden.\n  - Hintergrund-Watchdog prüft alle 4 Sekunden den Voice-Status und stellt die Verbindung bei Discord-Netzwerk-Jittern oder Server-Wechseln sofort automatisch wieder her.\n- **Fix: Bot verlässt nicht mehr den Channel beim Spielstart:**\n  - Kein Verbindungsabbruch mehr beim Klick auf ein Spiel ('Song', 'Hitster', 'Wallpaper') oder beim Starten von Runden.\n  - Bestehende gesunde Verbindungen werden unterbrechungsfrei weiterverwendet, anstatt durch redundante Neuverbindungen abgebrochen zu werden.\n  - \`leaveVoice()\` wird nur noch ausgeführt, wenn der Host explizit auf 'Voice trennen' klickt.\n- **Intelligente Voice-Erkennung (Discord Voice State Updates):**\n  - Automatisches Wiederverbinden, falls der Bot versehentlich gekickt oder von Discord getrennt wurde.\n  - Automatisches Erkennen und Verfolgen, falls der Bot von einem Admin in einen anderen Kanal gezogen wird.\n- **Alle V5.0 Features enthalten:**\n  - 144 FPS Performance ohne Daumenkino-Lag.\n  - Integrierter In-App GitHub Auto-Updater.\n  - Reine Vektor-SVGs ohne Unicode-Emojis.`;
 
   try {
     release = await request({
@@ -119,7 +119,7 @@ async function main() {
     console.log(`Found existing release ID: ${release.id}`);
 
     const updatePayload = JSON.stringify({
-      name: `MannisBox ${TAG} — Smooth 144 FPS Performance, Built-in Auto-Updater & Perfection Update`,
+      name: `MannisBox ${TAG} — Permanent Voice Channel Keep-Alive & Auto-Reconnect Guard`,
       body: releaseDescription,
       draft: false,
       prerelease: false
@@ -147,7 +147,7 @@ async function main() {
     const releasePayload = JSON.stringify({
       tag_name: TAG,
       target_commitish: 'main',
-      name: `MannisBox ${TAG} — Smooth 144 FPS Performance, Built-in Auto-Updater & Perfection Update`,
+      name: `MannisBox ${TAG} — Permanent Voice Channel Keep-Alive & Auto-Reconnect Guard`,
       body: releaseDescription,
       draft: false,
       prerelease: false

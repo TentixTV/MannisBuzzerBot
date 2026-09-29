@@ -45,7 +45,7 @@ class AudioManager {
 
   setConnection(connection) {
     this.connection = connection;
-    if (this.connection) {
+    if (this.connection && this.connection.state?.status !== VoiceConnectionStatus.Destroyed) {
       try {
         const target = (this.isSongPlaying && !this.isSongPaused) ? this.songPlayer : this.sfxPlayer;
         this.connection.subscribe(target);
@@ -75,7 +75,7 @@ class AudioManager {
       return false;
     }
 
-    if (!this.connection) {
+    if (!this.connection || this.connection.state?.status === VoiceConnectionStatus.Destroyed) {
       return false;
     }
 
@@ -117,7 +117,7 @@ class AudioManager {
     this.isSongPlaying = true;
     this.isSongPaused = false;
 
-    if (!this.connection) return true;
+    if (!this.connection || this.connection.state?.status === VoiceConnectionStatus.Destroyed) return true;
     try {
       const resource = createAudioResource(filePath, { inlineVolume: true });
       if (resource.volume) {
@@ -144,7 +144,7 @@ class AudioManager {
   resumeSong() {
     this.isSongPaused = false;
     try {
-      if (this.connection) {
+      if (this.connection && this.connection.state?.status !== VoiceConnectionStatus.Destroyed) {
         this.connection.subscribe(this.songPlayer);
       }
       if (this.songPlayer && this.songPlayer.state.status === AudioPlayerStatus.Paused) {

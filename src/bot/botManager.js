@@ -47,6 +47,8 @@ class BotManager extends EventEmitter {
     this.config = loadConfig();
     this.isReady = false;
     this.currentVoiceConnection = null;
+    this.isVoiceIntentionallyLeft = false;
+    this.voiceWatchdogInterval = null;
     this.cooldownTimer = null;
     this.roundTicker = null;
     this.hostName = '';
@@ -135,12 +137,21 @@ class BotManager extends EventEmitter {
   }
 
   updateConfig(newConf) {
+    const oldVoiceId = this.config.voiceChannelId;
+    const oldGuildId = this.config.guildId;
     this.config = saveConfig(newConf);
     if (this.config.soundVolume !== undefined) {
       audioManager.setVolume(this.config.soundVolume);
     }
     this.resolveHostName();
     this.emitState();
+
+    if (this.isReady && this.config.guildId && this.config.voiceChannelId) {
+      if (this.config.voiceChannelId !== oldVoiceId || this.config.guildId !== oldGuildId) {
+        this.isVoiceIntentionallyLeft = false;
+        this.joinVoice(this.config.guildId, this.config.voiceChannelId).catch(() => {});
+      }
+    }
   }
 
   async resolveHostName() {
@@ -226,6 +237,16 @@ class BotManager extends EventEmitter {
     this.updateRichPresence();
     this.updateDiscordMessage();
     this.emitState();
+
+    // Ensure bot stays connected to voice when game starts
+    this.isVoiceIntentionallyLeft = false;
+    if (this.isReady && this.config.guildId && this.config.voiceChannelId) {
+      const existing = getVoiceConnection(this.config.guildId) || this.currentVoiceConnection;
+      if (!existing || existing.state.status !== VoiceConnectionStatus.Ready) {
+        this.joinVoice(this.config.guildId, this.config.voiceChannelId).catch(() => {});
+      }
+    }
+
     return { success: true, mode };
   }
 
@@ -497,14 +518,42 @@ class BotManager extends EventEmitter {
         hostName: this.hostName
       });
 
+      this.isVoiceIntentionallyLeft = false;
       this.emitState();
 
       if (this.config.guildId && this.config.voiceChannelId) {
-        await this.joinVoice(this.config.guildId, this.config.voiceChannelId);
+        await this.joinVoice(this.config.guildId, this.config.voiceChannelId).catch(() => {});
       }
+
+      this.startVoiceWatchdog();
     });
 
     this.client.on('voiceStateUpdate', async (oldState, newState) => {
+      // Check if the bot itself was affected
+      if (this.client?.user && newState.id === this.client.user.id) {
+        if (!newState.channelId) {
+          // Bot was disconnected from voice channel
+          console.warn('[Bot] Bot was disconnected from voice channel.');
+          if (!this.isVoiceIntentionallyLeft && this.config.guildId && this.config.voiceChannelId) {
+            console.log('[Bot] Auto-reconnecting to voice channel in 1s...');
+            setTimeout(() => {
+              if (!this.isVoiceIntentionallyLeft) {
+                this.joinVoice(this.config.guildId, this.config.voiceChannelId).catch(() => {});
+              }
+            }, 1000);
+          }
+        } else if (newState.channelId !== this.gameState.currentVoiceChannelId) {
+          // Bot was moved to a different voice channel
+          console.log(`[Bot] Bot was moved to voice channel ${newState.channelId}`);
+          this.gameState.currentVoiceChannelId = newState.channelId;
+          this.config.voiceChannelId = newState.channelId;
+          saveConfig(this.config);
+          await this.updateVoiceMembers();
+          await this.updateRichPresence();
+          this.emit('voice-status', { connected: true, guildId: newState.guild.id, channelId: newState.channelId });
+        }
+      }
+
       const channelId = this.gameState.currentVoiceChannelId;
       if (!channelId) return;
 
@@ -697,6 +746,7 @@ class BotManager extends EventEmitter {
   }
 
   async stop() {
+    this.stopVoiceWatchdog();
     this.stopRoundTimer();
     if (this.cooldownTimer) {
       clearInterval(this.cooldownTimer);
@@ -765,9 +815,64 @@ class BotManager extends EventEmitter {
     }
   }
 
+  startVoiceWatchdog() {
+    this.stopVoiceWatchdog();
+    this.voiceWatchdogInterval = setInterval(async () => {
+      if (!this.client || !this.isReady || this.isVoiceIntentionallyLeft) return;
+      const targetGuildId = this.config.guildId;
+      const targetChannelId = this.config.voiceChannelId;
+      if (!targetGuildId || !targetChannelId) return;
+
+      try {
+        const existing = getVoiceConnection(targetGuildId) || this.currentVoiceConnection;
+        const isHealthy = existing && (
+          existing.state.status === VoiceConnectionStatus.Ready ||
+          existing.state.status === VoiceConnectionStatus.Signalling ||
+          existing.state.status === VoiceConnectionStatus.Connecting
+        );
+
+        const guild = this.client.guilds.cache.get(targetGuildId);
+        const voiceChannel = guild?.channels?.cache?.get(targetChannelId);
+        const botInChannel = voiceChannel?.members?.has(this.client.user.id);
+
+        if (!isHealthy || !botInChannel) {
+          console.log('[Bot Watchdog] Voice connection dropped or bot missing from channel. Auto-reconnecting...');
+          await this.joinVoice(targetGuildId, targetChannelId);
+        }
+      } catch (err) {
+        console.warn('[Bot Watchdog] Heartbeat check warning:', err.message);
+      }
+    }, 4000);
+  }
+
+  stopVoiceWatchdog() {
+    if (this.voiceWatchdogInterval) {
+      clearInterval(this.voiceWatchdogInterval);
+      this.voiceWatchdogInterval = null;
+    }
+  }
+
   async joinVoice(guildId, channelId) {
     if (!this.client || !this.isReady) {
       return { success: false, error: 'Bot nicht bereit' };
+    }
+    if (!guildId || !channelId) {
+      return { success: false, error: 'Server oder Voice-Kanal nicht angegeben' };
+    }
+
+    this.isVoiceIntentionallyLeft = false;
+
+    // Check if an existing connection for this guild is already active and healthy in the target channel
+    const existing = getVoiceConnection(guildId) || this.currentVoiceConnection;
+    if (existing && existing.state.status === VoiceConnectionStatus.Ready) {
+      if (this.gameState.currentVoiceChannelId === channelId && existing.joinConfig?.channelId === channelId) {
+        this.currentVoiceConnection = existing;
+        audioManager.setConnection(existing);
+        await this.updateVoiceMembers();
+        await this.updateRichPresence();
+        this.emit('voice-status', { connected: true, guildId, channelId });
+        return { success: true, reused: true };
+      }
     }
 
     try {
@@ -775,6 +880,11 @@ class BotManager extends EventEmitter {
       const voiceChannel = await guild.channels.fetch(channelId);
       if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
         return { success: false, error: 'Voice-Kanal nicht gefunden' };
+      }
+
+      // If an existing connection exists and is in a different channel or destroyed, clean it
+      if (existing && existing !== this.currentVoiceConnection) {
+        try { existing.destroy(); } catch (e) {}
       }
 
       const connection = joinVoiceChannel({
@@ -785,33 +895,57 @@ class BotManager extends EventEmitter {
         selfMute: false
       });
 
-      connection.on('error', (err) => {
-        console.warn('[Bot] Voice Connection error:', err.message);
-      });
+      if (!connection._mannisListenersAttached) {
+        connection._mannisListenersAttached = true;
 
-      connection.on(VoiceConnectionStatus.Disconnected, async () => {
-        try {
-          await Promise.race([
-            entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
-            entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
-          ]);
-        } catch (error) {
-          try { connection.destroy(); } catch (e) {}
-          if (this.currentVoiceConnection === connection) {
-            this.leaveVoice();
+        connection.on('error', (err) => {
+          console.warn('[Bot] Voice Connection error:', err.message);
+        });
+
+        connection.on(VoiceConnectionStatus.Disconnected, async () => {
+          console.warn('[Bot] Voice connection disconnected. Evaluating reconnection...');
+          if (this.isVoiceIntentionallyLeft) return;
+
+          try {
+            // Give Discord gateway a short window to automatically recover (e.g. channel switch / server region change)
+            await Promise.race([
+              entersState(connection, VoiceConnectionStatus.Signalling, 4_000),
+              entersState(connection, VoiceConnectionStatus.Connecting, 4_000),
+            ]);
+            console.log('[Bot] Voice connection recovered signaling/connecting automatically.');
+          } catch (error) {
+            if (this.isVoiceIntentionallyLeft) return;
+            console.warn('[Bot] Voice connection did not recover within 4s. Attempting rejoin...');
+            try {
+              if (connection.state.status !== VoiceConnectionStatus.Destroyed) {
+                connection.rejoin();
+              }
+            } catch (rejoinErr) {
+              console.warn('[Bot] Voice rejoin error:', rejoinErr.message);
+            }
           }
-        }
-      });
+        });
+
+        connection.on(VoiceConnectionStatus.Destroyed, () => {
+          if (this.currentVoiceConnection === connection) {
+            this.currentVoiceConnection = null;
+            audioManager.setConnection(null);
+          }
+          if (!this.isVoiceIntentionallyLeft) {
+            console.warn('[Bot] Voice connection destroyed unexpectedly. Scheduling reconnect...');
+            setTimeout(() => {
+              if (!this.isVoiceIntentionallyLeft && this.config.guildId && this.config.voiceChannelId) {
+                this.joinVoice(this.config.guildId, this.config.voiceChannelId).catch(() => {});
+              }
+            }, 1500);
+          }
+        });
+      }
 
       try {
-        await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+        await entersState(connection, VoiceConnectionStatus.Ready, 12_000);
       } catch (timeoutErr) {
-        console.warn('[Bot] Voice Connection timeout / abort:', timeoutErr.message);
-        try { connection.destroy(); } catch (e) {}
-        this.currentVoiceConnection = null;
-        audioManager.setConnection(null);
-        this.emit('voice-status', { connected: false, error: timeoutErr.message });
-        return { success: false, error: timeoutErr.message };
+        console.warn('[Bot] Voice Connection ready wait timeout (will retry in background):', timeoutErr.message);
       }
 
       this.currentVoiceConnection = connection;
@@ -831,16 +965,18 @@ class BotManager extends EventEmitter {
   }
 
   leaveVoice() {
-    if (this.currentVoiceConnection) {
+    this.isVoiceIntentionallyLeft = true;
+    const conn = this.currentVoiceConnection || (this.config.guildId ? getVoiceConnection(this.config.guildId) : null);
+    if (conn) {
       try {
-        this.currentVoiceConnection.destroy();
+        conn.destroy();
       } catch (err) {}
-      this.currentVoiceConnection = null;
-      audioManager.setConnection(null);
-      this.gameState.currentVoiceChannelId = null;
-      this.gameState.voiceMembers = [];
-      this.emit('voice-status', { connected: false });
     }
+    this.currentVoiceConnection = null;
+    audioManager.setConnection(null);
+    this.gameState.currentVoiceChannelId = null;
+    this.gameState.voiceMembers = [];
+    this.emit('voice-status', { connected: false });
   }
 
   // --- ROUND TIMER SYSTEM ---
@@ -998,6 +1134,7 @@ class BotManager extends EventEmitter {
     const targetTextChannelId = textChannelId || this.config.textChannelId;
     const targetVoiceChannelId = voiceChannelId || this.config.voiceChannelId;
 
+    this.isVoiceIntentionallyLeft = false;
     this.gameState.isRoundActive = true;
     this.gameState.isLocked = false;
     this.gameState.isEvaluating = false;
@@ -1040,8 +1177,16 @@ class BotManager extends EventEmitter {
     let messageId = null;
     if (this.client && this.isReady && targetTextChannelId) {
       try {
-        if (targetGuildId && targetVoiceChannelId && (!this.currentVoiceConnection || this.gameState.currentVoiceChannelId !== targetVoiceChannelId)) {
-          await this.joinVoice(targetGuildId, targetVoiceChannelId).catch(() => {});
+        if (targetGuildId && targetVoiceChannelId) {
+          const existing = getVoiceConnection(targetGuildId) || this.currentVoiceConnection;
+          const isReadyInChannel = existing && 
+            existing.state.status === VoiceConnectionStatus.Ready && 
+            this.gameState.currentVoiceChannelId === targetVoiceChannelId &&
+            existing.joinConfig?.channelId === targetVoiceChannelId;
+
+          if (!isReadyInChannel) {
+            await this.joinVoice(targetGuildId, targetVoiceChannelId).catch(() => {});
+          }
         }
 
         const channel = await this.client.channels.fetch(targetTextChannelId).catch(() => null);
