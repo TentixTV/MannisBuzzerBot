@@ -12,7 +12,10 @@ process.on('unhandledRejection', (reason) => {
 
 // Hardware Acceleration & High-Refresh Rate (60Hz / 120Hz / 144Hz+) VSync Support
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('force-high-performance-gpu');
+app.commandLine.appendSwitch('use-angle', 'd3d11');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
 app.commandLine.appendSwitch('enable-accelerated-2d-canvas');
 app.commandLine.appendSwitch('enable-accelerated-video-decode');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
