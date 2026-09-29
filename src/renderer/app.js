@@ -532,10 +532,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Error loading config:', err);
   }
 
+  function isHost(id, username = '') {
+    const hostId = config?.hostId || '327863089796087809';
+    if (id === hostId || id === '327863089796087809') return true;
+    if (id && typeof id === 'string' && id.startsWith('host-')) return true;
+    const name = String(username || '').trim().toLowerCase();
+    if (name === 'thismanniguy' || name === 'manni' || (hostDisplayName && name === hostDisplayName.trim().toLowerCase())) return true;
+    return false;
+  }
+
   function updateHostDisplay() {
     const id = config.hostId || '327863089796087809';
     const name = (currentGameState && currentGameState.hostName) ? currentGameState.hostName : hostDisplayName;
-    lblCurrentHost.textContent = `@${id} (${name})`;
+    lblCurrentHost.textContent = `@${id} (${name}) — Spielleiter`;
   }
 
   // 2. Setup IPC Listeners
@@ -743,19 +752,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const allPlayersMap = {};
     if (state && state.scores) {
       Object.values(state.scores).forEach(p => {
-        allPlayersMap[p.username] = { id: p.id, username: p.username, avatar: p.avatar, points: p.points || 0 };
+        if (!isHost(p.id, p.username)) {
+          allPlayersMap[p.username] = { id: p.id, username: p.username, avatar: p.avatar, points: p.points || 0 };
+        }
       });
     }
     if (state && state.voiceMembers) {
       state.voiceMembers.forEach(m => {
-        if (!allPlayersMap[m.username]) {
+        if (!isHost(m.id, m.username) && !allPlayersMap[m.username]) {
           allPlayersMap[m.username] = { id: m.id, username: m.username, avatar: m.avatar, points: 0 };
         }
       });
     }
 
     Object.keys(playerHitsterCards).forEach(name => {
-      if (!allPlayersMap[name]) {
+      if (!isHost(name, name) && !allPlayersMap[name]) {
         allPlayersMap[name] = { id: name, username: name, avatar: '../../App.png', points: 0 };
       }
     });
@@ -1400,7 +1411,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Voice Members List
-    const voiceMembers = state.voiceMembers || [];
+    const voiceMembers = (state.voiceMembers || []).filter(m => !isHost(m.id, m.username));
     voiceMembersCountBadge.textContent = `${voiceMembers.length} im Voice`;
     if (voiceMembers.length === 0) {
       voiceMembersList.innerHTML = '<div class="queue-empty">Keine Mitspieler im Voice-Kanal</div>';
@@ -1435,7 +1446,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Scoreboard with Slide-Down Drawer on Hover
-    const scoreEntries = Object.values(state.scores || {}).sort((a, b) => b.points - a.points);
+    const scoreEntries = Object.values(state.scores || {})
+      .filter(p => !isHost(p.id, p.username))
+      .sort((a, b) => b.points - a.points);
     playerCountBadge.textContent = `${scoreEntries.length} Spieler`;
 
     const currentScoresSignature = scoreEntries.map(p => `${p.id}:${p.points}:${p.correct}:${p.wrong}:${p.username}`).join('|');
@@ -1540,12 +1553,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderBannedListModal(state.bannedPlayers || {});
     updateChannelLabels();
 
-    // Update Manni host score badge in bottom-left status card
-    if (lblHostScore) {
-      const hostId = config.hostId || '327863089796087809';
-      const hostEntry = state.scores?.[hostId] || Object.values(state.scores || {}).find(p => /manni/i.test(p.username) || p.id === hostId);
-      const hostPts = hostEntry ? hostEntry.points : 0;
-      lblHostScore.innerHTML = `${hostPts} Pkt ${SVG_PENCIL}`;
+    // Update Manni host badge in bottom-left status card
+    const lblHostRole = document.getElementById('lblHostRole');
+    if (lblHostRole) {
+      lblHostRole.innerHTML = `<span class="host-role-val">👑 Spielleiter (${escapeHtml(hostDisplayName || 'Manni')})</span>`;
     }
   }
 
@@ -2084,8 +2095,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       screenFlashLayer.className = 'screen-flash-layer flash-glow-red';
       setTimeout(() => { screenFlashLayer.className = 'screen-flash-layer'; }, 400);
 
-      const regieName = hostDisplayName || 'Regie (Dome)';
-      await window.mannisBoxAPI.manualBuzzPlayer('host-regie-buzzer', regieName);
+      await window.mannisBoxAPI.manualBuzzPlayer('host-regie-buzzer', 'Regie (Dome)');
     });
   }
 
@@ -3069,15 +3079,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  if (lblHostScore) {
-    lblHostScore.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const hostId = config.hostId || '327863089796087809';
-      const hostEntry = currentGameState?.scores?.[hostId] || Object.values(currentGameState?.scores || {}).find(p => /manni/i.test(p.username) || p.id === hostId);
-      const hostPts = hostEntry ? hostEntry.points : 0;
-      openQuickScorePopup({ id: hostId, name: `${hostDisplayName || 'Manni'} (Host)`, points: hostPts }, lblHostScore);
-    });
-  }
 
   if (activePlayerScore) {
     activePlayerScore.addEventListener('click', (e) => {

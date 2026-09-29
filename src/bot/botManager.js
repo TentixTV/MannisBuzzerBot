@@ -24,6 +24,7 @@ const audioManager = require('./audioManager');
 const {
   createBuzzerEmbed,
   createBuzzerComponents,
+  createBuzzNotificationEmbed,
   createFinalGameEndEmbed,
   createVictoryEmbed,
   createHelpEmbed
@@ -174,6 +175,62 @@ class BotManager extends EventEmitter {
       this.gameState.hostName = 'Manni';
     }
     this.emitState();
+  }
+
+  isHost(userOrMemberOrId) {
+    if (!userOrMemberOrId) return false;
+    const uid = typeof userOrMemberOrId === 'string'
+      ? userOrMemberOrId
+      : (userOrMemberOrId.id || userOrMemberOrId.user?.id);
+    const configuredHostId = this.config.hostId || '327863089796087809';
+
+    if (uid && (uid === configuredHostId || uid === '327863089796087809')) {
+      return true;
+    }
+
+    if (uid && typeof uid === 'string' && uid.startsWith('host-')) {
+      return true;
+    }
+
+    const username = typeof userOrMemberOrId === 'object'
+      ? (userOrMemberOrId.displayName || userOrMemberOrId.user?.displayName || userOrMemberOrId.username || userOrMemberOrId.user?.username || '')
+      : String(userOrMemberOrId);
+
+    const cleanName = username.trim().toLowerCase();
+    if (cleanName === 'thismanniguy' || cleanName === 'manni' || (this.hostName && cleanName === this.hostName.trim().toLowerCase())) {
+      return true;
+    }
+
+    return false;
+  }
+
+  async sendBuzzAnnouncement({ userId, username, avatar, timeOffset, potentialPoints, isBoostActive, gameMode }) {
+    const targetTextChannelId = this.gameState.currentTextChannelId || this.config.textChannelId;
+    if (!this.client || !this.isReady || !targetTextChannelId) return;
+
+    try {
+      const channel = await this.client.channels.fetch(targetTextChannelId).catch(() => null);
+      if (!channel || !channel.isTextBased()) return;
+
+      const buzzEmbed = createBuzzNotificationEmbed({
+        username,
+        userId,
+        avatar,
+        timeOffset,
+        potentialPoints,
+        isBoostActive,
+        gameMode
+      });
+
+      const mention = userId ? `<@${userId}>` : `**${username}**`;
+      const boostText = isBoostActive ? ' 🔥 *(2X BOOST AKTIV!)*' : '';
+      await channel.send({
+        content: `🚨 ${mention} hat als **Erster gebuzzert!**${boostText}`,
+        embeds: [buzzEmbed]
+      });
+    } catch (err) {
+      console.warn('[Bot] Failed to send buzz announcement to text channel:', err.message);
+    }
   }
 
   startStandbyPresence() {
@@ -403,6 +460,15 @@ class BotManager extends EventEmitter {
       voiceChannel.members.forEach((member) => {
         if (!member.user.bot) {
           const uid = member.id;
+
+          // IMPORTANT: The Host (Spielleiter) is NEVER a contestant/player!
+          if (this.isHost(member)) {
+            if (this.gameState.scores[uid]) {
+              delete this.gameState.scores[uid];
+            }
+            return;
+          }
+
           const uname = member.displayName || member.user.displayName || member.user.username;
           const avatar = member.user.displayAvatarURL({ size: 128 });
           const isBanned = !!this.gameState.bannedPlayers[uid];
@@ -422,6 +488,16 @@ class BotManager extends EventEmitter {
             this.gameState.scores[uid].username = uname;
             this.gameState.scores[uid].avatar = avatar;
           }
+        }
+      });
+
+      // Purge any lingering host entry from scores by ID or name
+      const hostId = this.config.hostId || '327863089796087809';
+      delete this.gameState.scores[hostId];
+      delete this.gameState.scores['327863089796087809'];
+      Object.keys(this.gameState.scores).forEach(key => {
+        if (this.isHost(this.gameState.scores[key])) {
+          delete this.gameState.scores[key];
         }
       });
 
@@ -541,6 +617,17 @@ class BotManager extends EventEmitter {
       }
 
       await this.resolveHostName();
+      if (!this.gameState.currentTextChannelId && this.config.textChannelId) {
+        this.gameState.currentTextChannelId = this.config.textChannelId;
+      }
+      const hostId = this.config.hostId || '327863089796087809';
+      delete this.gameState.scores[hostId];
+      delete this.gameState.scores['327863089796087809'];
+      Object.keys(this.gameState.scores).forEach(id => {
+        if (this.isHost(this.gameState.scores[id])) {
+          delete this.gameState.scores[id];
+        }
+      });
       await this.updateRichPresence();
 
       this.emit('status-changed', {
@@ -1163,11 +1250,11 @@ class BotManager extends EventEmitter {
 
   // --- BUZZER INTERACTION ---
   async handleUserBuzz({ userId, username, avatar, replyFn }) {
+    if (this.isHost(userId)) {
+      return replyFn({ content: `👑 Du bist als Spielleiter (Host) eingetragen und kannst nicht selbst mitbuzzern!`, ephemeral: true });
+    }
     if (this.gameState.bannedPlayers[userId]) {
       return replyFn({ content: '⛔ Du wurdest vom Spielleiter gesperrt!', ephemeral: true });
-    }
-    if (userId === this.config.hostId) {
-      return replyFn({ content: `👑 Du bist als Host eingetragen und kannst nicht selbst mitbuzzern!`, ephemeral: true });
     }
     if (!this.gameState.isRoundActive || this.gameState.isLocked || this.gameState.isEvaluating) {
       return replyFn({ content: '🔒 Der Buzzer ist derzeit gesperrt!', ephemeral: true });
@@ -1226,11 +1313,25 @@ class BotManager extends EventEmitter {
     this.startAnswerCountdown(15);
     await replyFn({ content: `🎉 **GEBUZZERT!** Du bist dran! Antworte jetzt im Voice-Chat!${boostBadge}`, ephemeral: true });
 
+    // Send public announcement message into the selected Discord text channel!
+    await this.sendBuzzAnnouncement({
+      userId,
+      username,
+      avatar,
+      timeOffset,
+      potentialPoints,
+      isBoostActive: this.gameState.isBoostActive,
+      gameMode: this.gameState.gameMode
+    });
+
     this.updateDiscordMessage();
     this.emitState();
   }
 
   async handleBuzzerInteraction(interaction) {
+    if (interaction.channelId && !this.gameState.currentTextChannelId) {
+      this.gameState.currentTextChannelId = interaction.channelId;
+    }
     const userId = interaction.user.id;
     const username = interaction.member?.displayName || interaction.user.displayName || interaction.user.username;
     const avatar = interaction.user.displayAvatarURL({ size: 128 });
@@ -1543,6 +1644,17 @@ class BotManager extends EventEmitter {
         }
       }
 
+      // Post result to channel
+      const targetTextChannelId = this.gameState.currentTextChannelId || this.config.textChannelId;
+      if (this.client && this.isReady && targetTextChannelId) {
+        this.client.channels.fetch(targetTextChannelId).then(ch => {
+          if (ch && ch.isTextBased()) {
+            const mention = userId ? `<@${userId}>` : `**${player.username}**`;
+            ch.send(`❌ ${mention} lag leider **falsch** (${penalty} Pkt.)! Buzzer ist wieder frei.`);
+          }
+        }).catch(() => {});
+      }
+
       await this.updateDiscordMessage();
       this.emitState();
 
@@ -1598,6 +1710,21 @@ class BotManager extends EventEmitter {
       this.gameState.isEvaluating = false;
 
       this.checkVictory(playerScore);
+
+      // Post result to channel
+      const targetTextChannelId = this.gameState.currentTextChannelId || this.config.textChannelId;
+      if (this.client && this.isReady && targetTextChannelId) {
+        this.client.channels.fetch(targetTextChannelId).then(ch => {
+          if (ch && ch.isTextBased()) {
+            const mention = userId ? `<@${userId}>` : `**${player.username}**`;
+            const boostTag = wasBoosted ? ' 🔥 **(2X BOOST!)**' : '';
+            ch.send(action === 'perfect'
+              ? `🌟 ${mention} hat **VOLLSTÄNDIG RICHTIG** geantwortet! (+${gain} Pkt.${boostTag}) 🏆`
+              : `✅ ${mention} hat **RICHTIG** geantwortet! (+${gain} Pkt.${boostTag}) 🎉`
+            );
+          }
+        }).catch(() => {});
+      }
 
       await this.updateDiscordMessage();
       this.emitState();
@@ -2310,6 +2437,7 @@ class BotManager extends EventEmitter {
   // --- PLAYER & SCOREBOARD MANAGEMENT ---
   adjustPlayerScore(playerId, delta) {
     if (!playerId) return { success: false, error: 'Keine Spieler-ID angegeben' };
+    if (this.isHost(playerId)) return { success: false, error: 'Der Spielleiter ist kein Mitspieler.' };
     if (!this.gameState.scores[playerId]) {
       this.gameState.scores[playerId] = {
         id: playerId,
@@ -2338,13 +2466,13 @@ class BotManager extends EventEmitter {
 
   setPlayerScore(playerId, newPoints) {
     if (!playerId) return { success: false, error: 'Keine Spieler-ID angegeben' };
+    if (this.isHost(playerId)) return { success: false, error: 'Der Spielleiter ist kein Mitspieler.' };
     let player = this.gameState.scores[playerId] ||
       Object.values(this.gameState.scores).find(p => p.username.toLowerCase() === String(playerId).toLowerCase() || p.id === playerId);
     if (!player) {
-      const isManni = playerId === this.config.hostId || /manni/i.test(String(playerId));
       player = {
         id: playerId,
-        username: isManni ? (this.hostName || 'Manni') : String(playerId),
+        username: String(playerId),
         avatar: '../../App.png',
         points: 0,
         correct: 0,
@@ -2413,13 +2541,17 @@ class BotManager extends EventEmitter {
   }
 
   manualBuzzPlayer(playerId, username = null) {
+    const isRegie = playerId === 'host-regie-buzzer';
+    if (!isRegie && this.isHost(playerId)) {
+      return { success: false, error: 'Der Spielleiter kann nicht mitbuzzern.' };
+    }
     if (this.gameState.roundLockedPlayers && this.gameState.roundLockedPlayers[playerId]) {
       return { success: false, error: 'Spieler ist für diese Runde gesperrt.' };
     }
 
-    let player = this.gameState.scores[playerId];
+    let player = isRegie ? null : this.gameState.scores[playerId];
     if (!player) {
-      const displayName = username || (playerId === 'host-regie-buzzer' ? (this.hostName || 'Regie (Dome)') : 'Spieler');
+      const displayName = username || (isRegie ? 'Regie (Dome)' : 'Spieler');
       player = {
         id: playerId || 'host-regie-buzzer',
         username: displayName,
@@ -2430,7 +2562,9 @@ class BotManager extends EventEmitter {
         cards: [],
         isCustom: true
       };
-      this.gameState.scores[player.id] = player;
+      if (!isRegie) {
+        this.gameState.scores[player.id] = player;
+      }
     }
 
     audioManager.pauseSong();
@@ -2463,6 +2597,18 @@ class BotManager extends EventEmitter {
 
     audioManager.playSound('buzzer');
     this.startAnswerCountdown(15);
+
+    // Send public announcement to the selected text channel!
+    this.sendBuzzAnnouncement({
+      userId: player.id && !player.id.startsWith('host-') ? player.id : null,
+      username: player.username,
+      avatar: player.avatar,
+      timeOffset: `nach ${elapsed.toFixed(1)}s`,
+      potentialPoints,
+      isBoostActive: this.gameState.isBoostActive,
+      gameMode: this.gameState.gameMode
+    });
+
     this.emitState();
     this.updateDiscordMessage();
     return { success: true, player: this.gameState.activePlayer };

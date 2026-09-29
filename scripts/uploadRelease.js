@@ -13,7 +13,7 @@ if (!TOKEN) {
 }
 const OWNER = 'TentixTV';
 const REPO = 'MannisBuzzerBot';
-const TAG = 'v5.0.002';
+const TAG = 'v5.0.003';
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
@@ -103,7 +103,7 @@ function uploadAsset(uploadUrlRaw, filePath, contentType) {
 async function main() {
   console.log(`1. Checking if release for ${TAG} exists...`);
   let release = null;
-  const releaseDescription = `## MannisBox ${TAG} — Discord Voice DAVE E2EE Protocol, Zero Flapping & Perfect /goal & /boost\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Fixes in ${TAG}:\n- **Discord Voice DAVE E2EE Protokoll-Upgrade (Behebt Code 4017):**\n  - Upgrade auf \`@discordjs/voice@^0.19.2\` inkl. nativem \`@snazzah/davey\` End-to-End Encryption Support.\n  - Beseitigt den 5–10x Reconnect-Loop ("rein und raus") und den 30-Sekunden Rate-Limit Cooldown von Discord vollständig!\n- **Kein Verbindungs-Suizid mehr (Concurrency Mutex):**\n  - Parallele Voice-Befehle werden nun über eine Mutex-Sperre (\`voiceJoinPromise\`) synchronisiert, sodass in-flight Handshakes nicht mehr gegenseitig abgewürgt werden.\n  - Der Voice-Watchdog läuft entspannt alle 15 Sekunden und stört laufende Verbindungen zu keinem Zeitpunkt.\n- **Synchroner Voice-Status:**\n  - Das UI-Badge schaltet nur noch auf grün ("Voice verbunden"), wenn Discord den Kanalstatus tatsächlich als \`Ready\` bestätigt hat.\n- **Korrektur der /boost Punkte-Mechanik (Dopplung behoben):**\n  - Verhindert vierfache (4X) Punktevergabe im Wallpaper-Modus und fehlerhafte Embed-Vorschauen: 2X Boost verdoppelt exakt einmal!\n- **Sofortige Sieg-Prüfung bei /goal:**\n  - Wird das Spielziel herabgesetzt (z.B. auf 30 Punkte), wird sofort geprüft, ob ein Spieler das neue Ziel bereits erreicht hat, und der Sieg sauber ausgelöst.\n- **Schutz vor 3-Sekunden Discord-Timeouts:**\n  - Slash-Commands (\`/boost\`, \`/goal\`, etc.) nutzen nun \`deferReply()\`, um auch bei Netzwerklatenzen niemals in den "Die Anwendung hat nicht reagiert"-Fehler zu laufen.\n- **Text-Chat-Commands aktiviert:**\n  - \`GatewayIntentBits.GuildMessages\` aktiviert, sodass \`!goal\`, \`!boost\` und \`!score\` auch im Textkanal wieder reagieren.\n- **Hitster-Rangliste mit Karten-Fortschritt:**\n  - Im Hitster-Modus zeigt das Embed nun korrekt \`X / Ziel Karten\` anstatt Punkte.`;
+  const releaseDescription = `## MannisBox ${TAG} — Live Buzzer-Nachrichten im Textkanal & Spielleiter-Trennung (Kein Mitspieler)\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Fixes in ${TAG}:\n- **Live Buzzer-Benachrichtigung im Text-Kanal:**\n  - Sobald ein Spieler den Buzzer betätigt (per Discord-Button, \`/buzzer\`, Chatbefehl oder Web/App), schickt der Bot sofort eine unübersehbare Benachrichtigung samt Reaktionszeit, möglicher Punkte und Spieler-Ping direkt in den ausgewählten Textkanal!\n  - Bei richtiger oder falscher Antwort postet der Bot nun ebenfalls das Ergebnis live in den Textkanal.\n- **Spielleiter (ThisManniGuy) ist reiner Host und KEIN Mitspieler:**\n  - ThisManniGuy wird nun strikt als Spielleiter geführt und erscheint weder in der Mitspieler-Liste des Voice-Kanals, noch im Punktestand oder auf der Stream-Anzeige.\n  - Voice-Updates und Host-Buzzer legen keine Phantom-Spielerprofile mehr für den Host an.\n- **Alle Fixes aus v5.0.002 enthalten:**\n  - DAVE E2EE Protokoll (@snazzah/davey) gegen Voice-Flapping / Code 4017.\n  - Mutex-gesteuerter Voice-Watchdog (15s) ohne Verbindungsabbrüche.\n  - Perfekt ausbalancierte /goal- und /boost-Mechaniken.`;
 
   try {
     release = await request({
@@ -119,7 +119,7 @@ async function main() {
     console.log(`Found existing release ID: ${release.id}`);
 
     const updatePayload = JSON.stringify({
-      name: `MannisBox ${TAG} — Discord Voice DAVE E2EE Protocol, Zero Flapping & Perfect /goal & /boost`,
+      name: `MannisBox ${TAG} — Live Buzzer-Nachrichten im Textkanal & Spielleiter-Trennung`,
       body: releaseDescription,
       draft: false,
       prerelease: false
@@ -147,7 +147,7 @@ async function main() {
     const releasePayload = JSON.stringify({
       tag_name: TAG,
       target_commitish: 'main',
-      name: `MannisBox ${TAG} — Discord Voice DAVE E2EE Protocol, Zero Flapping & Perfect /goal & /boost`,
+      name: `MannisBox ${TAG} — Live Buzzer-Nachrichten im Textkanal & Spielleiter-Trennung`,
       body: releaseDescription,
       draft: false,
       prerelease: false

@@ -13,14 +13,23 @@ function createProgressBar(current, goal) {
 function formatDiscordLeaderboard(scores, goal = 50, gameMode = 'song') {
   const isHitster = gameMode === 'hitster';
   const targetGoal = Math.max(1, goal || (isHitster ? 10 : 50));
-  const sorted = Object.values(scores || {}).sort((a, b) => {
-    if (isHitster) {
-      const aCards = (a.cards && Array.isArray(a.cards)) ? a.cards.length : (typeof a.cards === 'number' ? a.cards : (a.points || 0));
-      const bCards = (b.cards && Array.isArray(b.cards)) ? b.cards.length : (typeof b.cards === 'number' ? b.cards : (b.points || 0));
-      return bCards - aCards;
-    }
-    return (b.points || 0) - (a.points || 0);
-  });
+  const sorted = Object.values(scores || {})
+    .filter(p => {
+      if (!p) return false;
+      const uid = String(p.id || '');
+      if (uid === '327863089796087809' || uid.startsWith('host-')) return false;
+      const name = String(p.username || '').trim().toLowerCase();
+      if (name === 'thismanniguy' || name === 'manni' || name.includes('spielleiter')) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (isHitster) {
+        const aCards = (a.cards && Array.isArray(a.cards)) ? a.cards.length : (typeof a.cards === 'number' ? a.cards : (a.points || 0));
+        const bCards = (b.cards && Array.isArray(b.cards)) ? b.cards.length : (typeof b.cards === 'number' ? b.cards : (b.points || 0));
+        return bCards - aCards;
+      }
+      return (b.points || 0) - (a.points || 0);
+    });
   if (sorted.length === 0) return isHitster ? '*Noch keine Karten vergeben.*' : '*Noch keine Punkte vergeben.*';
 
   return sorted.map((p, idx) => {
@@ -40,6 +49,48 @@ function formatDiscordLeaderboard(scores, goal = 50, gameMode = 'song') {
       return `${rankBadge} **${pName}** ➔ **\`${pts} Pkt\`** ${pBar} *(✅ ${p.correct || 0} | ❌ ${p.wrong || 0})*`;
     }
   }).join('\n');
+}
+
+function createBuzzNotificationEmbed({
+  username = 'Spieler',
+  userId = null,
+  avatar = null,
+  timeOffset = '1. Platz (0.00s)',
+  potentialPoints = 3,
+  isBoostActive = false,
+  gameMode = 'song'
+}) {
+  const boostBadge = isBoostActive ? ' 🔥 **(2X BOOST AKTIV!)**' : '';
+  const mention = userId ? `<@${userId}>` : `**${username}**`;
+
+  let modeText = 'Song Quiz';
+  let unit = 'Punkte';
+  if (gameMode === 'wallpaper') {
+    modeText = 'Filme & Wallpaper Quiz';
+    unit = 'Punkte';
+  } else if (gameMode === 'hitster') {
+    modeText = 'Hitster Zeitstrahl';
+    unit = 'Karte';
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor(isBoostActive ? 0xff5500 : 0xf59e0b)
+    .setTitle(`🚨 BUZZER GEDRÜCKT! — ${username.toUpperCase()}`)
+    .setDescription(
+      `🔔 ${mention} (**${username}**) hat als **ERSTER** gebuzzert!${boostBadge}\n\n` +
+      `⏱️ **Reaktionszeit:** \`${timeOffset}\`\n` +
+      `💎 **Mögliche Punkte:** \`${potentialPoints} ${unit}${isBoostActive ? ' (verdoppelt!)' : ''}\`\n` +
+      `🎮 **Modus:** \`${modeText}\`\n\n` +
+      `👉 **Du bist dran! Antworte jetzt laut im Voice-Chat!** *(15 Sekunden)*`
+    )
+    .setFooter({ text: 'MannisBox • Discord Buzzer & Stream Master' })
+    .setTimestamp();
+
+  if (avatar && typeof avatar === 'string' && avatar.startsWith('http')) {
+    embed.setThumbnail(avatar);
+  }
+
+  return embed;
 }
 
 function createBuzzerEmbed(state) {
@@ -361,6 +412,7 @@ function createHelpEmbed(state = {}) {
 module.exports = {
   createProgressBar,
   formatDiscordLeaderboard,
+  createBuzzNotificationEmbed,
   createBuzzerEmbed,
   createBuzzerComponents,
   createVictoryEmbed,

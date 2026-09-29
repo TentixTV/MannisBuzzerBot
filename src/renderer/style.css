@@ -4814,6 +4814,26 @@ body {
    SUPERCHARGED HOVER GLOW FOR INTERACTIVE SCORE & STAGE PILLS
    ========================================================================== */
 
+.tag-host-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #f59e0b;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  user-select: none;
+}
+
+.tag-host-role .ui-svg-icon {
+  width: 13px;
+  height: 13px;
+  color: #f59e0b;
+}
+
 .tag-score-interactive {
   cursor: pointer !important;
   position: relative !important;

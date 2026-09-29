@@ -1058,7 +1058,11 @@
           const streamShelvesSig = JSON.stringify({ shelves, goal: state.goal });
           if (shelvesEl.getAttribute('data-sig') !== streamShelvesSig) {
             shelvesEl.setAttribute('data-sig', streamShelvesSig);
-            const playerIds = Object.keys(shelves);
+            const playerIds = Object.keys(shelves).filter(pId => {
+              const pName = (shelves[pId].username || pId || '').trim().toLowerCase();
+              if (pName === 'thismanniguy' || pName === 'manni' || pId === '327863089796087809' || pId.startsWith('host-')) return false;
+              return true;
+            });
             if (playerIds.length > 0) {
               const target = state.goal || 10;
               shelvesEl.innerHTML = playerIds.map(pId => {
@@ -1094,8 +1098,17 @@
         const streamScoresSig = JSON.stringify({ scores: state.scores, activeId: state.activePlayer?.id, goal: state.goal, mode: state.gameMode });
         if (playerList.getAttribute('data-sig') !== streamScoresSig) {
           playerList.setAttribute('data-sig', streamScoresSig);
-          if (state.scores && Object.keys(state.scores).length > 0) {
-            const sorted = Object.values(state.scores).sort((a, b) => {
+          const filteredScores = Object.values(state.scores || {}).filter(p => {
+            if (!p) return false;
+            const uid = String(p.id || '');
+            if (uid === '327863089796087809' || uid.startsWith('host-') || (state.config && uid === state.config.hostId)) return false;
+            const name = String(p.username || '').trim().toLowerCase();
+            if (name === 'thismanniguy' || name === 'manni' || name.includes('spielleiter')) return false;
+            return true;
+          });
+
+          if (filteredScores.length > 0) {
+            const sorted = filteredScores.sort((a, b) => {
               if (state.gameMode === 'hitster') {
                 const countA = (a.cards && a.cards.length) ? a.cards.length : (a.points || 0);
                 const countB = (b.cards && b.cards.length) ? b.cards.length : (b.points || 0);
