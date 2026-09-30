@@ -1230,7 +1230,9 @@ class BotManager extends EventEmitter {
       }
 
       if (t.remaining <= 0) {
-        this.setBuzzerLocked(true);
+        if (this.gameState.gameMode === 'wallpaper') {
+          this.setBuzzerLocked(true);
+        }
         this.stopRoundTimer();
       }
 
@@ -1390,11 +1392,13 @@ class BotManager extends EventEmitter {
       }
     } else if (this.gameState.gameMode === 'song') {
       this.gameState.songState.revealed = false;
+      if (duration === 30) duration = 180;
     } else if (this.gameState.gameMode === 'hitster') {
       if (this.gameState.hitsterState.currentCard) {
         this.gameState.hitsterState.currentCard.revealed = false;
       }
       this.gameState.hitsterState.lastChallenge = null;
+      if (duration === 30) duration = 180;
     }
 
     // Always start timer & update local state

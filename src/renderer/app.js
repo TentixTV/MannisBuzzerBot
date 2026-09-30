@@ -2222,9 +2222,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch (e) {
         console.warn('Auto-play error:', e);
       }
-      if (!currentGameState?.isRoundActive) {
-        await window.mannisBoxAPI.startRound();
-      }
+      await window.mannisBoxAPI.startRound({
+        guildId: config.guildId || null,
+        textChannelId: config.textChannelId || null,
+        voiceChannelId: config.voiceChannelId || null
+      });
     }
   });
 
@@ -2234,6 +2236,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       setPlayPauseIcon(true);
       if (window.mannisBoxAPI.resumeSong) {
         await window.mannisBoxAPI.resumeSong();
+      }
+      if (localAudioPlayer.src && (!currentGameState?.isRoundActive || currentGameState?.isLocked)) {
+        await window.mannisBoxAPI.startRound({
+          guildId: config.guildId || null,
+          textChannelId: config.textChannelId || null,
+          voiceChannelId: config.voiceChannelId || null
+        });
       }
     } else {
       localAudioPlayer.pause();
@@ -2254,6 +2263,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (window.ue5StageInstance) window.ue5StageInstance.setAudioPulse(1.0);
     });
     localAudioPlayer.addEventListener('pause', () => {
+      setPlayPauseIcon(false);
+      if (window.ue5StageInstance) window.ue5StageInstance.setAudioPulse(0.0);
+    });
+    localAudioPlayer.addEventListener('ended', () => {
       setPlayPauseIcon(false);
       if (window.ue5StageInstance) window.ue5StageInstance.setAudioPulse(0.0);
     });
@@ -2349,6 +2362,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) {
           console.warn('Auto-play error:', e);
         }
+        await window.mannisBoxAPI.startRound({
+          guildId: config.guildId || null,
+          textChannelId: config.textChannelId || null,
+          voiceChannelId: config.voiceChannelId || null
+        });
       }
     } else {
       await showCustomAlert(res?.error || 'Bitte wähle zuerst links einen Ordner mit Musik aus.', 'Hitster Musik');
@@ -2421,13 +2439,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 3D Turntable Play & Next Controls
   if (btnHitsterDeckPlay) {
-    btnHitsterDeckPlay.addEventListener('click', () => {
+    btnHitsterDeckPlay.addEventListener('click', async () => {
       if (localAudioPlayer.paused) {
         localAudioPlayer.play();
-        btnHitsterDeckPlay.textContent = '⏸️ Pause';
+        btnHitsterDeckPlay.innerHTML = '<svg class="mini-svg" viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg><span>Pause</span>';
+        if (localAudioPlayer.src && (!currentGameState?.isRoundActive || currentGameState?.isLocked)) {
+          await window.mannisBoxAPI.startRound({
+            guildId: config.guildId || null,
+            textChannelId: config.textChannelId || null,
+            voiceChannelId: config.voiceChannelId || null
+          });
+        }
       } else {
         localAudioPlayer.pause();
-        btnHitsterDeckPlay.textContent = '▶️ Play';
+        btnHitsterDeckPlay.innerHTML = '<svg class="mini-svg" viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>Play</span>';
       }
     });
   }
@@ -2651,9 +2676,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (err) {
               console.warn('Auto-play error:', err);
             }
-            if (!currentGameState?.isRoundActive) {
-              await window.mannisBoxAPI.startRound();
-            }
+            await window.mannisBoxAPI.startRound({
+              guildId: config.guildId || null,
+              textChannelId: config.textChannelId || null,
+              voiceChannelId: config.voiceChannelId || null
+            });
           }
         };
 
@@ -2721,6 +2748,11 @@ document.addEventListener('DOMContentLoaded', async () => {
               } catch (err) {
                 console.warn('Auto-play error:', err);
               }
+              await window.mannisBoxAPI.startRound({
+                guildId: config.guildId || null,
+                textChannelId: config.textChannelId || null,
+                voiceChannelId: config.voiceChannelId || null
+              });
             }
           }
         });

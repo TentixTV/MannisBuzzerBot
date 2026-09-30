@@ -13,7 +13,7 @@ if (!TOKEN) {
 }
 const OWNER = 'TentixTV';
 const REPO = 'MannisBuzzerBot';
-const TAG = 'v5.0.004';
+const TAG = 'v5.0.005';
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
@@ -103,7 +103,7 @@ function uploadAsset(uploadUrlRaw, filePath, contentType) {
 async function main() {
   console.log(`1. Checking if release for ${TAG} exists...`);
   let release = null;
-  const releaseDescription = `## MannisBox ${TAG} — Live Buzzer-Nachrichten im Textkanal & Spielleiter-Trennung (Kein Mitspieler)\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Fixes in ${TAG}:\n- **Regie-Buzzer sauber beschriftet:**\n  - Beim Klick auf den Regie-Buzzer in der App wird nun überall sauber ausschließlich \`Regie\` angezeigt (nicht mehr \`Regie (Dome)\`).\n- **Live Buzzer-Benachrichtigung im Text-Kanal:**\n  - Sobald ein Spieler den Buzzer betätigt (per Discord-Button, \`/buzzer\`, Chatbefehl oder Web/App), schickt der Bot sofort eine unübersehbare Benachrichtigung samt Reaktionszeit, möglicher Punkte und Spieler-Ping direkt in den ausgewählten Textkanal!\n  - Bei richtiger oder falscher Antwort postet der Bot nun ebenfalls das Ergebnis live in den Textkanal.\n- **Spielleiter (ThisManniGuy) ist reiner Host und KEIN Mitspieler:**\n  - ThisManniGuy wird nun strikt als Spielleiter geführt und erscheint weder in der Mitspieler-Liste des Voice-Kanals, noch im Punktestand oder auf der Stream-Anzeige.\n  - Voice-Updates und Host-Buzzer legen keine Phantom-Spielerprofile mehr für den Host an.\n- **Alle Fixes aus v5.0.002 enthalten:**\n  - DAVE E2EE Protokoll (@snazzah/davey) gegen Voice-Flapping / Code 4017.\n  - Mutex-gesteuerter Voice-Watchdog (15s) ohne Verbindungsabbrüche.\n  - Perfekt ausbalancierte /goal- und /boost-Mechaniken.`;
+  const releaseDescription = `## MannisBox ${TAG} — Auto-Buzzer bei Play & Kein unerwünschter Buzzer-Lock mehr\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Fixes in ${TAG}:\n- **Automatische Discord-Buzzer-Nachricht beim Klick auf "Spielen":**\n  - Sobald im Audio-Player auf Play gedrückt wird (oder ein neuer Song/Zufallssong gestartet wird), postet der Bot die interaktive Buzzer-Nachricht sofort in den Discord-Kanal.\n  - Das umständliche separate Klicken auf "Runde starten" entfällt komplett!\n- **Kein automatisches Ausschalten des Buzzers nach 10–30s mehr:**\n  - Im Musik-Quiz & Hitster bleibt der Buzzer durchgehend aktiv und offen, solange der Song läuft.\n  - Der automatische Lock nach Ablauf der Rundenzeit wurde in Song- & Hitster-Modus entfernt, sodass der Host nicht mehr manuell auf "Buzzer freigeben" klicken muss.\n- **Regie-Buzzer sauber beschriftet:**\n  - Beim Klick auf den Regie-Buzzer in der App wird nun überall sauber ausschließlich \`Regie\` angezeigt (nicht mehr \`Regie (Dome)\`).\n- **Live Buzzer-Benachrichtigung im Text-Kanal:**\n  - Sobald ein Spieler buzzert, schickt der Bot sofort eine Benachrichtigung samt Reaktionszeit, möglicher Punkte und Spieler-Ping direkt in den Textkanal!\n- **Spielleiter (ThisManniGuy) ist reiner Host und KEIN Mitspieler:**\n  - Keine Mitspieler-Punkte oder Voice-Spam mehr für den Host.\n- **Stabile Voice-Verbindung (DAVE E2EE Protokoll & Mutex Watchdog):**\n  - Kein Flapping und kein Verlassen des Voice-Kanals.`;
 
   try {
     release = await request({
@@ -119,7 +119,7 @@ async function main() {
     console.log(`Found existing release ID: ${release.id}`);
 
     const updatePayload = JSON.stringify({
-      name: `MannisBox ${TAG} — Live Buzzer-Nachrichten im Textkanal & Spielleiter-Trennung`,
+      name: `MannisBox ${TAG} — Auto-Buzzer bei Play & Kein unerwünschter Buzzer-Lock mehr`,
       body: releaseDescription,
       draft: false,
       prerelease: false
@@ -147,7 +147,7 @@ async function main() {
     const releasePayload = JSON.stringify({
       tag_name: TAG,
       target_commitish: 'main',
-      name: `MannisBox ${TAG} — Live Buzzer-Nachrichten im Textkanal & Spielleiter-Trennung`,
+      name: `MannisBox ${TAG} — Auto-Buzzer bei Play & Kein unerwünschter Buzzer-Lock mehr`,
       body: releaseDescription,
       draft: false,
       prerelease: false

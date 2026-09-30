@@ -17,6 +17,9 @@ async function ensureIcon() {
 
 async function zipFolder(sourceDir, outPath) {
   return new Promise((resolve, reject) => {
+    if (fs.existsSync(outPath)) {
+      try { fs.unlinkSync(outPath); } catch (e) {}
+    }
     const output = fs.createWriteStream(outPath);
     const archive = archiver('zip', { zlib: { level: 9 } });
 
@@ -27,6 +30,7 @@ async function zipFolder(sourceDir, outPath) {
       resolve();
     });
 
+    output.on('error', (err) => reject(err));
     archive.on('error', (err) => reject(err));
     archive.pipe(output);
     archive.directory(sourceDir, false);
