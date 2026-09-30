@@ -5899,7 +5899,7 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-/* 2. Animated Cookie (No Frames, Crisp White Highlights, Visible Tooth Bites & Hectic Crunch Rhythm) */
+/* 2. Animated Cookie (No Frames, Crisp White Highlights, 3 Visible Tooth Bites, Eaten Pause & Elastic Repop) */
 .anim-cookie-container {
   display: flex !important;
   align-items: center !important;
@@ -5917,103 +5917,116 @@ body {
 
 .anim-svg-cookie {
   overflow: visible;
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.55));
 }
 
+.cookie-repop-wrapper,
 .cookie-main-group {
   transform-origin: 32px 32px;
   transform-box: view-box;
-  animation: cookieHecticCrunch 4s ease-in-out infinite;
+  animation: cookieHecticCrunch 3.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
 
 @keyframes cookieHecticCrunch {
-  0%, 12.8% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  13% { transform: translate(1.8px, -1px) scale(0.94) rotate(3deg); }
-  14% { transform: translate(-1.2px, 0.8px) scale(1.03) rotate(-2deg); }
-  15.5% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  27.8% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  28% { transform: translate(-1.8px, 1.2px) scale(0.94) rotate(-3.5deg); }
-  29% { transform: translate(1.2px, -0.6px) scale(1.03) rotate(2deg); }
-  30.5% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  42.8% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  43% { transform: translate(1.2px, 1.8px) scale(0.93) rotate(3.5deg); }
-  44% { transform: translate(-1px, -1px) scale(1.03) rotate(-2deg); }
-  45.5% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  57.8% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  58% { transform: translate(-2px, 1.2px) scale(0.90) rotate(-4.5deg); }
-  59.5% { transform: translate(1.2px, -1.2px) scale(1.04) rotate(2.5deg); }
-  61.5% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  85% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
-  90% { transform: translate(0, 0) scale(0.2) rotate(45deg); opacity: 0; }
-  94% { transform: translate(0, 0) scale(1.1) rotate(-8deg); opacity: 0.85; }
-  98%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  0%, 15.9% { transform: scale(1) rotate(0deg); opacity: 1; }
+  /* Biss 1: Knackiges Zubeißen & Rucken */
+  16% { transform: translate(1.8px, -1.2px) scale(0.94) rotate(3deg); opacity: 1; }
+  18% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  /* Biss 2: Zweiter Biss, Cookie wackelt */
+  35.9% { transform: scale(1) rotate(0deg); opacity: 1; }
+  36% { transform: translate(-1.8px, 1.4px) scale(0.93) rotate(-3.5deg); opacity: 1; }
+  38% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  /* Biss 3: Finaler Chomp - der ganze Rest wird verputzt */
+  55.9% { transform: scale(1) rotate(0deg); opacity: 1; }
+  56% { transform: translate(0, 2px) scale(0.9) rotate(4deg); opacity: 1; }
+  58% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  /* Pause: Komplett aufgegessen & leer von 58.1% bis 70.9% */
+  58.1%, 70.9% { transform: scale(0.2); opacity: 0; }
+  /* REPOP! Saftiger, elastischer Pop-in Bounce */
+  71% { transform: scale(0) rotate(-14deg); opacity: 0; }
+  76% { transform: scale(1.22) rotate(4deg); opacity: 1; }
+  81% { transform: scale(0.92) rotate(-2deg); opacity: 1; }
+  85% { transform: scale(1.05) rotate(0deg); opacity: 1; }
+  89%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
-.cookie-bite {
-  transform-origin: 32px 32px;
-  transform-box: view-box;
-  animation: cookieBiteAnim 4s ease-out infinite;
+.stage-full,
+.bite-stage-0 {
+  animation: cookieBiteRepop 3.4s step-end infinite;
 }
 
+.stage-bite1,
 .cookie-bite.bite-1 {
-  animation-name: cookieBite1;
+  animation: cookieBite1 3.4s step-end infinite;
 }
 
+.stage-bite2,
 .cookie-bite.bite-2 {
-  animation-name: cookieBite2;
+  animation: cookieBite2 3.4s step-end infinite;
 }
 
-.cookie-bite.bite-3 {
-  animation-name: cookieBite3;
-}
-
-.cookie-bite.bite-4 {
-  animation-name: cookieBite4;
+@keyframes cookieBiteRepop {
+  0%, 15.9% { display: inline; }
+  16%, 70.9% { display: none; }
+  71%, 100% { display: inline; }
 }
 
 @keyframes cookieBite1 {
-  0%, 12.8% { transform: scale(0); opacity: 0; }
-  13% { transform: scale(1.18); opacity: 1; }
-  14.5%, 85% { transform: scale(1); opacity: 1; }
-  90%, 100% { transform: scale(0); opacity: 0; }
+  0%, 15.9% { display: none; }
+  16%, 35.9% { display: inline; }
+  36%, 100% { display: none; }
 }
 
 @keyframes cookieBite2 {
-  0%, 27.8% { transform: scale(0); opacity: 0; }
-  28% { transform: scale(1.18); opacity: 1; }
-  29.5%, 85% { transform: scale(1); opacity: 1; }
-  90%, 100% { transform: scale(0); opacity: 0; }
+  0%, 35.9% { display: none; }
+  36%, 58% { display: inline; }
+  58.1%, 100% { display: none; }
 }
 
 @keyframes cookieBite3 {
-  0%, 42.8% { transform: scale(0); opacity: 0; }
-  43% { transform: scale(1.18); opacity: 1; }
-  44.5%, 85% { transform: scale(1); opacity: 1; }
-  90%, 100% { transform: scale(0); opacity: 0; }
+  0%, 100% { display: none; }
 }
 
 @keyframes cookieBite4 {
-  0%, 57.8% { transform: scale(0); opacity: 0; }
-  58% { transform: scale(1.22); opacity: 1; }
-  59.5%, 85% { transform: scale(1); opacity: 1; }
-  90%, 100% { transform: scale(0); opacity: 0; }
+  0%, 100% { display: none; }
 }
 
 .cookie-crumb {
   opacity: 0;
-  animation: cookieCrumbsBurst 4s ease-out infinite;
+  transform-origin: center;
+  animation: cookieCrumbsBurst 3.4s ease-out infinite;
 }
 
-.cookie-crumb.c-1 { animation-delay: 0.52s; }
-.cookie-crumb.c-2 { animation-delay: 1.12s; }
-.cookie-crumb.c-3 { animation-delay: 1.72s; }
-.cookie-crumb.c-4 { animation-delay: 2.32s; }
+.cookie-crumb.c-1 { animation-name: cBurst1; }
+.cookie-crumb.c-2 { animation-name: cBurst2; }
+.cookie-crumb.c-3 { animation-name: cBurst3; }
 
 @keyframes cookieCrumbsBurst {
-  0% { transform: translate(0, 0) scale(0.2); opacity: 0; }
-  6% { transform: translate(5px, -3px) scale(1.4); opacity: 1; }
-  20% { transform: translate(16px, 16px) scale(0.4); opacity: 0; }
-  100% { transform: translate(16px, 16px) scale(0); opacity: 0; }
+  0%, 15.9% { opacity: 0; transform: translate(0, 0) scale(0); }
+  16% { opacity: 1; transform: translate(0, 0) scale(1.4); }
+  24% { opacity: 0; transform: translate(14px, -10px) scale(0.3); }
+  100% { opacity: 0; }
+}
+
+@keyframes cBurst1 {
+  0%, 15.9% { opacity: 0; transform: translate(0, 0) scale(0); }
+  16% { opacity: 1; transform: translate(0, 0) scale(1.4); }
+  24% { opacity: 0; transform: translate(14px, -10px) scale(0.3); }
+  100% { opacity: 0; }
+}
+
+@keyframes cBurst2 {
+  0%, 35.9% { opacity: 0; transform: translate(0, 0) scale(0); }
+  36% { opacity: 1; transform: translate(0, 0) scale(1.4); }
+  44% { opacity: 0; transform: translate(12px, 14px) scale(0.3); }
+  100% { opacity: 0; }
+}
+
+@keyframes cBurst3 {
+  0%, 55.9% { opacity: 0; transform: translate(0, 0) scale(0); }
+  56% { opacity: 1; transform: translate(0, 0) scale(1.6); }
+  64% { opacity: 0; transform: translate(-16px, 12px) scale(0.2); }
+  100% { opacity: 0; }
 }
 
 /* 3. Animated Datenschutz (No Outer Box, Crisp White & Emerald Vector Lines, Snap Lock) */
@@ -6118,58 +6131,86 @@ body {
   overflow: visible !important;
 }
 
-.gavel-arm {
-  transform-origin: 44px 44px;
+.gavel-soundblock-group {
+  transform-origin: 25px 48px;
+  transform-box: view-box;
+  animation: soundblockSquash 3.2s ease-out infinite;
+}
+
+.gavel-arm,
+.gavel-arm-group {
+  transform-origin: 54px 45px;
   transform-box: view-box;
   animation: smoothGavelStrike 3.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
 }
 
-.gavel-impact-wave {
-  transform-origin: 32px 47px;
+.gavel-impact-wave,
+.gavel-wave-1 {
+  transform-origin: 25px 44px;
   transform-box: view-box;
   animation: gavelWaveExpand 3.2s ease-out infinite;
 }
 
+.gavel-wave-2 {
+  transform-origin: 25px 44px;
+  transform-box: view-box;
+  animation: gavelWave2Expand 3.2s ease-out infinite;
+}
+
+.gavel-spark {
+  transform-origin: 25px 44px;
+  transform-box: view-box;
+  animation: gavelSparkBurst 3.2s ease-out infinite;
+}
+
 @keyframes smoothGavelStrike {
-  0% {
-    transform: rotate(-12deg);
-  }
-  28% {
-    transform: rotate(-52deg);
-  }
-  46% {
-    transform: rotate(5deg);
-  }
-  48% {
-    transform: rotate(4deg);
-  }
-  54% {
-    transform: rotate(-2deg);
-  }
-  66% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(-12deg);
-  }
+  0% { transform: rotate(0deg); }
+  /* Ausholbewegung: geschmeidig nach oben */
+  16% { transform: rotate(48deg); }
+  /* SCHLAG 1: blitzschneller Hieb auf den Schallblock */
+  22% { transform: rotate(-3deg); }
+  /* Elastischer Rückprall / Rebound */
+  28% { transform: rotate(20deg); }
+  /* SCHLAG 2: autoritärer zweiter Treffer */
+  34% { transform: rotate(-3.5deg); }
+  /* Mikro-Einschwingen */
+  38% { transform: rotate(1deg); }
+  41% { transform: rotate(0deg); }
+  /* Fester Ruhezustand auf dem Sockel */
+  70% { transform: rotate(0deg); }
+  /* Harmonischer Übergang zum nächsten Zyklus */
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes soundblockSquash {
+  0%, 21.8% { transform: scale(1, 1); }
+  22% { transform: scale(1.06, 0.88); }
+  25% { transform: scale(1, 1); }
+  33.8% { transform: scale(1, 1); }
+  34% { transform: scale(1.08, 0.84); }
+  38% { transform: scale(0.98, 1.02); }
+  42%, 100% { transform: scale(1, 1); }
 }
 
 @keyframes gavelWaveExpand {
-  0%, 45% {
-    transform: scale(0.2);
-    opacity: 0;
-  }
-  48% {
-    transform: scale(1);
-    opacity: 0.95;
-  }
-  65% {
-    transform: scale(2.6);
-    opacity: 0;
-  }
-  100% {
-    opacity: 0;
-  }
+  0%, 21.9% { transform: scale(0.1); opacity: 0; }
+  22% { transform: scale(0.4); opacity: 0.95; }
+  27% { transform: scale(2.2); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes gavelWave2Expand {
+  0%, 33.9% { transform: scale(0.1); opacity: 0; }
+  34% { transform: scale(0.5); opacity: 1; }
+  41% { transform: scale(2.8); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes gavelSparkBurst {
+  0%, 33.9% { transform: scale(0); opacity: 0; }
+  34% { transform: scale(1.3); opacity: 1; }
+  40% { transform: scale(2.5) translate(4px, -6px); opacity: 0; }
+  100% { opacity: 0; }
 }
 
 /* 5. App-Info, Credits & Richtlinien Modal Styling (High-End Glassmorphism & Vertical Sidebar) */

@@ -22,11 +22,13 @@ assert.strictEqual(htmlContent.includes('id="lblSettingsCurrentVersion"'), true,
 
 // Check SVG elements
 assert.strictEqual(htmlContent.includes('anim-svg-cookie'), true, 'anim-svg-cookie SVG must exist');
+assert.strictEqual(htmlContent.includes('cookie-repop-wrapper'), true, 'cookie-repop-wrapper must exist');
 assert.strictEqual(htmlContent.includes('bite-1'), true, 'bite-1 must exist');
 assert.strictEqual(htmlContent.includes('bite-4'), true, 'bite-4 must exist');
 assert.strictEqual(htmlContent.includes('anim-svg-privacy'), true, 'anim-svg-privacy SVG must exist');
 assert.strictEqual(htmlContent.includes('privacy-lock-group'), true, 'privacy-lock-group must exist');
 assert.strictEqual(htmlContent.includes('anim-svg-gavel'), true, 'anim-svg-gavel SVG must exist');
+assert.strictEqual(htmlContent.includes('gavel-soundblock-group'), true, 'gavel-soundblock-group must exist');
 assert.strictEqual(htmlContent.includes('gavel-arm'), true, 'gavel-arm must exist');
 assert.strictEqual(htmlContent.includes('btn-score-quick-pill'), true, 'btn-score-quick-pill must exist');
 assert.strictEqual(htmlContent.includes('lblGoalCounterDigits'), true, 'lblGoalCounterDigits must exist');
@@ -62,9 +64,11 @@ assert.strictEqual(cssContent.includes('@keyframes cookieBite1'), true, 'cookieB
 assert.strictEqual(cssContent.includes('@keyframes cookieBite4'), true, 'cookieBite4 keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes cookieCrumbsBurst'), true, 'cookieCrumbsBurst keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes cookieHecticCrunch'), true, 'cookieHecticCrunch keyframe must exist');
+assert.strictEqual(cssContent.includes('@keyframes cookieBiteRepop'), true, 'cookieBiteRepop keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes lockFlyAndClose'), true, 'lockFlyAndClose keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes shackleSnap'), true, 'shackleSnap keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes smoothGavelStrike'), true, 'smoothGavelStrike keyframe must exist');
+assert.strictEqual(cssContent.includes('@keyframes soundblockSquash'), true, 'soundblockSquash keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes gavelWaveExpand'), true, 'gavelWaveExpand keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes versionGradientShimmer'), true, 'versionGradientShimmer keyframe must exist');
 
