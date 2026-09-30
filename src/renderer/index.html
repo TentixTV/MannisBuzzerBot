@@ -70,7 +70,7 @@
       <div class="titlebar-drag-region">
         <img src="../../App.png" alt="Logo" class="titlebar-app-icon">
         <span class="titlebar-title">Manni's Box — Discord Musik-Quiz, Hitster & Wallpaper Stream Master</span>
-        <span class="titlebar-version-tag">V5.0.005</span>
+        <span class="titlebar-version-tag" id="titlebarVersionTag" title="Klicke für App-Info, Credits & Richtlinien">V5.0.006</span>
       </div>
       <div class="titlebar-controls no-drag">
         <button id="titlebarMin" class="titlebar-btn titlebar-min" title="Minimieren">
@@ -102,7 +102,7 @@
         <img src="../../App.png" alt="MannisBox" class="brand-logo">
         <div class="brand-text">
           <h1 class="brand-title">
-            MANNI'S BOX <span class="version-tag">V5.0.005</span>
+            MANNI'S BOX <span class="version-tag" id="brandVersionTag" title="Klicke für App-Info, Credits & Richtlinien">V5.0.006</span>
             <button id="btnHeaderUpdate" class="btn-update-badge hidden" title="Neues Update verfügbar!">
               <svg class="update-pulse-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -1371,7 +1371,7 @@
                 </svg>
                 <span>App-Version & Updates:</span>
               </label>
-              <span id="lblSettingsCurrentVersion" class="settings-version-pill">V5.0.005</span>
+              <span id="lblSettingsCurrentVersion" class="settings-version-pill" title="Klicke für App-Info, Credits & Richtlinien">V5.0.006</span>
             </div>
             <div class="update-settings-controls">
               <button id="btnSettingsCheckUpdate" class="btn-sub update-check-btn" type="button">
@@ -1380,7 +1380,17 @@
                 </svg>
                 <span id="lblBtnCheckUpdateText">Auf Updates prüfen</span>
               </button>
-              <span id="lblSettingsUpdateStatus" class="update-status-msg">Aktuell (V5.0.005)</span>
+              <button id="btnSettingsViewChangelog" class="btn-sub changelog-btn" type="button" title="Changelog & Neuerungen ansehen">
+                <svg class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span>Changelog</span>
+              </button>
+              <span id="lblSettingsUpdateStatus" class="update-status-msg">Aktuell (V5.0.006)</span>
             </div>
           </div>
 
@@ -1601,24 +1611,38 @@
     </div>
   </div>
 
-  <!-- Floating Animated Quick Score Editor Popup -->
+  <!-- Floating Animated Neon Quick Score Editor Popup -->
   <div id="quickScoreEditorPopup" class="quick-score-popup hidden">
+    <div class="quick-score-glow-line"></div>
     <div class="quick-score-header">
       <span class="quick-score-title" style="display: flex; align-items: center; gap: 6px;">
-        <svg class="ui-svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        <span>Punkte anpassen</span>
+        <svg class="ui-svg-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fbbf24" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span>Punkte / Score bearbeiten</span>
       </span>
-      <button id="btnQuickScoreClose" class="quick-score-close">&times;</button>
+      <button id="btnQuickScoreClose" class="quick-score-close" title="Schließen">&times;</button>
     </div>
-    <div class="quick-score-player" id="quickScorePlayerName">Manni</div>
+    <div class="quick-score-target-badge">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="quickScorePlayerName">Spieler</span>
+    </div>
+    <!-- Quick Steppers & Input -->
     <div class="quick-score-controls">
-      <button class="btn-score-quick" data-delta="-5">-5</button>
-      <button class="btn-score-quick" data-delta="-1">-1</button>
-      <input type="number" id="txtQuickScoreValue" class="quick-score-input" value="0">
-      <button class="btn-score-quick" data-delta="1">+1</button>
-      <button class="btn-score-quick" data-delta="5">+5</button>
+      <button class="btn-score-quick btn-score-neg" data-delta="-5" title="-5 Punkte">-5</button>
+      <button class="btn-score-quick btn-score-neg" data-delta="-1" title="-1 Punkt">-1</button>
+      <div class="quick-score-input-wrap">
+        <input type="number" id="txtQuickScoreValue" class="quick-score-input" value="0" min="0">
+      </div>
+      <button class="btn-score-quick btn-score-pos" data-delta="1" title="+1 Punkt">+1</button>
+      <button class="btn-score-quick btn-score-pos" data-delta="5" title="+5 Punkte">+5</button>
     </div>
-    <button id="btnQuickScoreSave" class="btn-chunky btn-primary" style="min-height: 32px; padding: 5px 12px; font-size: 12px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;">
+    <!-- Quick Delta Pills (+2, +3, +4, +10) -->
+    <div class="quick-score-pills-row">
+      <button class="btn-score-quick-pill" data-delta="2">+2</button>
+      <button class="btn-score-quick-pill" data-delta="3">+3</button>
+      <button class="btn-score-quick-pill" data-delta="4">+4</button>
+      <button class="btn-score-quick-pill" data-delta="10">+10</button>
+    </div>
+    <button id="btnQuickScoreSave" class="btn-chunky btn-primary quick-score-save-btn">
       <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       <span>Punkte übernehmen</span>
     </button>
@@ -1879,6 +1903,407 @@
       <div class="update-modal-footer">
         <button id="btnUpdateModalDismiss" class="btn-modal-cancel" type="button" style="margin-left: auto;">
           Später erinnern
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Deluxe Neon Goal Settings Modal (/goal) -->
+  <div id="goalSettingsModal" class="modal-backdrop hidden">
+    <div class="modal-box goal-modal-box">
+      <div class="goal-modal-glow-edge"></div>
+      <div class="goal-modal-header">
+        <div class="goal-header-icon-wrap">
+          <svg class="goal-target-svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" stroke="#3b82f6"/>
+            <circle cx="12" cy="12" r="6" stroke="#8b5cf6"/>
+            <circle cx="12" cy="12" r="2" fill="#ec4899"/>
+          </svg>
+        </div>
+        <div style="flex: 1;">
+          <h2 class="goal-modal-title">Spielziel festlegen (/goal)</h2>
+          <p class="goal-modal-desc">Sobald ein Mitspieler dieses Ziel erreicht, wird er automatisch als Sieger gefeiert!</p>
+        </div>
+        <button id="btnGoalModalClose" class="modal-close-btn" title="Schließen">&times;</button>
+      </div>
+
+      <!-- Big Neon Display -->
+      <div class="goal-counter-display">
+        <div class="goal-counter-glow-box">
+          <span class="goal-counter-unit" id="lblGoalModalUnit">PUNKTE</span>
+          <div class="goal-counter-digits" id="lblGoalCounterDigits">50</div>
+        </div>
+      </div>
+
+      <!-- Quick Steppers Row -->
+      <div class="goal-steppers-row">
+        <button class="btn-goal-step" data-delta="-25" title="-25">-25</button>
+        <button class="btn-goal-step" data-delta="-10" title="-10">-10</button>
+        <button class="btn-goal-step" data-delta="-5" title="-5">-5</button>
+        <button class="btn-goal-step" data-delta="-1" title="-1">-1</button>
+        <div class="goal-direct-wrap">
+          <input type="number" id="inpGoalDirectValue" class="goal-direct-input" value="50" min="1" max="999">
+        </div>
+        <button class="btn-goal-step" data-delta="1" title="+1">+1</button>
+        <button class="btn-goal-step" data-delta="5" title="+5">+5</button>
+        <button class="btn-goal-step" data-delta="10" title="+10">+10</button>
+        <button class="btn-goal-step" data-delta="25" title="+25">+25</button>
+      </div>
+
+      <!-- Quick Preset Chips -->
+      <div class="goal-presets-section">
+        <span class="goal-presets-label">Schnell-Vorgaben:</span>
+        <div class="goal-presets-chips" id="goalPresetsChipsContainer">
+          <button class="btn-goal-preset" data-val="10">10 (Hitster)</button>
+          <button class="btn-goal-preset" data-val="25">25</button>
+          <button class="btn-goal-preset active" data-val="50">50 (Standard)</button>
+          <button class="btn-goal-preset" data-val="75">75</button>
+          <button class="btn-goal-preset" data-val="100">100</button>
+        </div>
+      </div>
+
+      <div class="goal-modal-actions">
+        <button id="btnGoalModalCancel" class="btn-modal-cancel" type="button">Abbrechen</button>
+        <button id="btnGoalModalSave" class="btn-chunky btn-primary goal-save-btn" type="button">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Ziel speichern & live synchronisieren</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Simple "Du"-Sprache Changelog Modal -->
+  <div id="changelogModal" class="modal-backdrop hidden">
+    <div class="modal-box changelog-modal-box">
+      <div class="changelog-modal-header">
+        <div class="changelog-header-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#38bdf8" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <div style="flex: 1;">
+          <h2 class="changelog-modal-title">Was ist neu? (Changelog)</h2>
+          <p class="changelog-modal-sub">Alle Updates und Neuerungen für dich einfach zusammengefasst.</p>
+        </div>
+        <button id="btnChangelogClose" class="modal-close-btn" title="Schließen">&times;</button>
+      </div>
+
+      <div class="changelog-list-scroll">
+        <!-- v5.0.006 Entry -->
+        <div class="changelog-entry current-entry">
+          <div class="changelog-entry-header">
+            <span class="changelog-tag-badge">V5.0.006</span>
+            <span class="changelog-entry-date">Neueste Version</span>
+          </div>
+          <ul class="changelog-bullets">
+            <li><strong>Neues Info- & Richtlinien-Fenster:</strong> Wenn du oben auf die Versionsnummer klickst, siehst du alle Richtlinien, Datenschutz und Credits mit animierten Icons (der Cookie, der gegessen wird, das fliegende Schloss und der Richterhammer!).</li>
+            <li><strong>Schöneres Zielpunkte- & Punkte-Popup:</strong> Das Einstellen der Zielpunkte und das Bearbeiten von Punkteständen hat ein schickes Neon-Design mit großen Schnell-Knöpfen (+1, +5, +10) bekommen.</li>
+            <li><strong>Neuer Changelog-Knopf:</strong> Hier in den Einstellungen kannst du ab sofort jederzeit nachlesen, was neu dazugekommen ist – ganz simpel und ohne Fachchinesisch!</li>
+            <li><strong>Credits & Sprachen:</strong> In den App-Infos steht jetzt genau drin, dass die Idee von ThisManniGuy kommt, von Sandro / T3x / TNTIX gecodet wurde und welche Programmiersprachen verwendet werden.</li>
+          </ul>
+        </div>
+
+        <!-- v5.0.005 Entry -->
+        <div class="changelog-entry">
+          <div class="changelog-entry-header">
+            <span class="changelog-tag-badge">V5.0.005</span>
+          </div>
+          <ul class="changelog-bullets">
+            <li><strong>Automatischer Buzzer bei Play:</strong> Wenn du im Player auf 'Play' drückst, bringt der Bot die Buzzer-Nachricht sofort von ganz alleine in deinen Discord-Kanal. Du musst nicht mehr extra auf 'Runde starten' klicken!</li>
+            <li><strong>Kein 10-Sekunden-Ausschalten mehr:</strong> Der Buzzer schaltet sich beim Musik-Raten nicht mehr nach 10 oder 30 Sekunden einfach aus. Deine Freunde können den gesamten Song lang mitbuzzern, ohne dass du ihn wieder freigeben musst!</li>
+            <li><strong>Nur noch 'Regie':</strong> Wenn du als Regie den Buzzer drückst, steht da jetzt nur noch sauber 'Regie' statt 'Dome'.</li>
+          </ul>
+        </div>
+
+        <!-- v5.0.004 Entry -->
+        <div class="changelog-entry">
+          <div class="changelog-entry-header">
+            <span class="changelog-tag-badge">V5.0.004</span>
+          </div>
+          <ul class="changelog-bullets">
+            <li><strong>Regie-Buzzer sauber benannt:</strong> Der Button in der App heißt und zeigt jetzt überall nur noch 'Regie' statt 'Regie (Dome)'.</li>
+          </ul>
+        </div>
+
+        <!-- v5.0.003 Entry -->
+        <div class="changelog-entry">
+          <div class="changelog-entry-header">
+            <span class="changelog-tag-badge">V5.0.003</span>
+          </div>
+          <ul class="changelog-bullets">
+            <li><strong>Live Buzzer-Nachricht im Chat:</strong> Sobald jemand buzzert, schickt der Bot eine Nachricht mit Reaktionszeit und Punkten direkt in deinen ausgewählten Textkanal.</li>
+            <li><strong>ThisManniGuy ist reiner Spielleiter:</strong> Der Spielleiter ist jetzt sauber getrennt und steht nicht mehr als Mitspieler in der Liste oder im Punktestand.</li>
+          </ul>
+        </div>
+
+        <!-- v5.0.002 Entry -->
+        <div class="changelog-entry">
+          <div class="changelog-entry-header">
+            <span class="changelog-tag-badge">V5.0.002</span>
+          </div>
+          <ul class="changelog-bullets">
+            <li><strong>Voice-Verbindung bleibt stabil:</strong> Discord DAVE E2EE Protokoll eingebaut – der Bot geht nicht mehr rein und raus, sondern bleibt dauerhaft im Sprachkanal.</li>
+            <li><strong>2X Boost repariert:</strong> Der Boost verdoppelt Punkte jetzt genau einmal wie gewünscht und nicht mehr vierfach.</li>
+          </ul>
+        </div>
+
+        <!-- v5.0.001 & v5.0.000 Entry -->
+        <div class="changelog-entry">
+          <div class="changelog-entry-header">
+            <span class="changelog-tag-badge">V5.0.000 & V5.0.001</span>
+          </div>
+          <ul class="changelog-bullets">
+            <li><strong>Kein Daumenkino mehr:</strong> Die App läuft jetzt überall flüssig und butterweich mit voller FPS-Leistung.</li>
+            <li><strong>Update-Melder:</strong> Ein neuer Knopf oben sagt dir sofort Bescheid, wenn ein neues Update auf GitHub da ist.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="changelog-modal-footer">
+        <button id="btnChangelogCloseBottom" class="btn-chunky btn-primary" type="button" style="margin-left: auto; padding: 8px 22px;">
+          Alles klar!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. App-Info, Credits & Richtlinien Modal -->
+  <div id="appInfoLegalModal" class="modal-backdrop hidden">
+    <div class="modal-box app-info-modal-box">
+      <div class="app-info-modal-header">
+        <div class="app-info-brand">
+          <img src="../../App.png" alt="MannisBox" class="app-info-logo">
+          <div>
+            <div class="app-info-title-row">
+              <h2 class="app-info-title">Manni's Box</h2>
+              <span class="app-info-version-pill">V5.0.006</span>
+            </div>
+            <p class="app-info-subtitle">Discord Musik-Quiz, Hitster & Wallpaper Stream Master</p>
+          </div>
+        </div>
+        <button id="btnAppInfoClose" class="modal-close-btn" title="Schließen">&times;</button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="app-info-tabs" id="appInfoTabsContainer">
+        <button class="app-info-tab active" data-tab="tabCredits" type="button">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <span>Credits & Macher</span>
+        </button>
+        <button class="app-info-tab" data-tab="tabTechStack" type="button">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span>Tech-Stack & Sprachen</span>
+        </button>
+        <button class="app-info-tab" data-tab="tabCookies" type="button">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="1"/><circle cx="15" cy="8" r="1"/><circle cx="10" cy="15" r="1"/><circle cx="16" cy="14" r="1"/></svg>
+          <span>Cookies & Speicher</span>
+        </button>
+        <button class="app-info-tab" data-tab="tabDatenschutz" type="button">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Datenschutz</span>
+        </button>
+        <button class="app-info-tab" data-tab="tabImpressum" type="button">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Impressum & Rechtliches</span>
+        </button>
+      </div>
+
+      <!-- Tab Contents Container -->
+      <div class="app-info-tab-contents">
+        <!-- 1. Tab: Credits -->
+        <div id="tabCredits" class="app-info-pane active">
+          <div class="credits-grid">
+            <div class="credit-card creator-card">
+              <div class="credit-avatar-wrap">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#f59e0b" stroke-width="2">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/>
+                  <line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              </div>
+              <div class="credit-content">
+                <span class="credit-role">Idee, Konzept & Community</span>
+                <h3 class="credit-name">ThisManniGuy (Manni)</h3>
+                <p class="credit-desc">Erfinder des Formats, Host & Streamer. Die gesamte Idee und das Konzept für Manni's Box stammen von ihm!</p>
+              </div>
+            </div>
+
+            <div class="credit-card dev-card">
+              <div class="credit-avatar-wrap">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#60a5fa" stroke-width="2">
+                  <polyline points="16 18 22 12 16 6"/>
+                  <polyline points="8 6 2 12 8 18"/>
+                  <line x1="14" y1="4" x2="10" y2="20"/>
+                </svg>
+              </div>
+              <div class="credit-content">
+                <span class="credit-role">Entwicklung & Software-Architektur</span>
+                <h3 class="credit-name">Sandro / T3x / TNTIX</h3>
+                <p class="credit-desc">Hat die gesamte Desktop-App, den Discord-Bot, die Audio-Engine, das WebGL 3D-Bühnensystem und die Release-Pipeline programmiert.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Tab: Tech Stack & Sprachen -->
+        <div id="tabTechStack" class="app-info-pane">
+          <h4 class="tech-section-title">In Manni's Box verwendete Programmiersprachen & Technologien:</h4>
+          <div class="tech-stack-grid">
+            <div class="tech-card">
+              <span class="tech-badge js-badge">JavaScript (ES6+)</span>
+              <p>Hauptprogrammiersprache für die gesamte Bot-Logik, Event-Steuerung und Renderer-Funktionalität.</p>
+            </div>
+            <div class="tech-card">
+              <span class="tech-badge node-badge">Node.js</span>
+              <p>Server- und Desktop-Laufzeitumgebung für Dateisystem-Scanning, HTTP-Audiostreaming & Bot-Prozess.</p>
+            </div>
+            <div class="tech-card">
+              <span class="tech-badge electron-badge">Electron</span>
+              <p>Framework für die rahmenlose Desktop-App mit nativer Windows-Integration und IPC-Kommunikation.</p>
+            </div>
+            <div class="tech-card">
+              <span class="tech-badge html-badge">HTML5</span>
+              <p>Semantische Auszeichnungssprache für die Benutzeroberfläche und OBS-kompatible Stream-Overlays.</p>
+            </div>
+            <div class="tech-card">
+              <span class="tech-badge css-badge">CSS3</span>
+              <p>Modernes Styling mit Glassmorphism-Effekten, GPU-beschleunigten Keyframe-Animationen & Neon-Glow.</p>
+            </div>
+            <div class="tech-card">
+              <span class="tech-badge webgl-badge">WebGL / Three.js</span>
+              <p>3D-Grafik-Engine für den dynamischen Partikel-Hintergrund, Audio-Impulse und den 3D-Plattenspieler.</p>
+            </div>
+            <div class="tech-card">
+              <span class="tech-badge discord-badge">Discord.js & Voice</span>
+              <p>Discord API v14 mit DAVE E2EE Gateway-Verschlüsselung (@snazzah/davey) für kristallklare Voice-Übertragung.</p>
+            </div>
+            <div class="tech-card">
+              <span class="tech-badge audio-badge">FFmpeg & Opus</span>
+              <p>High-Performance Audio-Transcoding und verlustfreies Live-Streaming direkt in den Discord-Sprachkanal.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Tab: Cookies & Lokale Speicherung -->
+        <div id="tabCookies" class="app-info-pane">
+          <div class="legal-hero-row">
+            <!-- Animated Cookie Icon (4x gegessen und dann aufgegessen) -->
+            <div class="anim-cookie-container" title="Mampf! Der Cookie wird 4x abgebissen und aufgegessen!">
+              <svg class="anim-svg-cookie" viewBox="0 0 64 64" width="70" height="70">
+                <defs>
+                  <mask id="cookieMask">
+                    <rect width="64" height="64" fill="white"/>
+                    <circle class="cookie-bite bite-1" cx="50" cy="18" r="10" fill="black"/>
+                    <circle class="cookie-bite bite-2" cx="54" cy="34" r="11" fill="black"/>
+                    <circle class="cookie-bite bite-3" cx="44" cy="50" r="10" fill="black"/>
+                    <circle class="cookie-bite bite-4" cx="24" cy="40" r="14" fill="black"/>
+                  </mask>
+                </defs>
+                <circle cx="32" cy="32" r="26" fill="#d97706" stroke="#b45309" stroke-width="2.5" mask="url(#cookieMask)"/>
+                <g mask="url(#cookieMask)" fill="#78350f">
+                  <circle cx="22" cy="22" r="3.2"/>
+                  <circle cx="34" cy="18" r="2.8"/>
+                  <circle cx="20" cy="34" r="3"/>
+                  <circle cx="32" cy="30" r="3.5"/>
+                  <circle cx="26" cy="46" r="2.6"/>
+                  <circle cx="42" cy="28" r="3"/>
+                  <circle cx="40" cy="42" r="2.8"/>
+                </g>
+                <circle class="cookie-crumb c-1" cx="56" cy="14" r="1.8" fill="#d97706"/>
+                <circle class="cookie-crumb c-2" cx="60" cy="32" r="1.5" fill="#b45309"/>
+                <circle class="cookie-crumb c-3" cx="50" cy="54" r="2" fill="#d97706"/>
+                <circle class="cookie-crumb c-4" cx="16" cy="46" r="1.6" fill="#78350f"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="legal-section-heading">Cookies & Lokale Speicherung</h3>
+              <p class="legal-text-lead">100% lokal. Keine Werbe-Cookies, keine Tracker, keine Spionage.</p>
+            </div>
+          </div>
+          <div class="legal-content-body">
+            <p>Manni's Box verwendet <strong>keinerlei Tracking- oder Werbe-Cookies</strong>. Es findet zu keinem Zeitpunkt eine Übertragung von Surf- oder Nutzungsverhalten an Werbenetzwerke oder Drittanbieter statt.</p>
+            <p>Alle deine Einstellungen (wie gespeicherte Ordnerpfade für Musik und Wallpaper, ausgewählte Discord-Kanal-IDs, Sound-Lautstärke und Punktestände) werden ausschließlich lokal in einer einfachen JSON-Datei (<code>mannisbox_config.json</code>) im AppData-Verzeichnis deines Windows-Benutzerprofils sowie im Arbeitsspeicher während der Laufzeit gesichert.</p>
+          </div>
+        </div>
+
+        <!-- 4. Tab: Datenschutz & Privatsphäre -->
+        <div id="tabDatenschutz" class="app-info-pane">
+          <div class="legal-hero-row">
+            <!-- Animated Document + Flying Lock -->
+            <div class="anim-privacy-container" title="Sicher verschlüsselt: Ein Schloss fliegt auf das Dokument und schließt sich!">
+              <svg class="anim-svg-privacy" viewBox="0 0 64 64" width="70" height="70">
+                <g class="privacy-paper">
+                  <rect x="14" y="8" width="36" height="48" rx="4" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+                  <line x1="20" y1="18" x2="38" y2="18" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="20" y1="26" x2="44" y2="26" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="20" y1="34" x2="44" y2="34" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="20" y1="42" x2="32" y2="42" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+                </g>
+                <g class="privacy-lock-group">
+                  <rect x="22" y="27" width="20" height="16" rx="3" fill="#10b981" stroke="#059669" stroke-width="1.5"/>
+                  <circle cx="32" cy="34" r="2" fill="#064e3b"/>
+                  <path d="M32 36v3" stroke="#064e3b" stroke-width="1.5" stroke-linecap="round"/>
+                  <path class="lock-shackle" d="M26 27V21a6 6 0 0 1 12 0v6" fill="none" stroke="#f1f5f9" stroke-width="2.5" stroke-linecap="round"/>
+                  <circle class="lock-glow-ring" cx="32" cy="35" r="14" fill="none" stroke="#34d399" stroke-width="2" opacity="0"/>
+                </g>
+              </svg>
+            </div>
+            <div>
+              <h3 class="legal-section-heading">Datenschutzerklärung & Privatsphäre</h3>
+              <p class="legal-text-lead">Deine Daten bleiben bei dir. Punkt.</p>
+            </div>
+          </div>
+          <div class="legal-content-body">
+            <p>Manni's Box respektiert deine Privatsphäre vollumfänglich. Bei der Nutzung der Software werden <strong>keine personenbezogenen Daten an uns oder externe Server übermittelt</strong>.</p>
+            <p><strong>Discord-Interaktionen:</strong> Der Bot verbindet sich über das offizielle Discord-Gateway direkt mit den Servern von Discord Inc. Dabei werden lediglich die für das Quiz erforderlichen technischen Identifikatoren (Discord User-IDs, Anzeigenamen und Voice-Status) im flüchtigen Arbeitsspeicher verarbeitet, um den Buzzer-Gewinner zu ermitteln und Punkte zu zählen.</p>
+          </div>
+        </div>
+
+        <!-- 5. Tab: Impressum & Rechtliches -->
+        <div id="tabImpressum" class="app-info-pane">
+          <div class="legal-hero-row">
+            <!-- Animated Gavel Strike -->
+            <div class="anim-gavel-container" title="Rechtliches & Impressum: Ein Richterhammer schlägt geschmeidig!">
+              <svg class="anim-svg-gavel" viewBox="0 0 64 64" width="70" height="70">
+                <rect x="12" y="46" width="40" height="7" rx="2" fill="#334155" stroke="#64748b" stroke-width="1.5"/>
+                <ellipse cx="32" cy="46" rx="16" ry="2" fill="#475569"/>
+                <ellipse class="gavel-impact-wave" cx="32" cy="46" rx="2" ry="1" fill="none" stroke="#fbbf24" stroke-width="2" opacity="0"/>
+                <g class="gavel-arm">
+                  <line x1="44" y1="44" x2="22" y2="22" stroke="#b45309" stroke-width="3.5" stroke-linecap="round"/>
+                  <g transform="translate(22, 22) rotate(-45)">
+                    <rect x="-7" y="-12" width="14" height="24" rx="3" fill="#d97706" stroke="#fef3c7" stroke-width="1.5"/>
+                    <line x1="-7" y1="-5" x2="7" y2="-5" stroke="#fef3c7" stroke-width="1"/>
+                    <line x1="-7" y1="5" x2="7" y2="5" stroke="#fef3c7" stroke-width="1"/>
+                  </g>
+                </g>
+              </svg>
+            </div>
+            <div>
+              <h3 class="legal-section-heading">Impressum & Haftungsausschluss</h3>
+              <p class="legal-text-lead">Rechtliche Hinweise & Projektinformationen</p>
+            </div>
+          </div>
+          <div class="legal-content-body">
+            <p><strong>Projekt-Typ:</strong> Nicht-kommerzielles Fan- und Community-Projekt für Live-Streaming, Song-Quiz und Hitster-Spieleabende.</p>
+            <p><strong>Urheberrecht & Marken:</strong> Discord ist eine eingetragene Marke der Discord Inc. Manni's Box steht in keiner offiziellen geschäftlichen Verbindung zu Discord Inc. Alle Rechte an den gespielten Musiktiteln, Covern und Wallpapern liegen ausschließlich bei den jeweiligen Künstlern, Komponisten und Verlagen.</p>
+            <p><strong>Haftung für Inhalte:</strong> Die Software dient als lokales Werkzeug zur Verwaltung von Mediendateien, die der Nutzer auf seinem eigenen System bereitstellt. Der Betreiber übernimmt keine Haftung für vom Nutzer abgespielte Medien oder Inhalte.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-info-modal-footer">
+        <button id="btnAppInfoCloseBottom" class="btn-chunky btn-primary" type="button" style="margin-left: auto; padding: 8px 22px;">
+          Schließen
         </button>
       </div>
     </div>

@@ -2057,17 +2057,120 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Set Target Goal (/goal)
-  if (goalBadgeContainer) {
-    goalBadgeContainer.addEventListener('click', async () => {
-      const cur = currentGameState?.goal || (currentGameState?.gameMode === 'hitster' ? 10 : 50);
-      const ans = await showCustomPrompt(`Neues Spielziel eingeben (aktuell: ${cur}):`, cur, 'Spielziel festlegen');
-      if (ans !== null && ans.trim() !== '') {
-        const val = parseInt(ans.trim(), 10);
-        if (!isNaN(val) && val > 0) {
-          await window.mannisBoxAPI.setGoal(val);
-        }
+  // Set Target Goal (/goal) with Deluxe Neon Modal
+  const goalSettingsModal = document.getElementById('goalSettingsModal');
+  const lblGoalModalUnit = document.getElementById('lblGoalModalUnit');
+  const lblGoalCounterDigits = document.getElementById('lblGoalCounterDigits');
+  const inpGoalDirectValue = document.getElementById('inpGoalDirectValue');
+  const btnGoalModalClose = document.getElementById('btnGoalModalClose');
+  const btnGoalModalCancel = document.getElementById('btnGoalModalCancel');
+  const btnGoalModalSave = document.getElementById('btnGoalModalSave');
+  const goalPresetsChipsContainer = document.getElementById('goalPresetsChipsContainer');
+
+  function updateGoalPresetsActive(val) {
+    if (!goalPresetsChipsContainer) return;
+    goalPresetsChipsContainer.querySelectorAll('.btn-goal-preset').forEach((btn) => {
+      const pVal = parseInt(btn.getAttribute('data-val'), 10);
+      if (pVal === val) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
       }
+    });
+  }
+
+  function setGoalModalValue(val) {
+    const clamped = Math.max(1, Math.min(999, val));
+    if (inpGoalDirectValue) inpGoalDirectValue.value = clamped;
+    if (lblGoalCounterDigits) lblGoalCounterDigits.textContent = clamped;
+    updateGoalPresetsActive(clamped);
+  }
+
+  function openGoalSettingsModal() {
+    if (!goalSettingsModal) return;
+    const isHitster = currentGameState?.gameMode === 'hitster';
+    const cur = currentGameState?.goal || (isHitster ? 10 : 50);
+    if (lblGoalModalUnit) {
+      lblGoalModalUnit.textContent = isHitster ? 'KARTEN' : 'PUNKTE';
+    }
+    setGoalModalValue(cur);
+    goalSettingsModal.classList.remove('hidden');
+    if (inpGoalDirectValue) {
+      inpGoalDirectValue.focus();
+      inpGoalDirectValue.select();
+    }
+  }
+
+  function closeGoalSettingsModal() {
+    if (goalSettingsModal) {
+      goalSettingsModal.classList.add('hidden');
+    }
+  }
+
+  if (goalBadgeContainer) {
+    goalBadgeContainer.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openGoalSettingsModal();
+    });
+  }
+
+  if (btnGoalModalClose) {
+    btnGoalModalClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeGoalSettingsModal();
+    });
+  }
+  if (btnGoalModalCancel) {
+    btnGoalModalCancel.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeGoalSettingsModal();
+    });
+  }
+
+  document.querySelectorAll('.btn-goal-step').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const delta = parseInt(btn.getAttribute('data-delta'), 10) || 0;
+      const cur = parseInt(inpGoalDirectValue?.value, 10) || 50;
+      setGoalModalValue(cur + delta);
+    });
+  });
+
+  document.querySelectorAll('.btn-goal-preset').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const val = parseInt(btn.getAttribute('data-val'), 10) || 50;
+      setGoalModalValue(val);
+    });
+  });
+
+  if (inpGoalDirectValue) {
+    inpGoalDirectValue.addEventListener('input', () => {
+      const val = parseInt(inpGoalDirectValue.value, 10);
+      if (!isNaN(val)) {
+        if (lblGoalCounterDigits) lblGoalCounterDigits.textContent = val;
+        updateGoalPresetsActive(val);
+      }
+    });
+    inpGoalDirectValue.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        btnGoalModalSave?.click();
+      } else if (e.key === 'Escape') {
+        closeGoalSettingsModal();
+      }
+    });
+  }
+
+  if (btnGoalModalSave) {
+    btnGoalModalSave.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const val = Math.max(1, parseInt(inpGoalDirectValue?.value, 10) || 50);
+      try {
+        await window.mannisBoxAPI.setGoal(val);
+      } catch (err) {
+        console.error('Failed to set goal:', err);
+      }
+      closeGoalSettingsModal();
     });
   }
 
@@ -2860,7 +2963,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  document.querySelectorAll('.btn-score-quick').forEach((btn) => {
+  document.querySelectorAll('.btn-score-quick, .btn-score-quick-pill').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const delta = parseInt(btn.getAttribute('data-delta'), 10) || 0;
@@ -3156,6 +3259,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         hideUpdateModal();
       }
     }
+    if (goalSettingsModal && !goalSettingsModal.classList.contains('hidden')) {
+      const modalContent = goalSettingsModal.querySelector('.goal-modal-box');
+      if (modalContent && !modalContent.contains(e.target) && !e.target.closest('#goalBadgeContainer')) {
+        closeGoalSettingsModal();
+      }
+    }
+    if (changelogModal && !changelogModal.classList.contains('hidden')) {
+      const modalContent = changelogModal.querySelector('.changelog-modal-box');
+      if (modalContent && !modalContent.contains(e.target) && !e.target.closest('#btnSettingsViewChangelog')) {
+        closeChangelogModal();
+      }
+    }
+    if (appInfoLegalModal && !appInfoLegalModal.classList.contains('hidden')) {
+      const modalContent = appInfoLegalModal.querySelector('.app-info-modal-box');
+      if (modalContent && !modalContent.contains(e.target) && !e.target.closest('#titlebarVersionTag') && !e.target.closest('#brandVersionTag') && !e.target.closest('#lblSettingsCurrentVersion')) {
+        closeAppInfoModal();
+      }
+    }
+  });
+
+  // Global ESC key listener to dismiss active modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (goalSettingsModal && !goalSettingsModal.classList.contains('hidden')) closeGoalSettingsModal();
+      if (changelogModal && !changelogModal.classList.contains('hidden')) closeChangelogModal();
+      if (appInfoLegalModal && !appInfoLegalModal.classList.contains('hidden')) closeAppInfoModal();
+      if (updateModal && !updateModal.classList.contains('hidden')) hideUpdateModal();
+      if (wpStagesConfigModal && !wpStagesConfigModal.classList.contains('hidden')) closeWallpaperStagesModal();
+    }
   });
 
   // ==========================================================================
@@ -3325,6 +3457,131 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     } catch (e) {}
   }, 2500);
+
+  // ==========================================================================
+  // 15. CHANGELOG & APP-INFO / LEGAL MODALS (V5.0.006)
+  // ==========================================================================
+  const changelogModal = document.getElementById('changelogModal');
+  const btnChangelogClose = document.getElementById('btnChangelogClose');
+  const btnChangelogCloseBottom = document.getElementById('btnChangelogCloseBottom');
+  const btnSettingsViewChangelog = document.getElementById('btnSettingsViewChangelog');
+
+  function openChangelogModal() {
+    if (changelogModal) {
+      changelogModal.classList.remove('hidden');
+    }
+  }
+
+  function closeChangelogModal() {
+    if (changelogModal) {
+      changelogModal.classList.add('hidden');
+    }
+  }
+
+  if (btnSettingsViewChangelog) {
+    btnSettingsViewChangelog.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openChangelogModal();
+    });
+  }
+
+  if (btnChangelogClose) {
+    btnChangelogClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeChangelogModal();
+    });
+  }
+
+  if (btnChangelogCloseBottom) {
+    btnChangelogCloseBottom.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeChangelogModal();
+    });
+  }
+
+  // App-Info, Credits & Legal Modal
+  const appInfoLegalModal = document.getElementById('appInfoLegalModal');
+  const btnAppInfoClose = document.getElementById('btnAppInfoClose');
+  const btnAppInfoCloseBottom = document.getElementById('btnAppInfoCloseBottom');
+  const titlebarVersionTag = document.getElementById('titlebarVersionTag');
+  const brandVersionTag = document.getElementById('brandVersionTag');
+  const lblSettingsCurrentVersion = document.getElementById('lblSettingsCurrentVersion');
+
+  function openAppInfoModal(tabTargetId = null) {
+    if (!appInfoLegalModal) return;
+    if (tabTargetId) {
+      switchAppInfoTab(tabTargetId);
+    }
+    appInfoLegalModal.classList.remove('hidden');
+  }
+
+  function closeAppInfoModal() {
+    if (appInfoLegalModal) {
+      appInfoLegalModal.classList.add('hidden');
+    }
+  }
+
+  function switchAppInfoTab(tabTargetId) {
+    const tabs = document.querySelectorAll('.app-info-tab');
+    const panes = document.querySelectorAll('.app-info-pane');
+    tabs.forEach((t) => {
+      if (t.getAttribute('data-tab') === tabTargetId) {
+        t.classList.add('active');
+      } else {
+        t.classList.remove('active');
+      }
+    });
+    panes.forEach((p) => {
+      if (p.id === tabTargetId) {
+        p.classList.add('active');
+      } else {
+        p.classList.remove('active');
+      }
+    });
+  }
+
+  document.querySelectorAll('.app-info-tab').forEach((tab) => {
+    tab.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tabTarget = tab.getAttribute('data-tab');
+      if (tabTarget) switchAppInfoTab(tabTarget);
+    });
+  });
+
+  if (titlebarVersionTag) {
+    titlebarVersionTag.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openAppInfoModal('tabCredits');
+    });
+  }
+
+  if (brandVersionTag) {
+    brandVersionTag.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openAppInfoModal('tabCredits');
+    });
+  }
+
+  if (lblSettingsCurrentVersion) {
+    lblSettingsCurrentVersion.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openAppInfoModal('tabCredits');
+    });
+  }
+
+  if (btnAppInfoClose) {
+    btnAppInfoClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAppInfoModal();
+    });
+  }
+
+  if (btnAppInfoCloseBottom) {
+    btnAppInfoCloseBottom.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAppInfoModal();
+    });
+  }
 
   // Helper
   function escapeHtml(text) {

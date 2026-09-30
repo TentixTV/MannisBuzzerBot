@@ -71,7 +71,7 @@ function createWindow() {
     height: 900,
     minWidth: 1080,
     minHeight: 720,
-    title: "Manni's Box — Discord Buzzer & Stream Master V5.0.005",
+    title: "Manni's Box — Discord Buzzer & Stream Master V5.0.006",
     icon: iconPath,
     backgroundColor: '#12131a',
     frame: false,
@@ -518,11 +518,11 @@ ipcMain.handle('stop-song', () => {
 });
 
 // ==========================================================================
-// GITHUB AUTO-UPDATER ENGINE (V5.0.005)
+// GITHUB AUTO-UPDATER ENGINE (V5.0.006)
 // Checks for new GitHub releases, compares versions, returns release notes & download assets
 // ==========================================================================
 
-const CURRENT_APP_VERSION = 'v5.0.005';
+const CURRENT_APP_VERSION = 'v5.0.006';
 const GITHUB_REPO_PATH = 'TentixTV/MannisBuzzerBot';
 
 function compareSemver(remoteTag, localTag) {
