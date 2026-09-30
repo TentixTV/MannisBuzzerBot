@@ -5899,17 +5899,17 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-/* 2. Animated Cookie (4x gegessen und dann aufgegessen) */
+/* 2. Animated Cookie (Minimalist Modern Biscuit with Clean Bite Progression & Subtle Crumbs) */
 .anim-cookie-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 76px;
-  height: 76px;
-  background: rgba(217, 119, 6, 0.12);
-  border: 1.5px solid rgba(217, 119, 6, 0.35);
+  width: 74px;
+  height: 74px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(180, 83, 9, 0.05) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.3);
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(217, 119, 6, 0.2);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -5917,12 +5917,12 @@ body {
 
 .anim-svg-cookie {
   overflow: visible;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
 }
 
 .cookie-bite {
   transform-origin: center;
-  animation: cookieBiteAnim 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: cookieBiteAnim 4.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
 }
 
 .cookie-bite.bite-1 {
@@ -5942,70 +5942,70 @@ body {
 }
 
 @keyframes cookieBite1 {
-  0%, 15% { transform: scale(0); opacity: 0; }
-  22%, 88% { transform: scale(1); opacity: 1; }
+  0%, 14% { transform: scale(0); opacity: 0; }
+  20%, 88% { transform: scale(1); opacity: 1; }
   94%, 100% { transform: scale(0); opacity: 0; }
 }
 
 @keyframes cookieBite2 {
-  0%, 35% { transform: scale(0); opacity: 0; }
-  42%, 88% { transform: scale(1); opacity: 1; }
+  0%, 34% { transform: scale(0); opacity: 0; }
+  40%, 88% { transform: scale(1); opacity: 1; }
   94%, 100% { transform: scale(0); opacity: 0; }
 }
 
 @keyframes cookieBite3 {
-  0%, 55% { transform: scale(0); opacity: 0; }
-  62%, 88% { transform: scale(1); opacity: 1; }
+  0%, 54% { transform: scale(0); opacity: 0; }
+  60%, 88% { transform: scale(1); opacity: 1; }
   94%, 100% { transform: scale(0); opacity: 0; }
 }
 
 @keyframes cookieBite4 {
-  0%, 75% { transform: scale(0); opacity: 0; }
-  82%, 88% { transform: scale(1.1); opacity: 1; }
+  0%, 74% { transform: scale(0); opacity: 0; }
+  80%, 88% { transform: scale(1.15); opacity: 1; }
   94%, 100% { transform: scale(0); opacity: 0; }
 }
 
 .cookie-crumb {
   opacity: 0;
-  animation: cookieCrumbsBurst 4.5s ease-out infinite;
+  animation: cookieCrumbsBurst 4.2s ease-out infinite;
 }
 
-.cookie-crumb.c-1 { animation-delay: 0.9s; }
-.cookie-crumb.c-2 { animation-delay: 1.8s; }
-.cookie-crumb.c-3 { animation-delay: 2.7s; }
-.cookie-crumb.c-4 { animation-delay: 3.6s; }
+.cookie-crumb.c-1 { animation-delay: 0.84s; }
+.cookie-crumb.c-2 { animation-delay: 1.68s; }
+.cookie-crumb.c-3 { animation-delay: 2.52s; }
+.cookie-crumb.c-4 { animation-delay: 3.36s; }
 
 @keyframes cookieCrumbsBurst {
-  0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
-  10% { transform: translate(4px, 4px) scale(1.2); opacity: 1; }
-  25% { transform: translate(10px, 12px) scale(0.8); opacity: 0; }
-  100% { transform: translate(10px, 12px) scale(0); opacity: 0; }
+  0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  8% { transform: translate(3px, 3px) scale(1.1); opacity: 1; }
+  22% { transform: translate(8px, 10px) scale(0.6); opacity: 0; }
+  100% { transform: translate(8px, 10px) scale(0); opacity: 0; }
 }
 
-/* 3. Animated Datenschutz (Dokument + Einfliegendes Schloss, schließt sich, wird kleiner) */
+/* 3. Animated Datenschutz (Minimalist Cyber Shield + Smooth Flying Lock with Cyber-Glow) */
 .anim-privacy-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 76px;
-  height: 76px;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1.5px solid rgba(16, 185, 129, 0.35);
+  width: 74px;
+  height: 74px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.35);
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
 }
 
 .privacy-paper {
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
   transform-origin: center;
 }
 
 .privacy-lock-group {
   transform-origin: 32px 35px;
-  animation: lockFlyAndClose 4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  animation: lockFlyAndClose 4s cubic-bezier(0.34, 1.4, 0.64, 1) infinite;
 }
 
 .lock-shackle {
@@ -6014,52 +6014,53 @@ body {
 }
 
 .lock-glow-ring {
+  transform-origin: 32px 35px;
   animation: lockGlowPulse 4s ease infinite;
 }
 
 @keyframes lockFlyAndClose {
   0% {
-    transform: translate(32px, -32px) scale(1.4);
+    transform: translate(26px, -28px) scale(1.3) rotate(12deg);
     opacity: 0;
   }
-  24% {
-    transform: translate(0, 0) scale(1.15);
+  22% {
+    transform: translate(0, 0) scale(1.1) rotate(0deg);
     opacity: 1;
   }
-  38% {
-    transform: translate(0, 0) scale(1.15);
+  34% {
+    transform: translate(0, 0) scale(1.1) rotate(0deg);
     opacity: 1;
   }
-  48%, 84% {
-    transform: translate(0, 0) scale(0.88);
+  44%, 84% {
+    transform: translate(0, 0) scale(0.92) rotate(0deg);
     opacity: 1;
   }
   94%, 100% {
-    transform: translate(0, 0) scale(0.7);
+    transform: translate(0, 0) scale(0.7) rotate(-5deg);
     opacity: 0;
   }
 }
 
 @keyframes shackleSnap {
-  0%, 25% {
+  0%, 24% {
     transform: translateY(-5px);
   }
-  38%, 100% {
+  34%, 100% {
     transform: translateY(0);
   }
 }
 
 @keyframes lockGlowPulse {
-  0%, 36% {
-    transform: scale(0.6);
+  0%, 32% {
+    transform: scale(0.5);
     opacity: 0;
   }
-  42% {
+  38% {
     transform: scale(1.1);
-    opacity: 0.9;
+    opacity: 0.95;
   }
-  55% {
-    transform: scale(1.6);
+  52% {
+    transform: scale(1.8);
     opacity: 0;
   }
   100% {
@@ -6067,17 +6068,17 @@ body {
   }
 }
 
-/* 4. Animated Impressum (Gerichts-Hammer, schlägt smooth und geht langsam hoch) */
+/* 4. Animated Impressum (Minimalist Geometric Gavel Strike & Shockwave Ring) */
 .anim-gavel-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 76px;
-  height: 76px;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1.5px solid rgba(245, 158, 11, 0.35);
+  width: 74px;
+  height: 74px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.05) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.3);
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -6089,15 +6090,16 @@ body {
 }
 
 .gavel-impact-wave {
+  transform-origin: 32px 47px;
   animation: gavelWaveExpand 3.2s ease-out infinite;
 }
 
 @keyframes smoothGavelStrike {
   0% {
-    transform: rotate(-15deg);
+    transform: rotate(-12deg);
   }
   30% {
-    transform: rotate(-52deg);
+    transform: rotate(-50deg);
   }
   48% {
     transform: rotate(5deg);
@@ -6106,13 +6108,13 @@ body {
     transform: rotate(4deg);
   }
   56% {
-    transform: rotate(-3deg);
+    transform: rotate(-2deg);
   }
   68% {
     transform: rotate(0deg);
   }
   100% {
-    transform: rotate(-15deg);
+    transform: rotate(-12deg);
   }
 }
 
@@ -6123,10 +6125,10 @@ body {
   }
   50% {
     transform: scale(1);
-    opacity: 0.85;
+    opacity: 0.9;
   }
-  64% {
-    transform: scale(2.2);
+  65% {
+    transform: scale(2.4);
     opacity: 0;
   }
   100% {
@@ -6134,27 +6136,44 @@ body {
   }
 }
 
-/* 5. App-Info, Credits & Richtlinien Modal Styling */
+/* 5. App-Info, Credits & Richtlinien Modal Styling (High-End Glassmorphism & Vertical Sidebar) */
 .app-info-modal-box {
-  width: 680px !important;
+  width: 820px !important;
   max-width: 95vw !important;
+  height: 570px !important;
   max-height: 88vh !important;
   display: flex !important;
   flex-direction: column !important;
-  background: #11131f !important;
-  border: 1.5px solid rgba(139, 92, 246, 0.4) !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(139, 92, 246, 0.25) !important;
+  background: linear-gradient(150deg, #101322 0%, #0d0f1b 60%, #0a0b14 100%) !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 28px 75px rgba(0, 0, 0, 0.95), 0 0 35px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
   padding: 0 !important;
   overflow: hidden !important;
+  position: relative !important;
+}
+
+.app-info-modal-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #8b5cf6, #ec4899, #38bdf8, transparent);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.8);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .app-info-modal-header {
-  padding: 18px 24px;
-  background: linear-gradient(135deg, rgba(30, 27, 75, 0.8), rgba(15, 17, 30, 0.95));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px 22px;
+  background: linear-gradient(135deg, rgba(26, 23, 62, 0.9) 0%, rgba(14, 16, 28, 0.98) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .app-info-brand {
@@ -6164,10 +6183,11 @@ body {
 }
 
 .app-info-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.5));
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
 }
 
 .app-info-title-row {
@@ -6181,7 +6201,9 @@ body {
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 900;
-  color: #fff;
+  background: linear-gradient(135deg, #ffffff 40%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   letter-spacing: 0.5px;
 }
 
@@ -6190,62 +6212,121 @@ body {
   font-weight: 800;
   background: linear-gradient(135deg, #ec4899, #8b5cf6);
   color: #fff;
-  padding: 2px 8px;
+  padding: 2.5px 8px;
   border-radius: 6px;
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+  letter-spacing: 0.5px;
 }
 
 .app-info-subtitle {
-  margin: 2px 0 0 0;
+  margin: 3px 0 0 0;
   font-size: 11.5px;
   color: #94a3b8;
   font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* Sidebar Body Layout (Left Tabs, Right Content) */
+.app-info-modal-body {
+  display: flex !important;
+  flex-direction: row !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 
 .app-info-tabs {
-  display: flex;
-  background: rgba(0, 0, 0, 0.35);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0 14px;
-  gap: 4px;
-  overflow-x: auto;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 225px !important;
+  flex-shrink: 0 !important;
+  background: rgba(10, 12, 21, 0.75) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-bottom: none !important;
+  padding: 16px 10px !important;
+  gap: 6px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 .app-info-tab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  background: transparent;
-  border: none;
-  border-bottom: 2.5px solid transparent;
-  color: #94a3b8;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  white-space: nowrap;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 14px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  color: #94a3b8 !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+  width: 100% !important;
+  border-bottom: none !important;
+}
+
+.app-info-tab svg {
+  flex-shrink: 0;
+  transition: transform 0.2s ease, stroke 0.2s ease;
 }
 
 .app-info-tab:hover {
-  color: #f1f5f9;
+  color: #f1f5f9 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  transform: translateX(2px) !important;
 }
 
 .app-info-tab.active {
-  color: #a78bfa;
-  border-bottom-color: #8b5cf6;
-  background: rgba(139, 92, 246, 0.1);
+  color: #ffffff !important;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.24) 0%, rgba(99, 102, 241, 0.12) 100%) !important;
+  border-color: rgba(139, 92, 246, 0.45) !important;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.app-info-tab.active svg {
+  color: #a78bfa !important;
+  stroke: #c4b5fd !important;
+  filter: drop-shadow(0 0 6px rgba(167, 139, 250, 0.6));
+  transform: scale(1.08);
 }
 
 .app-info-tab-contents {
-  padding: 22px 24px;
-  overflow-y: auto;
-  max-height: 440px;
+  flex: 1 1 auto !important;
+  padding: 22px 26px !important;
+  overflow-y: auto !important;
+  max-height: none !important;
+  height: 100% !important;
+}
+
+/* Custom scrollbar for contents */
+.app-info-tab-contents::-webkit-scrollbar,
+.app-info-tabs::-webkit-scrollbar {
+  width: 6px;
+}
+
+.app-info-tab-contents::-webkit-scrollbar-track,
+.app-info-tabs::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.app-info-tab-contents::-webkit-scrollbar-thumb,
+.app-info-tabs::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 4px;
+}
+
+.app-info-tab-contents::-webkit-scrollbar-thumb:hover,
+.app-info-tabs::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
 }
 
 .app-info-pane {
   display: none;
-  animation: fadeInPane 0.25s ease forwards;
+  animation: fadeInPane 0.22s ease-out forwards;
 }
 
 .app-info-pane.active {
@@ -6257,51 +6338,57 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.credits-list-vertical,
 .credits-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
 }
 
 .credit-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 16px;
+  padding: 16px 18px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 16px;
+  align-items: flex-start;
   transition: all 0.2s ease;
 }
 
 .credit-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .credit-card.creator-card {
   border-left: 3.5px solid #f59e0b;
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.06);
 }
 
 .credit-card.dev-card {
-  border-left: 3.5px solid #3b82f6;
+  border-left: 3.5px solid #38bdf8;
+  box-shadow: 0 4px 18px rgba(56, 189, 248, 0.06);
 }
 
 .credit-avatar-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .credit-role {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   color: #94a3b8;
 }
 
@@ -6310,58 +6397,67 @@ body {
   font-size: 16px;
   font-weight: 900;
   color: #fff;
+  letter-spacing: 0.3px;
 }
 
 .credit-desc {
   margin: 6px 0 0 0;
   font-size: 12px;
   color: #cbd5e1;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .tech-section-title {
-  margin: 0 0 14px 0;
+  margin: 0 0 12px 0;
   font-size: 13px;
   color: #94a3b8;
   font-weight: 800;
+  letter-spacing: 0.3px;
 }
 
 .tech-stack-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 .tech-card {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 11px 13px;
+  transition: all 0.18s ease;
+}
+
+.tech-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
 }
 
 .tech-card p {
-  margin: 6px 0 0 0;
+  margin: 5px 0 0 0;
   font-size: 11.5px;
   color: #cbd5e1;
   line-height: 1.45;
 }
 
 .tech-badge {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
-  padding: 2px 7px;
+  padding: 2.5px 7px;
   border-radius: 5px;
   display: inline-block;
 }
 
-.tech-badge.js-badge { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
-.tech-badge.node-badge { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
-.tech-badge.electron-badge { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
-.tech-badge.html-badge { background: rgba(249, 115, 22, 0.2); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.4); }
-.tech-badge.css-badge { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
-.tech-badge.webgl-badge { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
-.tech-badge.discord-badge { background: rgba(99, 102, 241, 0.25); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.5); }
-.tech-badge.audio-badge { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.4); }
+.tech-badge.js-badge { background: rgba(234, 179, 8, 0.18); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
+.tech-badge.node-badge { background: rgba(34, 197, 94, 0.18); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
+.tech-badge.electron-badge { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
+.tech-badge.html-badge { background: rgba(249, 115, 22, 0.18); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.4); }
+.tech-badge.css-badge { background: rgba(59, 130, 246, 0.18); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+.tech-badge.webgl-badge { background: rgba(168, 85, 247, 0.18); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
+.tech-badge.discord-badge { background: rgba(99, 102, 241, 0.22); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.45); }
+.tech-badge.audio-badge { background: rgba(236, 72, 153, 0.18); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.4); }
 
 .legal-hero-row {
   display: flex;
@@ -6375,6 +6471,7 @@ body {
   font-size: 17px;
   font-weight: 900;
   color: #fff;
+  letter-spacing: 0.3px;
 }
 
 .legal-text-lead {
@@ -6382,6 +6479,42 @@ body {
   font-size: 12.5px;
   color: #94a3b8;
   font-weight: 600;
+}
+
+.legal-cards-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legal-content-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 11px;
+  padding: 14px 16px;
+  transition: all 0.18s ease;
+}
+
+.legal-content-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.13);
+}
+
+.legal-content-card-title {
+  margin: 0 0 6px 0;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legal-content-card p {
+  margin: 0;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.6;
 }
 
 .legal-content-body {
@@ -6403,10 +6536,12 @@ body {
 }
 
 .app-info-modal-footer {
-  padding: 14px 24px;
-  background: rgba(0, 0, 0, 0.25);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 22px;
+  background: rgba(7, 9, 17, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 /* 6. Changelog Modal Styling */
