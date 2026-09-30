@@ -96,6 +96,11 @@ app.whenReady().then(async () => {
         results.brandTagText = brandTag ? brandTag.textContent.trim() : null;
         results.settingsTagText = settingsTag ? settingsTag.textContent.trim() : null;
 
+        // Quick Score Popup must be strictly hidden (display: none)
+        const quickScorePopup = document.getElementById('quickScoreEditorPopup');
+        results.quickScoreComputedDisplay = quickScorePopup ? window.getComputedStyle(quickScorePopup).display : null;
+        results.quickScoreHasHidden = quickScorePopup ? quickScorePopup.classList.contains('hidden') : false;
+
         // 2. Click titlebarVersionTag -> appInfoLegalModal opens
         const appInfoModal = document.getElementById('appInfoLegalModal');
         results.appInfoInitialHidden = appInfoModal.classList.contains('hidden');
@@ -162,6 +167,8 @@ app.whenReady().then(async () => {
     assert.strictEqual(testResults.titlebarTagText, 'V5.0.006', 'Titlebar tag must be V5.0.006');
     assert.strictEqual(testResults.brandTagText, 'V5.0.006', 'Brand tag must be V5.0.006');
     assert.strictEqual(testResults.settingsTagText, 'V5.0.006', 'Settings pill must be V5.0.006');
+    assert.strictEqual(testResults.quickScoreComputedDisplay, 'none', 'quickScoreEditorPopup MUST have computed display: none');
+    assert.strictEqual(testResults.quickScoreHasHidden, true, 'quickScoreEditorPopup must have hidden class');
     assert.strictEqual(testResults.appInfoOpened, true, 'App info modal must open on version click');
     assert.strictEqual(testResults.tabCookiesActive, true, 'Cookies tab must activate properly');
     assert.strictEqual(testResults.tabImpressumActive, true, 'Impressum tab must activate properly');
