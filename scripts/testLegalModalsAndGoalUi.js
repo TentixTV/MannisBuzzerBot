@@ -31,7 +31,28 @@ assert.strictEqual(htmlContent.includes('gavel-arm'), true, 'gavel-arm must exis
 assert.strictEqual(htmlContent.includes('btn-score-quick-pill'), true, 'btn-score-quick-pill must exist');
 assert.strictEqual(htmlContent.includes('lblGoalCounterDigits'), true, 'lblGoalCounterDigits must exist');
 
-console.log('✓ Step 1 Passed: All HTML modal elements and animated SVG structures present.\n');
+// Check Copyright notice & Year 2026 & TENTIX
+assert.strictEqual(htmlContent.includes('2026 TENTIX'), true, 'Copyright notice must mention 2026 TENTIX');
+assert.strictEqual(htmlContent.includes('copyright-icon'), true, 'Vector copyright icon must exist');
+
+// Check Official Tech Stack Logos & Badges
+assert.strictEqual(htmlContent.includes('aria-label="JavaScript Logo"'), true, 'JavaScript official logo must exist');
+assert.strictEqual(htmlContent.includes('aria-label="Node.js Logo"'), true, 'Node.js official logo must exist');
+assert.strictEqual(htmlContent.includes('aria-label="Electron Logo"'), true, 'Electron official logo must exist');
+assert.strictEqual(htmlContent.includes('aria-label="HTML5 Logo"'), true, 'HTML5 official logo must exist');
+assert.strictEqual(htmlContent.includes('aria-label="CSS3 Logo"'), true, 'CSS3 official logo must exist');
+assert.strictEqual(htmlContent.includes('aria-label="WebGL / Three.js Logo"'), true, 'WebGL / Three.js official logo must exist');
+assert.strictEqual(htmlContent.includes('aria-label="Discord Logo"'), true, 'Discord official logo must exist');
+assert.strictEqual(htmlContent.includes('aria-label="FFmpeg Logo"'), true, 'FFmpeg official logo must exist');
+
+// Check Comprehensive German Legal Texts
+assert.strictEqual(htmlContent.includes('TTDSG'), true, 'Cookies must reference TTDSG / TDDDG');
+assert.strictEqual(htmlContent.includes('mannisbox_config.json'), true, 'Cookies must detail mannisbox_config.json storage');
+assert.strictEqual(htmlContent.includes('DSGVO'), true, 'Datenschutz must reference DSGVO');
+assert.strictEqual(htmlContent.includes('DDG'), true, 'Impressum must reference DDG');
+assert.strictEqual(htmlContent.includes('Haftungsausschluss'), true, 'Impressum must feature complete liability disclaimer');
+
+console.log('✓ Step 1 Passed: All HTML modal elements, tech logos, legal texts, and copyright structures present.\n');
 
 // 2. Static CSS animation keyframes check
 console.log('[STEP 2] Verifying style.css CSS keyframe animations and styling...');
@@ -40,6 +61,7 @@ const cssContent = fs.readFileSync(path.join(__dirname, '../src/renderer/style.c
 assert.strictEqual(cssContent.includes('@keyframes cookieBite1'), true, 'cookieBite1 keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes cookieBite4'), true, 'cookieBite4 keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes cookieCrumbsBurst'), true, 'cookieCrumbsBurst keyframe must exist');
+assert.strictEqual(cssContent.includes('@keyframes cookieHecticCrunch'), true, 'cookieHecticCrunch keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes lockFlyAndClose'), true, 'lockFlyAndClose keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes shackleSnap'), true, 'shackleSnap keyframe must exist');
 assert.strictEqual(cssContent.includes('@keyframes smoothGavelStrike'), true, 'smoothGavelStrike keyframe must exist');
@@ -107,6 +129,14 @@ app.whenReady().then(async () => {
         titlebarTag.click();
         results.appInfoOpened = !appInfoModal.classList.contains('hidden');
 
+        // Copyright notice check
+        const copyrightEl = document.querySelector('.app-info-copyright');
+        results.copyrightNotice = copyrightEl ? copyrightEl.textContent.trim() : null;
+
+        // Tech stack cards and logos check
+        results.techCardCount = document.querySelectorAll('#tabTechStack .tech-card').length;
+        results.techLogoCount = document.querySelectorAll('#tabTechStack .tech-card-logo').length;
+
         // 3. Test tab switching in appInfoLegalModal
         const tabCookiesBtn = document.querySelector('.app-info-tab[data-tab="tabCookies"]');
         if (tabCookiesBtn) tabCookiesBtn.click();
@@ -170,6 +200,9 @@ app.whenReady().then(async () => {
     assert.strictEqual(testResults.quickScoreComputedDisplay, 'none', 'quickScoreEditorPopup MUST have computed display: none');
     assert.strictEqual(testResults.quickScoreHasHidden, true, 'quickScoreEditorPopup must have hidden class');
     assert.strictEqual(testResults.appInfoOpened, true, 'App info modal must open on version click');
+    assert.ok(testResults.copyrightNotice && testResults.copyrightNotice.includes('2026 TENTIX'), 'Copyright notice must contain 2026 TENTIX');
+    assert.strictEqual(testResults.techCardCount, 8, 'Must have 8 tech stack cards');
+    assert.strictEqual(testResults.techLogoCount, 8, 'Must have 8 official tech stack vector logos');
     assert.strictEqual(testResults.tabCookiesActive, true, 'Cookies tab must activate properly');
     assert.strictEqual(testResults.tabImpressumActive, true, 'Impressum tab must activate properly');
     assert.strictEqual(testResults.appInfoClosed, true, 'App info modal must close');
