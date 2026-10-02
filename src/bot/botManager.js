@@ -70,6 +70,10 @@ class BotManager extends EventEmitter {
     this.availableWallpaperRounds = [];
     this.currentWallpaperRound = null;
     this.answerCountdownInterval = null;
+    this.lastBuzzMessage = null;
+    this.lastBuzzData = null;
+    this._updatingDiscordMessage = false;
+    this._discordMessageNeedsUpdate = false;
 
     // Game state
     this.gameState = {
@@ -78,6 +82,7 @@ class BotManager extends EventEmitter {
       isLocked: false,
       isEvaluating: false,
       activePlayer: null,
+      potentialPoints: 4,
       queue: [],
       scores: {}, // playerId -> { id, username, avatar, points, correct, wrong }
       roundWrongAttempts: {}, // playerId -> count
@@ -152,12 +157,52 @@ class BotManager extends EventEmitter {
       audioManager.setVolume(this.config.soundVolume);
     }
     this.resolveHostName();
+
+    // Live sync potential points & active player
+    this.updatePotentialPointsFromConfig();
     this.emitState();
 
     if (this.isReady && this.config.guildId && this.config.voiceChannelId) {
       if (this.config.voiceChannelId !== oldVoiceId || this.config.guildId !== oldGuildId) {
         this.isVoiceIntentionallyLeft = false;
         this.joinVoice(this.config.guildId, this.config.voiceChannelId).catch(() => {});
+      }
+    }
+
+    // Immediately push live updates to Discord message embed and buzz announcement
+    this.updateDiscordMessage().catch(() => {});
+    this.updateBuzzAnnouncementMessage().catch(() => {});
+  }
+
+  setSongPoints(pointsObj) {
+    if (!pointsObj || typeof pointsObj !== 'object') return { success: false };
+    const currentPoints = this.config.points || { correct: 2, perfect: 4, custom: 1, wrongFirst: -1, wrongRepeat: -2 };
+    const merged = { ...currentPoints, ...pointsObj };
+    this.updateConfig({ points: merged });
+    return { success: true, points: this.config.points };
+  }
+
+  updatePotentialPointsFromConfig() {
+    const part = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
+    const perf = this.config.points?.perfect !== undefined ? this.config.points.perfect : 4;
+
+    if (this.gameState.gameMode === 'wallpaper') {
+      const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
+      this.gameState.potentialPoints = this.getWallpaperPoints(elapsed);
+    } else if (this.gameState.gameMode === 'hitster') {
+      this.gameState.potentialPoints = 1;
+    } else {
+      // Song Quiz (default)
+      this.gameState.potentialPoints = (part === perf) ? perf : `${part} - ${perf}`;
+    }
+
+    if (this.gameState.activePlayer) {
+      if (this.gameState.gameMode === 'wallpaper') {
+        this.gameState.activePlayer.potentialPoints = this.gameState.wallpaperState?.points || 4;
+      } else if (this.gameState.gameMode === 'hitster') {
+        this.gameState.activePlayer.potentialPoints = 1;
+      } else {
+        this.gameState.activePlayer.potentialPoints = this.gameState.potentialPoints;
       }
     }
   }
@@ -204,7 +249,7 @@ class BotManager extends EventEmitter {
     return false;
   }
 
-  async sendBuzzAnnouncement({ userId, username, avatar, timeOffset, potentialPoints, isBoostActive, gameMode }) {
+  async sendBuzzAnnouncement({ userId, username, avatar, timeOffset, potentialPoints, isBoostActive, gameMode, pointsConfig }) {
     const targetTextChannelId = this.gameState.currentTextChannelId || this.config.textChannelId;
     if (!this.client || !this.isReady || !targetTextChannelId) return;
 
@@ -219,17 +264,54 @@ class BotManager extends EventEmitter {
         timeOffset,
         potentialPoints,
         isBoostActive,
-        gameMode
+        gameMode,
+        pointsConfig: pointsConfig || this.config.points
       });
 
       const mention = userId ? `<@${userId}>` : `**${username}**`;
       const boostText = isBoostActive ? ' 🔥 *(2X BOOST AKTIV!)*' : '';
-      await channel.send({
+      const msg = await channel.send({
+        content: `🚨 ${mention} hat als **Erster gebuzzert!**${boostText}`,
+        embeds: [buzzEmbed]
+      });
+      this.lastBuzzMessage = msg;
+      this.lastBuzzData = { userId, username, avatar, timeOffset, gameMode };
+    } catch (err) {
+      console.warn('[Bot] Failed to send buzz announcement to text channel:', err.message);
+    }
+  }
+
+  async updateBuzzAnnouncementMessage() {
+    if (!this.lastBuzzMessage || !this.lastBuzzData) return;
+    try {
+      const part = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
+      const perf = this.config.points?.perfect !== undefined ? this.config.points.perfect : 4;
+      let potentialPoints = (part === perf) ? perf : `${part} - ${perf}`;
+      if (this.gameState.gameMode === 'wallpaper') {
+        potentialPoints = this.gameState.wallpaperState?.points || 4;
+      } else if (this.gameState.gameMode === 'hitster') {
+        potentialPoints = 1;
+      }
+
+      const buzzEmbed = createBuzzNotificationEmbed({
+        username: this.lastBuzzData.username,
+        userId: this.lastBuzzData.userId,
+        avatar: this.lastBuzzData.avatar,
+        timeOffset: this.lastBuzzData.timeOffset,
+        potentialPoints,
+        isBoostActive: this.gameState.isBoostActive,
+        gameMode: this.gameState.gameMode || 'song',
+        pointsConfig: this.config.points
+      });
+
+      const mention = this.lastBuzzData.userId ? `<@${this.lastBuzzData.userId}>` : `**${this.lastBuzzData.username}**`;
+      const boostText = this.gameState.isBoostActive ? ' 🔥 *(2X BOOST AKTIV!)*' : '';
+      await this.lastBuzzMessage.edit({
         content: `🚨 ${mention} hat als **Erster gebuzzert!**${boostText}`,
         embeds: [buzzEmbed]
       });
     } catch (err) {
-      console.warn('[Bot] Failed to send buzz announcement to text channel:', err.message);
+      console.warn('[Bot] Failed to update buzz announcement embed:', err.message);
     }
   }
 
@@ -301,6 +383,7 @@ class BotManager extends EventEmitter {
     this.gameState.queue = [];
     this.gameState.winner = null;
     this.stopRoundTimer();
+    this.updatePotentialPointsFromConfig();
     this.updateRichPresence();
     this.updateDiscordMessage();
     this.emitState();
@@ -1286,13 +1369,15 @@ class BotManager extends EventEmitter {
       timeOffset = `+${(diffMs / 1000).toFixed(2)}s`;
     }
 
-    // Calculate potential points for Wallpaper mode
-    let potentialPoints = 20;
+    // Calculate potential points for current mode
+    let potentialPoints = 4;
     if (this.gameState.gameMode === 'wallpaper') {
       const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
       potentialPoints = this.getWallpaperPoints(elapsed);
-    } else if (this.gameState.gameMode === 'song') {
-      potentialPoints = 3;
+    } else if (this.gameState.gameMode === 'song' || !this.gameState.gameMode) {
+      const part = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
+      const perf = this.config.points?.perfect !== undefined ? this.config.points.perfect : 4;
+      potentialPoints = (part === perf) ? perf : `${part} - ${perf}`;
     } else if (this.gameState.gameMode === 'hitster') {
       potentialPoints = 1;
     }
@@ -1300,6 +1385,7 @@ class BotManager extends EventEmitter {
     const player = { id: userId, username, avatar, timeOffset, timestamp: now, potentialPoints };
 
     this.gameState.activePlayer = player;
+    this.gameState.potentialPoints = potentialPoints;
     this.gameState.queue = [];
     const boostBadge = this.gameState.isBoostActive ? ' 🔥 (2X BOOST)' : '';
     this.gameState.statusText = `🔔 **${username}** hat zuerst gebuzzert!${boostBadge}`;
@@ -1323,7 +1409,8 @@ class BotManager extends EventEmitter {
       timeOffset,
       potentialPoints,
       isBoostActive: this.gameState.isBoostActive,
-      gameMode: this.gameState.gameMode
+      gameMode: this.gameState.gameMode,
+      pointsConfig: this.config.points
     });
 
     this.updateDiscordMessage();
@@ -1378,6 +1465,9 @@ class BotManager extends EventEmitter {
     this.gameState.currentTextChannelId = targetTextChannelId;
     this.gameState.currentGuildId = targetGuildId;
     this.gameState.cooldownSeconds = 0;
+    this.lastBuzzMessage = null;
+    this.lastBuzzData = null;
+    this.updatePotentialPointsFromConfig();
 
     // Mode-specific reset
     if (this.gameState.gameMode === 'wallpaper') {
@@ -1446,7 +1536,9 @@ class BotManager extends EventEmitter {
             hitsterState: this.gameState.hitsterState,
             goal: this.gameState.goal,
             isBoostActive: this.gameState.isBoostActive,
-            imageAttachmentName
+            imageAttachmentName,
+            pointsConfig: this.config.points,
+            potentialPoints: this.gameState.potentialPoints
           });
 
           const components = createBuzzerComponents(false, false, this.gameState.gameMode, this.gameState.isBoostActive, this.gameState.goal);
@@ -1747,6 +1839,8 @@ class BotManager extends EventEmitter {
       this.gameState.queue = [];
       this.gameState.isLocked = true;
       this.gameState.isEvaluating = false;
+      this.lastBuzzMessage = null;
+      this.lastBuzzData = null;
 
       this.checkVictory(playerScore);
 
@@ -2118,10 +2212,13 @@ class BotManager extends EventEmitter {
       if (this.gameState.gameMode === 'wallpaper') {
         const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
         this.gameState.wallpaperState.points = this.getWallpaperPoints(elapsed);
+        this.gameState.potentialPoints = this.gameState.wallpaperState.points;
         if (this.gameState.activePlayer) {
           this.gameState.activePlayer.potentialPoints = this.gameState.wallpaperState.points;
         }
       }
+      this.updateDiscordMessage().catch(() => {});
+      this.updateBuzzAnnouncementMessage().catch(() => {});
       this.emitState();
       return { success: true, points: this.gameState.wallpaperStagePoints };
     }
@@ -2138,6 +2235,7 @@ class BotManager extends EventEmitter {
         const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
         this.gameState.wallpaperState.stage = this.getWallpaperStage(elapsed);
         this.gameState.wallpaperState.points = this.getWallpaperPoints(elapsed);
+        this.gameState.potentialPoints = this.gameState.wallpaperState.points;
         if (this.gameState.roundTimer && this.gameState.roundTimer.active) {
           this.gameState.roundTimer.duration = this.getWallpaperTotalDuration();
           this.gameState.roundTimer.remaining = Math.max(0, this.gameState.roundTimer.duration - elapsed);
@@ -2146,6 +2244,8 @@ class BotManager extends EventEmitter {
           this.gameState.activePlayer.potentialPoints = this.gameState.wallpaperState.points;
         }
       }
+      this.updateDiscordMessage().catch(() => {});
+      this.updateBuzzAnnouncementMessage().catch(() => {});
       this.emitState();
       return { success: true, times: this.gameState.wallpaperStageTimes };
     }
@@ -2376,6 +2476,11 @@ class BotManager extends EventEmitter {
   // --- DISCORD EMBED SYNC ---
   async updateDiscordMessage() {
     if (!this.gameState.currentMessage) return;
+    if (this._updatingDiscordMessage) {
+      this._discordMessageNeedsUpdate = true;
+      return;
+    }
+    this._updatingDiscordMessage = true;
     try {
       let files = [];
       let imageAttachmentName = null;
@@ -2397,7 +2502,9 @@ class BotManager extends EventEmitter {
         hitsterState: this.gameState.hitsterState,
         goal: this.gameState.goal,
         isBoostActive: this.gameState.isBoostActive,
-        imageAttachmentName
+        imageAttachmentName,
+        pointsConfig: this.config.points,
+        potentialPoints: this.gameState.potentialPoints
       });
 
       const components = createBuzzerComponents(
@@ -2413,12 +2520,20 @@ class BotManager extends EventEmitter {
       await this.gameState.currentMessage.edit(editOpts);
     } catch (err) {
       console.error('[Bot] Failed to update Discord message:', err.message);
+    } finally {
+      this._updatingDiscordMessage = false;
+      if (this._discordMessageNeedsUpdate) {
+        this._discordMessageNeedsUpdate = false;
+        this.updateDiscordMessage().catch(() => {});
+      }
     }
   }
 
   async endRound() {
     this.stopAnswerCountdown();
     this.stopRoundTimer();
+    this.lastBuzzMessage = null;
+    this.lastBuzzData = null;
     this.gameState.isRoundActive = false;
     this.gameState.isLocked = true;
     this.gameState.activePlayer = null;
@@ -2439,6 +2554,21 @@ class BotManager extends EventEmitter {
 
     this.gameState.roundNumber += 1;
     this.gameState.statusText = '🏁 Die Runde wurde beendet!';
+    this.emitState();
+    return { success: true };
+  }
+
+  abortRound() {
+    this.stopAnswerCountdown();
+    this.stopRoundTimer();
+    this.lastBuzzMessage = null;
+    this.lastBuzzData = null;
+    this.gameState.isRoundActive = false;
+    this.gameState.isLocked = true;
+    this.gameState.activePlayer = null;
+    this.gameState.queue = [];
+    this.gameState.statusText = '🛑 Die Runde wurde abgebrochen.';
+    this.updateDiscordMessage().catch(() => {});
     this.emitState();
     return { success: true };
   }
@@ -2618,9 +2748,13 @@ class BotManager extends EventEmitter {
       this.gameState.roundTimer.paused = true;
     }
     const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
-    let potentialPoints = 3;
+    let potentialPoints = 4;
     if (this.gameState.gameMode === 'wallpaper') {
       potentialPoints = this.getWallpaperPoints(elapsed);
+    } else if (this.gameState.gameMode === 'song' || !this.gameState.gameMode) {
+      const part = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
+      const perf = this.config.points?.perfect !== undefined ? this.config.points.perfect : 4;
+      potentialPoints = (part === perf) ? perf : `${part} - ${perf}`;
     } else if (this.gameState.gameMode === 'hitster') {
       potentialPoints = 1;
     }
@@ -2633,6 +2767,7 @@ class BotManager extends EventEmitter {
       potentialPoints,
       timeOffset: `nach ${elapsed.toFixed(1)}s`
     };
+    this.gameState.potentialPoints = potentialPoints;
     this.gameState.isLocked = true;
     const boostTag = this.gameState.isBoostActive ? ' [2X BOOST]' : '';
     this.gameState.statusText = `**${player.username}** hat gebuzzert!${boostTag}`;
@@ -2648,7 +2783,8 @@ class BotManager extends EventEmitter {
       timeOffset: `nach ${elapsed.toFixed(1)}s`,
       potentialPoints,
       isBoostActive: this.gameState.isBoostActive,
-      gameMode: this.gameState.gameMode
+      gameMode: this.gameState.gameMode,
+      pointsConfig: this.config.points
     });
 
     this.emitState();

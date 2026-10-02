@@ -226,6 +226,10 @@ ipcMain.handle('save-config', (event, newConf) => {
   return loadConfig();
 });
 
+ipcMain.handle('set-song-points', (event, pointsObj) => {
+  return botManager.setSongPoints(pointsObj);
+});
+
 ipcMain.handle('start-bot', async () => {
   return await botManager.start();
 });

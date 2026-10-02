@@ -58,7 +58,8 @@ function createBuzzNotificationEmbed({
   timeOffset = '1. Platz (0.00s)',
   potentialPoints = 3,
   isBoostActive = false,
-  gameMode = 'song'
+  gameMode = 'song',
+  pointsConfig = null
 }) {
   const boostBadge = isBoostActive ? ' 🔥 **(2X BOOST AKTIV!)**' : '';
   const mention = userId ? `<@${userId}>` : `**${username}**`;
@@ -73,13 +74,24 @@ function createBuzzNotificationEmbed({
     unit = 'Karte';
   }
 
+  let pointsDisplay = potentialPoints;
+  let pointsDetails = '';
+  if ((gameMode === 'song' || !gameMode) && pointsConfig) {
+    const mult = isBoostActive ? 2 : 1;
+    const part = (pointsConfig.correct !== undefined ? pointsConfig.correct : 2) * mult;
+    const perf = (pointsConfig.perfect !== undefined ? pointsConfig.perfect : 4) * mult;
+    const cust = (pointsConfig.custom !== undefined ? pointsConfig.custom : 1) * mult;
+    pointsDisplay = (part === perf) ? `${perf}` : `${part} - ${perf}`;
+    pointsDetails = ` *(Teils: +${part} | Vollst.: +${perf} | Custom: +${cust})*`;
+  }
+
   const embed = new EmbedBuilder()
     .setColor(isBoostActive ? 0xff5500 : 0xf59e0b)
     .setTitle(`🚨 BUZZER GEDRÜCKT! — ${username.toUpperCase()}`)
     .setDescription(
       `🔔 ${mention} (**${username}**) hat als **ERSTER** gebuzzert!${boostBadge}\n\n` +
       `⏱️ **Reaktionszeit:** \`${timeOffset}\`\n` +
-      `💎 **Mögliche Punkte:** \`${potentialPoints} ${unit}${isBoostActive ? ' (verdoppelt!)' : ''}\`\n` +
+      `💎 **Mögliche Punkte:** \`${pointsDisplay} ${unit}${isBoostActive ? ' (verdoppelt!)' : ''}\`${pointsDetails}\n` +
       `🎮 **Modus:** \`${modeText}\`\n\n` +
       `👉 **Du bist dran! Antworte jetzt laut im Voice-Chat!** *(15 Sekunden)*`
     )
@@ -110,7 +122,9 @@ function createBuzzerEmbed(state) {
     hitsterState = null,
     goal = 50,
     isBoostActive = false,
-    imageAttachmentName = null
+    imageAttachmentName = null,
+    pointsConfig = null,
+    potentialPoints = null
   } = state;
 
   const hostDisplay = hostId 
@@ -160,13 +174,30 @@ function createBuzzerEmbed(state) {
       value: `**Stufe ${wallpaperState.stage || 1}** (${pts} Punkte erreichbar${isBoostActive ? ' 🔥 BOOST' : ''})\n*Bild schärft sich live im Stream!*`,
       inline: false
     });
-  } else if (gameMode === 'song' && songState) {
-    const displayTitle = songState.revealed ? songState.fullTitle : (songState.censoredTitle || '████████ - ████████');
-    embed.addFields({
-      name: songState.revealed ? '🎉 Song Aufgelöst' : '🎶 Aktueller Track',
-      value: `\`${displayTitle}\``,
-      inline: false
-    });
+  } else if (gameMode === 'song' || !gameMode) {
+    const mult = isBoostActive ? 2 : 1;
+    const boostBadge = isBoostActive ? ' 🔥 BOOST (2x)' : '';
+    let songPointsDesc = '';
+    if (pointsConfig) {
+      const part = (pointsConfig.correct !== undefined ? pointsConfig.correct : 2) * mult;
+      const perf = (pointsConfig.perfect !== undefined ? pointsConfig.perfect : 4) * mult;
+      const cust = (pointsConfig.custom !== undefined ? pointsConfig.custom : 1) * mult;
+      songPointsDesc = `\n💎 **Mögliche Punkte:** \`+${part} Pkt (Teils) | +${perf} Pkt (Vollst.) | +${cust} Pkt (Custom)\`${boostBadge}`;
+    }
+    if (songState) {
+      const displayTitle = songState.revealed ? songState.fullTitle : (songState.censoredTitle || '████████ - ████████');
+      embed.addFields({
+        name: songState.revealed ? '🎉 Song Aufgelöst' : '🎶 Aktueller Track',
+        value: `\`${displayTitle}\`${songPointsDesc}`,
+        inline: false
+      });
+    } else if (songPointsDesc) {
+      embed.addFields({
+        name: '🎵 Song Quiz Punkte',
+        value: songPointsDesc.trim(),
+        inline: false
+      });
+    }
   } else if (gameMode === 'hitster' && hitsterState && hitsterState.currentCard) {
     const card = hitsterState.currentCard;
     const yearDisplay = card.revealed ? `🎉 **${card.year}**` : '`???? (Geheim)`';
@@ -194,9 +225,39 @@ function createBuzzerEmbed(state) {
 
   // Active Player & Queue
   if (activePlayer) {
-    let ptsNum = activePlayer.potentialPoints || (gameMode === 'wallpaper' ? 4 : 3);
-    if (isBoostActive) ptsNum *= 2;
-    const ptsTag = ` (${ptsNum} Pkt möglich${isBoostActive ? ' 🔥 2x' : ''})`;
+    let ptsTag = '';
+    const mult = isBoostActive ? 2 : 1;
+    if (gameMode === 'wallpaper') {
+      const wpPts = (activePlayer.potentialPoints !== undefined ? activePlayer.potentialPoints : (wallpaperState?.points || 4)) * mult;
+      ptsTag = ` (${wpPts} Pkt möglich${isBoostActive ? ' 🔥 2x' : ''})`;
+    } else if (gameMode === 'hitster') {
+      ptsTag = ` (1 Karte möglich)`;
+    } else {
+      if (pointsConfig) {
+        const part = (pointsConfig.correct !== undefined ? pointsConfig.correct : 2) * mult;
+        const perf = (pointsConfig.perfect !== undefined ? pointsConfig.perfect : 4) * mult;
+        if (part === perf) {
+          ptsTag = ` (${perf} Pkt möglich${isBoostActive ? ' 🔥 2x' : ''})`;
+        } else {
+          ptsTag = ` (${part}-${perf} Pkt möglich${isBoostActive ? ' 🔥 2x' : ''})`;
+        }
+      } else {
+        let ptsNum = activePlayer.potentialPoints !== undefined ? activePlayer.potentialPoints : 4;
+        if (typeof ptsNum === 'number') {
+          ptsNum *= mult;
+          ptsTag = ` (${ptsNum} Pkt möglich${isBoostActive ? ' 🔥 2x' : ''})`;
+        } else if (typeof ptsNum === 'string') {
+          if (isBoostActive) {
+            const doubled = ptsNum.replace(/\d+/g, (n) => String(parseInt(n, 10) * 2));
+            ptsTag = ` (${doubled} Pkt möglich 🔥 2x)`;
+          } else {
+            ptsTag = ` (${ptsNum} Pkt möglich)`;
+          }
+        } else {
+          ptsTag = ` (${ptsNum} Pkt möglich)`;
+        }
+      }
+    }
     embed.addFields({
       name: '🎤 Aktuell an der Reihe',
       value: `👑 **${activePlayer.username}** \`(${activePlayer.timeOffset || '1. Platz'})\`${ptsTag}`,

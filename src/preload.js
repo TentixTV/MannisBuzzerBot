@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('mannisBoxAPI', {
   // Config
   getConfig: () => ipcRenderer.invoke('get-config'),
   saveConfig: (config) => ipcRenderer.invoke('save-config', config),
+  setSongPoints: (points) => ipcRenderer.invoke('set-song-points', points),
 
   // Bot Lifecycle
   startBot: () => ipcRenderer.invoke('start-bot'),
