@@ -170,20 +170,20 @@ app.whenReady().then(async () => {
   botManager.toggleBoost(true);
   botManager.manualBuzzPlayer('test-user-1', 'GamerPro');
   await new Promise(r => setTimeout(r, 200));
-  // In song mode, correct award is config.points.correct (default 3), with 2x boost = 6 points
+  // In song mode, correct award is config.points.correct (default 2 in v5.1.000), with 2x boost = 4 points
   await botManager.evaluateActivePlayer('correct');
   await new Promise(r => setTimeout(r, 300));
   const boostAwardCheck = botManager.getState();
   const player1Points = boostAwardCheck.scores['test-user-1']?.points;
   const boostClearedAfterHit = !boostAwardCheck.isBoostActive;
-  console.log('Points awarded (should be 6 for 3 base with 2x boost):', player1Points, 'Boost cleared:', boostClearedAfterHit);
+  console.log('Points awarded (should be 4 for 2 base with 2x boost):', player1Points, 'Boost cleared:', boostClearedAfterHit);
 
   console.log('[STEP 5] Testing Grand Champion Victory Trigger...');
   // Set goal to 20 and adjust player to reach 20 points
   await win.webContents.executeJavaScript(`
     (async () => {
       await window.mannisBoxAPI.setGoal(20);
-      await window.mannisBoxAPI.adjustPlayerScore('test-user-1', 14); // 6 + 14 = 20
+      await window.mannisBoxAPI.adjustPlayerScore('test-user-1', 16); // 4 + 16 = 20
     })()
   `);
   await new Promise(r => setTimeout(r, 400));
@@ -217,7 +217,7 @@ app.whenReady().then(async () => {
                   boostCheck.btnActive &&
                   boostCheck.bannerVisible &&
                   boostCheck.domeBoosted &&
-                  player1Points === 6 &&
+                  player1Points === 4 &&
                   boostClearedAfterHit &&
                   victoryCheck.modalVisible &&
                   streamData?.winner?.username === 'GamerPro' &&

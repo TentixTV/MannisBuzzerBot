@@ -70,7 +70,7 @@
       <div class="titlebar-drag-region">
         <img src="../../App.png" alt="Logo" class="titlebar-app-icon">
         <span class="titlebar-title">Manni's Box — Discord Musik-Quiz, Hitster & Wallpaper Stream Master</span>
-        <span class="titlebar-version-tag" id="titlebarVersionTag" title="Klicke für App-Info, Credits & Richtlinien">V5.0.006</span>
+        <span class="titlebar-version-tag" id="titlebarVersionTag" title="Klicke für App-Info, Credits & Richtlinien">V5.1.000</span>
       </div>
       <div class="titlebar-controls no-drag">
         <button id="titlebarMin" class="titlebar-btn titlebar-min" title="Minimieren">
@@ -102,7 +102,7 @@
         <img src="../../App.png" alt="MannisBox" class="brand-logo">
         <div class="brand-text">
           <h1 class="brand-title">
-            MANNI'S BOX <span class="version-tag" id="brandVersionTag" title="Klicke für App-Info, Credits & Richtlinien">V5.0.006</span>
+            MANNI'S BOX <span class="version-tag" id="brandVersionTag" title="Klicke für App-Info, Credits & Richtlinien">V5.1.000</span>
             <button id="btnHeaderUpdate" class="btn-update-badge hidden" title="Neues Update verfügbar!">
               <svg class="update-pulse-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -386,6 +386,52 @@
               <svg class="btn-mini-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
               <span>Song starten</span>
             </button>
+          </div>
+
+          <!-- Punkte-Vergabe für Song Quiz (V5.1.000) -->
+          <div class="song-points-config-card" id="songPointsConfigCard">
+            <div class="song-points-card-header">
+              <span class="song-points-title">
+                <svg class="mini-svg" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span>Punkte für Song Quiz:</span>
+              </span>
+              <span class="song-points-sync-badge" title="Live mit den Bewertungs-Buttons synchronisiert">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Live-Sync</span>
+              </span>
+            </div>
+
+            <div class="song-points-grid">
+              <!-- Teils erkannt (Default 2) -->
+              <div class="song-point-box point-box-partial" title="Punkte wenn nur Titel ODER nur Interpret erraten wurde (Standard: 2 Punkte)">
+                <div class="point-box-label">Teils erraten:</div>
+                <div class="point-stepper-wrap">
+                  <button type="button" id="btnSongPtsPartialMinus" class="btn-mini-stepper" title="-1 Punkt">-</button>
+                  <input type="number" id="inpSongPtsPartial" class="song-pts-input" min="0" max="100" value="2">
+                  <button type="button" id="btnSongPtsPartialPlus" class="btn-mini-stepper" title="+1 Punkt">+</button>
+                </div>
+              </div>
+
+              <!-- Vollständig erkannt (Default 4) -->
+              <div class="song-point-box point-box-perfect" title="Punkte wenn Titel UND Interpret vollständig erraten wurden (Standard: 4 Punkte)">
+                <div class="point-box-label">100% Vollständig:</div>
+                <div class="point-stepper-wrap">
+                  <button type="button" id="btnSongPtsPerfectMinus" class="btn-mini-stepper" title="-1 Punkt">-</button>
+                  <input type="number" id="inpSongPtsPerfect" class="song-pts-input" min="0" max="100" value="4">
+                  <button type="button" id="btnSongPtsPerfectPlus" class="btn-mini-stepper" title="+1 Punkt">+</button>
+                </div>
+              </div>
+
+              <!-- Custom Vorgabe (Default 1) -->
+              <div class="song-point-box point-box-custom" title="Voreinstellung / Schnellwert für den Custom-Button">
+                <div class="point-box-label">Custom:</div>
+                <div class="point-stepper-wrap">
+                  <button type="button" id="btnSongPtsCustomMinus" class="btn-mini-stepper" title="-1 Punkt">-</button>
+                  <input type="number" id="inpSongPtsCustom" class="song-pts-input" min="0" max="100" value="1">
+                  <button type="button" id="btnSongPtsCustomPlus" class="btn-mini-stepper" title="+1 Punkt">+</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Live Folder Track Search & Autocomplete -->
@@ -779,15 +825,15 @@
                   </div>
                 </button>
 
-                <button id="btnEvalCorrect" class="eval-btn eval-correct" title="Antwort ist richtig (+3 Punkte)">
+                <button id="btnEvalCorrect" class="eval-btn eval-correct" title="Teils richtig (+2 Punkte)">
                   <div class="eval-icon-circle">
                     <svg class="eval-svg-icon icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                       <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                   </div>
                   <div class="eval-text">
-                    <strong>Richtig</strong>
-                    <small>+3 Punkte</small>
+                    <strong id="lblEvalCorrectTitle">Teils erkannt</strong>
+                    <small id="lblEvalCorrectPts">+2 Punkte</small>
                   </div>
                 </button>
 
@@ -798,8 +844,28 @@
                     </svg>
                   </div>
                   <div class="eval-text">
-                    <strong>100% Vollständig</strong>
-                    <small>+4 Pkt (Songname)</small>
+                    <strong id="lblEvalPerfectTitle">100% Vollständig</strong>
+                    <small id="lblEvalPerfectPts">+4 Punkte</small>
+                  </div>
+                </button>
+
+                <button id="btnEvalCustom" class="eval-btn eval-custom" title="Individuelle Punkte vergeben (Custom)">
+                  <div class="eval-icon-circle">
+                    <svg class="eval-svg-icon icon-custom" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="4" y1="21" x2="4" y2="14"></line>
+                      <line x1="4" y1="10" x2="4" y2="3"></line>
+                      <line x1="12" y1="21" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12" y2="3"></line>
+                      <line x1="20" y1="21" x2="20" y2="16"></line>
+                      <line x1="20" y1="12" x2="20" y2="3"></line>
+                      <line x1="1" y1="14" x2="7" y2="14"></line>
+                      <line x1="9" y1="8" x2="15" y2="8"></line>
+                      <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg>
+                  </div>
+                  <div class="eval-text">
+                    <strong id="lblEvalCustomTitle">Custom</strong>
+                    <small id="lblEvalCustomPts">+1 Pkt (Custom)</small>
                   </div>
                 </button>
               </div>
@@ -1371,7 +1437,7 @@
                 </svg>
                 <span>App-Version & Updates:</span>
               </label>
-              <span id="lblSettingsCurrentVersion" class="settings-version-pill" title="Klicke für App-Info, Credits & Richtlinien">V5.0.006</span>
+              <span id="lblSettingsCurrentVersion" class="settings-version-pill" title="Klicke für App-Info, Credits & Richtlinien">V5.1.000</span>
             </div>
             <div class="update-settings-controls">
               <button id="btnSettingsCheckUpdate" class="btn-sub update-check-btn" type="button">
@@ -1390,7 +1456,7 @@
                 </svg>
                 <span>Changelog</span>
               </button>
-              <span id="lblSettingsUpdateStatus" class="update-status-msg">Aktuell (V5.0.006)</span>
+              <span id="lblSettingsUpdateStatus" class="update-status-msg">Aktuell (V5.1.000)</span>
             </div>
           </div>
 
@@ -1993,11 +2059,24 @@
       </div>
 
       <div class="changelog-list-scroll">
-        <!-- v5.0.006 Entry -->
+        <!-- v5.1.000 Entry -->
         <div class="changelog-entry current-entry">
           <div class="changelog-entry-header">
-            <span class="changelog-tag-badge">V5.0.006</span>
+            <span class="changelog-tag-badge">V5.1.000</span>
             <span class="changelog-entry-date">Neueste Version</span>
+          </div>
+          <ul class="changelog-bullets">
+            <li><strong>Punkte beim Songs-Erkennen frei anpassen:</strong> Du kannst die Punkte für "Teils erraten" und "100% Vollständig" ab sofort direkt links in der Regie anpassen – inklusive schneller Plus- und Minus-Tasten!</li>
+            <li><strong>Neue Standard-Punkte:</strong> Wenn jemand einen Song nur teils errät (z.B. nur den Interpreten oder nur den Titel), gibt es jetzt standardmäßig 2 Punkte (vorher 3). Bei vollständigem Erraten gibt es weiterhin 4 Punkte.</li>
+            <li><strong>Neuer Custom-Punkte-Button:</strong> In der Mitte bei der Song-Bewertung gibt es jetzt einen neuen 'Custom'-Button. Ein Klick darauf erlaubt dir, einem Spieler ganz individuelle Punkte für seine Antwort zu geben!</li>
+            <li><strong>Echtzeit-Synchronisierung:</strong> Wenn du links in der Leiste die Punkte änderst, aktualisieren sich die Bewertungs-Buttons in der Mitte und der Discord-Bot sofort synchron in Echtzeit!</li>
+          </ul>
+        </div>
+
+        <!-- v5.0.006 Entry -->
+        <div class="changelog-entry">
+          <div class="changelog-entry-header">
+            <span class="changelog-tag-badge">V5.0.006</span>
           </div>
           <ul class="changelog-bullets">
             <li><strong>Neues Info- & Richtlinien-Fenster:</strong> Wenn du oben auf die Versionsnummer klickst, siehst du alle Richtlinien, Datenschutz und Credits mit animierten Icons (der Cookie, der gegessen wird, das fliegende Schloss und der Richterhammer!).</li>
@@ -2080,7 +2159,7 @@
           <div>
             <div class="app-info-title-row">
               <h2 class="app-info-title">Manni's Box</h2>
-              <span class="app-info-version-pill">V5.0.006</span>
+              <span class="app-info-version-pill">V5.1.000</span>
             </div>
             <p class="app-info-subtitle">Discord Musik-Quiz, Hitster &amp; Wallpaper Stream Master</p>
           </div>

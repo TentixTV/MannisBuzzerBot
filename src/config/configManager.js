@@ -21,8 +21,9 @@ const defaultConfig = {
   voiceChannelId: '',
   textChannelId: '',
   points: {
-    correct: 3,
+    correct: 2,
     perfect: 4,
+    custom: 1,
     wrongFirst: -1,
     wrongRepeat: -2
   },
@@ -31,12 +32,22 @@ const defaultConfig = {
 
 function loadConfig() {
   try {
+    let cfg = null;
     if (fs.existsSync(configPath)) {
       const data = fs.readFileSync(configPath, 'utf-8');
-      return { ...defaultConfig, ...JSON.parse(data) };
+      cfg = JSON.parse(data);
     } else if (fs.existsSync(localConfigPath)) {
       const data = fs.readFileSync(localConfigPath, 'utf-8');
-      return { ...defaultConfig, ...JSON.parse(data) };
+      cfg = JSON.parse(data);
+    }
+    if (cfg) {
+      const mergedPoints = { ...defaultConfig.points, ...(cfg.points || {}) };
+      // V5.1.000: Default for partial recognition is now 2 points (migrate legacy default 3)
+      if (mergedPoints.correct === 3) {
+        mergedPoints.correct = 2;
+      }
+      const merged = { ...defaultConfig, ...cfg, points: mergedPoints };
+      return merged;
     }
   } catch (err) {
     console.error('Error loading config:', err);

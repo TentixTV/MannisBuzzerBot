@@ -71,7 +71,7 @@ function createWindow() {
     height: 900,
     minWidth: 1080,
     minHeight: 720,
-    title: "Manni's Box — Discord Buzzer & Stream Master V5.0.006",
+    title: "Manni's Box — Discord Buzzer & Stream Master V5.1.000",
     icon: iconPath,
     backgroundColor: '#12131a',
     frame: false,
@@ -263,7 +263,8 @@ ipcMain.handle('lock-buzzer', async (event, locked) => {
 ipcMain.handle('evaluate-player', async (event, arg) => {
   const action = (typeof arg === 'object' && arg !== null) ? arg.action : arg;
   const targetPlayer = (typeof arg === 'object' && arg !== null) ? arg.targetPlayer : undefined;
-  return await botManager.evaluateActivePlayer(action, targetPlayer);
+  const customPoints = (typeof arg === 'object' && arg !== null) ? (arg.customPoints !== undefined ? arg.customPoints : arg.points) : undefined;
+  return await botManager.evaluateActivePlayer(action, targetPlayer, customPoints);
 });
 
 ipcMain.handle('select-queue-player', async (event, playerId) => {
@@ -518,11 +519,11 @@ ipcMain.handle('stop-song', () => {
 });
 
 // ==========================================================================
-// GITHUB AUTO-UPDATER ENGINE (V5.0.006)
+// GITHUB AUTO-UPDATER ENGINE (V5.1.000)
 // Checks for new GitHub releases, compares versions, returns release notes & download assets
 // ==========================================================================
 
-const CURRENT_APP_VERSION = 'v5.0.006';
+const CURRENT_APP_VERSION = 'v5.1.000';
 const GITHUB_REPO_PATH = 'TentixTV/MannisBuzzerBot';
 
 function compareSemver(remoteTag, localTag) {

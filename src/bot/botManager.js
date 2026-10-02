@@ -1562,7 +1562,20 @@ class BotManager extends EventEmitter {
   }
 
   // --- EVALUATION ---
-  async evaluateActivePlayer(action, targetPlayerName = null) {
+  async evaluateActivePlayer(action, targetPlayerName = null, customPoints = undefined) {
+    if (typeof action === 'object' && action !== null) {
+      if (customPoints === undefined && action.customPoints !== undefined) {
+        customPoints = action.customPoints;
+      }
+      if (customPoints === undefined && action.points !== undefined) {
+        customPoints = action.points;
+      }
+      if (!targetPlayerName && action.targetPlayer) {
+        targetPlayerName = action.targetPlayer;
+      }
+      action = action.action || action.type || 'correct';
+    }
+
     let player = this.gameState.activePlayer;
     if (!player && targetPlayerName) {
       player = this.gameState.scores[targetPlayerName] ||
@@ -1662,17 +1675,33 @@ class BotManager extends EventEmitter {
       await this.updateDiscordMessage();
       this.emitState();
 
-    } else if (action === 'correct' || action === 'perfect') {
-      // Fall 1: Correct answer
-      let gain = this.config.points.correct || 3;
+    } else if (action === 'correct' || action === 'perfect' || action === 'custom' || typeof action === 'number') {
+      // Fall 1: Correct answer or custom points
+      let gain = this.config.points?.correct || 2;
       if (this.gameState.gameMode === 'wallpaper') {
         gain = player.potentialPoints || 4;
         this.resolveWallpaper();
       } else if (this.gameState.gameMode === 'song' || !this.gameState.gameMode) {
         this.gameState.songState.revealed = true;
-        if (action === 'perfect') gain = this.config.points.perfect || 4;
+        if (action === 'perfect') {
+          gain = (customPoints !== undefined && customPoints !== null && !isNaN(parseInt(customPoints, 10)))
+            ? parseInt(customPoints, 10)
+            : (this.config.points?.perfect || 4);
+        } else if (action === 'custom') {
+          if (customPoints !== undefined && customPoints !== null && !isNaN(parseInt(customPoints, 10))) {
+            gain = parseInt(customPoints, 10);
+          } else {
+            gain = this.config.points?.custom || 1;
+          }
+        } else if (typeof action === 'number') {
+          gain = action;
+        } else {
+          gain = (customPoints !== undefined && customPoints !== null && !isNaN(parseInt(customPoints, 10)))
+            ? parseInt(customPoints, 10)
+            : (this.config.points?.correct || 2);
+        }
       } else if (this.gameState.gameMode === 'hitster') {
-        gain = (typeof action === 'number') ? action : (action === 'perfect' ? 4 : 1);
+        gain = (typeof action === 'number') ? action : (action === 'perfect' ? 4 : (action === 'custom' && customPoints !== undefined ? parseInt(customPoints, 10) : 1));
         this.resolveHitsterCard(playerScore);
       }
 
@@ -1705,7 +1734,13 @@ class BotManager extends EventEmitter {
       }
 
       const boostTag = wasBoosted ? ' 🔥 (2X BOOST!)' : '';
-      this.gameState.statusText = `✅ **${player.username}** hat richtig geantwortet (+${gain} Pkt.${boostTag})! Song läuft weiter.`;
+      if (action === 'perfect') {
+        this.gameState.statusText = `🌟 **${player.username}** hat vollständig richtig geantwortet (+${gain} Pkt.${boostTag})! Song läuft weiter.`;
+      } else if (action === 'custom') {
+        this.gameState.statusText = `✨ **${player.username}** hat ${gain} Punkte erhalten${boostTag}! Song läuft weiter.`;
+      } else {
+        this.gameState.statusText = `✅ **${player.username}** hat richtig geantwortet (+${gain} Pkt.${boostTag})! Song läuft weiter.`;
+      }
 
       // Clear active player, lock buzzer because round is resolved, song keeps playing until host manually advances
       this.gameState.activePlayer = null;
@@ -1722,10 +1757,13 @@ class BotManager extends EventEmitter {
           if (ch && ch.isTextBased()) {
             const mention = userId ? `<@${userId}>` : `**${player.username}**`;
             const boostTag = wasBoosted ? ' 🔥 **(2X BOOST!)**' : '';
-            ch.send(action === 'perfect'
-              ? `🌟 ${mention} hat **VOLLSTÄNDIG RICHTIG** geantwortet! (+${gain} Pkt.${boostTag}) 🏆`
-              : `✅ ${mention} hat **RICHTIG** geantwortet! (+${gain} Pkt.${boostTag}) 🎉`
-            );
+            let msgText = `✅ ${mention} hat **RICHTIG** geantwortet! (+${gain} Pkt.${boostTag}) 🎉`;
+            if (action === 'perfect') {
+              msgText = `🌟 ${mention} hat **VOLLSTÄNDIG RICHTIG** geantwortet! (+${gain} Pkt.${boostTag}) 🏆`;
+            } else if (action === 'custom') {
+              msgText = `✨ ${mention} wurden **${gain} Punkte** vergeben!${boostTag} 🎯`;
+            }
+            ch.send(msgText);
           }
         }).catch(() => {});
       }

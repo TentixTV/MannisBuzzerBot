@@ -77,3 +77,4 @@ console.log('✓ Test 5 Passed: Regie buzz does not pollute contestant scoreboar
 console.log('========================================================');
 console.log('🎉 ALL HOST & BUZZER TESTS PASSED WITH 100% SUCCESS!');
 console.log('========================================================');
+process.exit(0);

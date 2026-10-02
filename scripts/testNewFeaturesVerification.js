@@ -10,10 +10,9 @@ async function runNewFeatureTests() {
 
   const buzzRes = botManager.manualBuzzPlayer('host-regie-buzzer', 'Host / Regie');
   assert.strictEqual(buzzRes.success, true, 'manualBuzzPlayer should succeed');
-  assert.ok(botManager.gameState.scores['host-regie-buzzer'], 'host-regie-buzzer should be created in scores');
-  assert.strictEqual(botManager.gameState.scores['host-regie-buzzer'].username, 'Host / Regie');
+  assert.strictEqual(botManager.gameState.scores['host-regie-buzzer'], undefined, 'host-regie-buzzer must NOT be added to scores');
   assert.strictEqual(botManager.gameState.activePlayer.id, 'host-regie-buzzer');
-  console.log('Test 1 Passed: Physical dome buzzer auto-creates host player without failing.');
+  console.log('Test 1 Passed: Physical dome buzzer sets active player without polluting scores.');
 
   console.log('[TEST 2] Testing Hitster card placement and shelf synchronization...');
   await botManager.setGameMode('hitster');

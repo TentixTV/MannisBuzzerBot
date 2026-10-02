@@ -13,7 +13,7 @@ if (!TOKEN) {
 }
 const OWNER = 'TentixTV';
 const REPO = 'MannisBuzzerBot';
-const TAG = 'v5.0.006';
+const TAG = 'v5.1.000';
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
@@ -103,7 +103,7 @@ function uploadAsset(uploadUrlRaw, filePath, contentType) {
 async function main() {
   console.log(`1. Checking if release for ${TAG} exists...`);
   let release = null;
-  const releaseDescription = `## MannisBox ${TAG} — App-Info, Richtlinien & Animierte Icons, Deluxe Zielpunkte & Changelog\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Highlights in ${TAG}:\n- **App-Info & Richtlinien-Modal per Klick auf die Versions-Pille:**\n  - Ein Klick auf die Version (${TAG}) in der Titelleiste, im Logo-Header oder in den Einstellungen öffnet das neue Info-Center.\n  - Enthalten: Ausführliche Credits (Idee: ThisManniGuy / Programmierung: Sandro/T3x/TNTIX), vollständige Liste aller Programmiersprachen & Technologien, Cookie-Richtlinie, Datenschutzerklärung & Impressum.\n- **Liebevoll animierte SVG-Icons (100% Vector, Pure CSS Keyframes):**\n  - **Cookies:** Ein Cookie wird viermal appetitlich abgebissen und dann komplett mit Krümelregen aufgegessen (Endlos-Schleife).\n  - **Datenschutz:** Ein Papier-Dokument, auf das geschmeidig ein grünes Sicherheitsschloss herbeischwebt, hörbar einrastet und versiegelt.\n  - **Impressum:** Ein edler Richterhammer, der butterweich auf den Klangblock schlägt, eine Schockwelle erzeugt und sanft wieder aufsteigt.\n- **Neues Cyber-Neon Zielpunkte-Popup (/goal):**\n  - Großes digitales Display, präzise Stepper (-25 bis +25), Schnellauswahl-Chips und direkte Eingabe.\n- **Aufgewertetes Punkte-Popup mit Schnell-Pills:**\n  - Spieler-Punkte können jetzt blitzschnell mit +2, +3, +4 und +10 Buttons angepasst werden.\n- **Changelog-Button in den Einstellungen:**\n  - Zeigt alle bisherigen Updates für dich in einfacher, sympathischer Du-Sprache ohne unverständliches Kauderwelsch.\n- **Alle bisherigen Fixes inklusive:**\n  - Auto-Buzzer bei Play, kein 10s-Buzzer-Lock, Regie-Buzzer sauber beschriftet, ThisManniGuy reiner Host, DAVE E2EE Voice-Stabilität.`;
+  const releaseDescription = `## MannisBox ${TAG} — Song-Quiz Punkte konfigurierbar (2 Pkt Teils / 4 Pkt Vollständig) & Neuer Custom-Button\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Highlights in ${TAG}:\n- **Punkte-Vergabe beim Songs-Erkennen an der linken Regie-Seite bearbeitbar:**\n  - In der Regie links gibt es eine neue Punkte-Konfiguration für das Song-Quiz mit interaktiven Plus- und Minus-Steppern sowie Direkteingabe.\n  - **Teils erkannt:** Standardmäßig auf **2 Punkte** gesetzt (vorher 3), wenn z.B. nur der Titel oder nur der Interpret erraten wurde.\n  - **100% Vollständig:** Standardmäßig auf **4 Punkte** gesetzt für die vollständige Lösung (Titel & Interpret).\n  - **Custom Vorgabe:** Schnelle Voreinstellung für benutzerdefinierte Punktvergaben.\n- **Neuer Custom-Bewertungsbutton in der Mitte:**\n  - In der Bewertungsleiste gibt es nun neben Falsch, Weiter, Teils und Vollständig einen stylischen neuen **Custom-Button**.\n  - Klickt der Host darauf, öffnet sich ein modaler Dialog zur Eingabe einer individuellen Punktzahl für den aktuell an der Reihe befindlichen Spieler.\n- **Vollständige Live-Synchronisierung:**\n  - Werden links an den Punkten Änderungen vorgenommen, spiegeln sich diese sofort live auf den Bewertungs-Buttons, im 2X-Boost-Multiplikator und in den Discord-Meldungen wider.\n- **Alle bisherigen Features inklusive:**\n  - /goal & /boost Slash-Commands, Hitster- & Wallpaper-Modi, automatische Audio-Steuerung, E2EE DAVE Voice und frameless Deluxe-Design.`;
 
   try {
     release = await request({
@@ -119,7 +119,7 @@ async function main() {
     console.log(`Found existing release ID: ${release.id}`);
 
     const updatePayload = JSON.stringify({
-      name: `MannisBox ${TAG} — Auto-Buzzer bei Play & Kein unerwünschter Buzzer-Lock mehr`,
+      name: `MannisBox ${TAG} — Song-Quiz Punkte konfigurierbar (2 Pkt Teils / 4 Pkt Vollständig) & Custom-Button`,
       body: releaseDescription,
       draft: false,
       prerelease: false
@@ -147,7 +147,7 @@ async function main() {
     const releasePayload = JSON.stringify({
       tag_name: TAG,
       target_commitish: 'main',
-      name: `MannisBox ${TAG} — Auto-Buzzer bei Play & Kein unerwünschter Buzzer-Lock mehr`,
+      name: `MannisBox ${TAG} — Song-Quiz Punkte konfigurierbar (2 Pkt Teils / 4 Pkt Vollständig) & Custom-Button`,
       body: releaseDescription,
       draft: false,
       prerelease: false

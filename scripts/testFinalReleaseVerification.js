@@ -7,7 +7,7 @@ const { calculateWallpaperPoints } = require('../src/bot/gameModes');
 
 app.whenReady().then(async () => {
   console.log('========================================================');
-  console.log('  MANNISBOX V5.0.000 — FINAL COMPREHENSIVE VERIFICATION  ');
+  console.log('  MANNISBOX V5.1.000 — FINAL COMPREHENSIVE VERIFICATION  ');
   console.log('========================================================');
 
   // TEST 1: 1-4 Points Calculation Scale
@@ -97,11 +97,24 @@ app.whenReady().then(async () => {
 
   botManager.gameState.scores['p-boost'] = { id: 'p-boost', username: 'Booster', points: 0 };
   botManager.gameState.activePlayer = { id: 'p-boost', username: 'Booster' };
-  botManager.gameState.potentialPoints = 3;
+  botManager.gameState.potentialPoints = 2;
   await botManager.evaluateActivePlayer('correct');
-  assert.strictEqual(botManager.gameState.scores['p-boost'].points, 6, 'Points must be doubled (3 * 2 = 6)');
+  assert.strictEqual(botManager.gameState.scores['p-boost'].points, 4, 'Points must be doubled (2 * 2 = 4)');
   assert.strictEqual(botManager.gameState.isBoostActive, false, 'Boost must auto-consume after correct hit');
   console.log('✓ Check 6 Passed: 2X Boost points doubling & single-use consumption verified.');
+
+  // TEST 6b: Custom Points & Perfect Answer Evaluation (V5.1.000)
+  console.log('\n[CHECK 6b] Testing Song Quiz Custom Points & Perfect Evaluation (V5.1.000)...');
+  botManager.gameState.scores['p-custom'] = { id: 'p-custom', username: 'CustomTester', points: 0 };
+  botManager.gameState.activePlayer = { id: 'p-custom', username: 'CustomTester' };
+  await botManager.evaluateActivePlayer('custom', null, 7);
+  assert.strictEqual(botManager.gameState.scores['p-custom'].points, 7, 'Custom points (7) must be awarded');
+
+  botManager.gameState.scores['p-perf'] = { id: 'p-perf', username: 'PerfTester', points: 0 };
+  botManager.gameState.activePlayer = { id: 'p-perf', username: 'PerfTester' };
+  await botManager.evaluateActivePlayer('perfect');
+  assert.strictEqual(botManager.gameState.scores['p-perf'].points, 4, 'Standard perfect answer must award 4 points');
+  console.log('✓ Check 6b Passed: Custom points and 4-point perfect evaluation verified.');
 
   // TEST 7: Frameless BrowserWindow & DOM Load
   console.log('\n[CHECK 7] Testing Electron Frameless Window & Titlebar DOM elements...');
@@ -145,6 +158,10 @@ app.whenReady().then(async () => {
       const answerTimerBox = document.getElementById('answerTimerBox');
       const answerExpiredAlert = document.getElementById('answerExpiredAlert');
       const btnPickNextWallpaper = document.getElementById('btnPickNextWallpaper');
+      const btnEvalCustom = document.getElementById('btnEvalCustom');
+      const inpSongPtsPartial = document.getElementById('inpSongPtsPartial');
+      const inpSongPtsPerfect = document.getElementById('inpSongPtsPerfect');
+      const inpSongPtsCustom = document.getElementById('inpSongPtsCustom');
       return {
         hasMin: !!minBtn,
         hasMax: !!maxBtn,
@@ -152,7 +169,11 @@ app.whenReady().then(async () => {
         versionTag,
         hasAnswerTimer: !!answerTimerBox,
         hasExpiredAlert: !!answerExpiredAlert,
-        hasNextWp: !!btnPickNextWallpaper
+        hasNextWp: !!btnPickNextWallpaper,
+        hasEvalCustom: !!btnEvalCustom,
+        partialDefault: inpSongPtsPartial?.value,
+        perfectDefault: inpSongPtsPerfect?.value,
+        customDefault: inpSongPtsCustom?.value
       };
     })()
   `);
@@ -161,10 +182,13 @@ app.whenReady().then(async () => {
   assert.strictEqual(titlebarElements.hasMin, true, 'titlebarMin must exist');
   assert.strictEqual(titlebarElements.hasMax, true, 'titlebarMax must exist');
   assert.strictEqual(titlebarElements.hasClose, true, 'titlebarClose must exist');
-  assert.strictEqual(titlebarElements.versionTag, 'V5.0.006', 'Version tag must be V5.0.006');
+  assert.strictEqual(titlebarElements.versionTag, 'V5.1.000', 'Version tag must be V5.1.000');
   assert.strictEqual(titlebarElements.hasAnswerTimer, true, 'answerTimerBox must exist');
   assert.strictEqual(titlebarElements.hasExpiredAlert, true, 'answerExpiredAlert must exist');
   assert.strictEqual(titlebarElements.hasNextWp, true, 'btnPickNextWallpaper must exist');
+  assert.strictEqual(titlebarElements.hasEvalCustom, true, 'btnEvalCustom must exist');
+  assert.strictEqual(titlebarElements.partialDefault, '2', 'inpSongPtsPartial default must be 2');
+  assert.strictEqual(titlebarElements.perfectDefault, '4', 'inpSongPtsPerfect default must be 4');
   assert.strictEqual(domErrors.length, 0, 'No console errors allowed');
   console.log('✓ Check 7 Passed: Frameless window DOM & controls verified.');
 

@@ -18,7 +18,12 @@ contextBridge.exposeInMainWorld('mannisBoxAPI', {
   // Game Control
   startRound: (options) => ipcRenderer.invoke('start-round', options),
   lockBuzzer: (locked) => ipcRenderer.invoke('lock-buzzer', locked),
-  evaluatePlayer: (action, targetPlayer) => ipcRenderer.invoke('evaluate-player', { action, targetPlayer }),
+  evaluatePlayer: (action, targetPlayer, customPoints) => {
+    if (typeof action === 'object' && action !== null) {
+      return ipcRenderer.invoke('evaluate-player', action);
+    }
+    return ipcRenderer.invoke('evaluate-player', { action, targetPlayer, customPoints });
+  },
   selectQueuePlayer: (playerId) => ipcRenderer.invoke('select-queue-player', playerId),
   banPlayer: (playerId, username) => ipcRenderer.invoke('ban-player', { playerId, username }),
   unbanPlayer: (playerId) => ipcRenderer.invoke('unban-player', playerId),

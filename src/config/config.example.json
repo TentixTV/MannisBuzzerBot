@@ -5,8 +5,9 @@
   "voiceChannelId": "",
   "textChannelId": "",
   "points": {
-    "correct": 3,
+    "correct": 2,
     "perfect": 4,
+    "custom": 1,
     "wrongFirst": -1,
     "wrongRepeat": -2
   },

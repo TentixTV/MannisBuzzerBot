@@ -58,6 +58,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnEvalSkip = document.getElementById('btnEvalSkip');
   const btnEvalCorrect = document.getElementById('btnEvalCorrect');
   const btnEvalPerfect = document.getElementById('btnEvalPerfect');
+  const btnEvalCustom = document.getElementById('btnEvalCustom');
+
+  const lblEvalCorrectTitle = document.getElementById('lblEvalCorrectTitle');
+  const lblEvalCorrectPts = document.getElementById('lblEvalCorrectPts');
+  const lblEvalPerfectTitle = document.getElementById('lblEvalPerfectTitle');
+  const lblEvalPerfectPts = document.getElementById('lblEvalPerfectPts');
+  const lblEvalCustomTitle = document.getElementById('lblEvalCustomTitle');
+  const lblEvalCustomPts = document.getElementById('lblEvalCustomPts');
+
+  const inpSongPtsPartial = document.getElementById('inpSongPtsPartial');
+  const inpSongPtsPerfect = document.getElementById('inpSongPtsPerfect');
+  const inpSongPtsCustom = document.getElementById('inpSongPtsCustom');
+  const btnSongPtsPartialMinus = document.getElementById('btnSongPtsPartialMinus');
+  const btnSongPtsPartialPlus = document.getElementById('btnSongPtsPartialPlus');
+  const btnSongPtsPerfectMinus = document.getElementById('btnSongPtsPerfectMinus');
+  const btnSongPtsPerfectPlus = document.getElementById('btnSongPtsPerfectPlus');
+  const btnSongPtsCustomMinus = document.getElementById('btnSongPtsCustomMinus');
+  const btnSongPtsCustomPlus = document.getElementById('btnSongPtsCustomPlus');
 
   const queueCountBadge = document.getElementById('queueCountBadge');
   const queueListContainer = document.getElementById('queueListContainer');
@@ -525,6 +543,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     config = await window.mannisBoxAPI.getConfig();
     populateSettingsForm(config);
+    initSongPointsFromConfig(config);
     updateHostDisplay();
     updateChannelLabels();
     refreshGuildsAndChannels();
@@ -1277,6 +1296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnEvalSkip.disabled = isEvaluating;
     btnEvalCorrect.disabled = isEvaluating;
     btnEvalPerfect.disabled = isEvaluating;
+    if (btnEvalCustom) btnEvalCustom.disabled = isEvaluating;
     btnHitsterWrong.disabled = isEvaluating;
     btnHitsterSkip.disabled = isEvaluating;
     btnHitsterCorrect.disabled = isEvaluating;
@@ -1697,6 +1717,117 @@ document.addEventListener('DOMContentLoaded', async () => {
     await window.mannisBoxAPI.evaluatePlayer('skip');
   });
 
+  // --- Song Quiz Points Synchronization & Custom Button (V5.1.000) ---
+  function getSongPointsValues() {
+    const partial = Math.max(0, parseInt(inpSongPtsPartial?.value, 10) || 2);
+    const perfect = Math.max(0, parseInt(inpSongPtsPerfect?.value, 10) || 4);
+    const custom = Math.max(0, parseInt(inpSongPtsCustom?.value, 10) || 1);
+    return { partial, perfect, custom };
+  }
+
+  function syncSongPointsUi(saveToConfig = true) {
+    const { partial, perfect, custom } = getSongPointsValues();
+
+    if (btnEvalCorrect) {
+      btnEvalCorrect.title = `Teils richtig (+${partial} ${partial === 1 ? 'Punkt' : 'Punkte'})`;
+    }
+    if (lblEvalCorrectPts) {
+      lblEvalCorrectPts.textContent = `+${partial} ${partial === 1 ? 'Punkt' : 'Punkte'}`;
+    }
+
+    if (btnEvalPerfect) {
+      btnEvalPerfect.title = `Vollständig richtig mit Songname & Interpret (+${perfect} ${perfect === 1 ? 'Punkt' : 'Punkte'})`;
+    }
+    if (lblEvalPerfectPts) {
+      lblEvalPerfectPts.textContent = `+${perfect} ${perfect === 1 ? 'Punkt' : 'Punkte'}`;
+    }
+
+    if (btnEvalCustom) {
+      btnEvalCustom.title = `Individuelle Punkte vergeben (Custom: +${custom} ${custom === 1 ? 'Punkt' : 'Punkte'})`;
+    }
+    if (lblEvalCustomPts) {
+      lblEvalCustomPts.textContent = `+${custom} Pkt (Custom)`;
+    }
+
+    if (saveToConfig && config && window.mannisBoxAPI) {
+      config.points = config.points || {};
+      config.points.correct = partial;
+      config.points.perfect = perfect;
+      config.points.custom = custom;
+      window.mannisBoxAPI.saveConfig(config).catch(err => console.warn('Could not save points to config:', err));
+    }
+  }
+
+  function initSongPointsFromConfig(cfg) {
+    if (!cfg) return;
+    const pts = cfg.points || {};
+    if (inpSongPtsPartial) inpSongPtsPartial.value = pts.correct !== undefined ? pts.correct : 2;
+    if (inpSongPtsPerfect) inpSongPtsPerfect.value = pts.perfect !== undefined ? pts.perfect : 4;
+    if (inpSongPtsCustom) inpSongPtsCustom.value = pts.custom !== undefined ? pts.custom : 1;
+    syncSongPointsUi(false);
+  }
+
+  // Stepper & Input event listeners for Song Points
+  if (btnSongPtsPartialMinus) {
+    btnSongPtsPartialMinus.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cur = parseInt(inpSongPtsPartial.value, 10) || 2;
+      inpSongPtsPartial.value = Math.max(0, cur - 1);
+      syncSongPointsUi(true);
+    });
+  }
+  if (btnSongPtsPartialPlus) {
+    btnSongPtsPartialPlus.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cur = parseInt(inpSongPtsPartial.value, 10) || 2;
+      inpSongPtsPartial.value = Math.min(100, cur + 1);
+      syncSongPointsUi(true);
+    });
+  }
+  if (inpSongPtsPartial) {
+    inpSongPtsPartial.addEventListener('input', () => syncSongPointsUi(true));
+  }
+
+  if (btnSongPtsPerfectMinus) {
+    btnSongPtsPerfectMinus.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cur = parseInt(inpSongPtsPerfect.value, 10) || 4;
+      inpSongPtsPerfect.value = Math.max(0, cur - 1);
+      syncSongPointsUi(true);
+    });
+  }
+  if (btnSongPtsPerfectPlus) {
+    btnSongPtsPerfectPlus.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cur = parseInt(inpSongPtsPerfect.value, 10) || 4;
+      inpSongPtsPerfect.value = Math.min(100, cur + 1);
+      syncSongPointsUi(true);
+    });
+  }
+  if (inpSongPtsPerfect) {
+    inpSongPtsPerfect.addEventListener('input', () => syncSongPointsUi(true));
+  }
+
+  if (btnSongPtsCustomMinus) {
+    btnSongPtsCustomMinus.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cur = parseInt(inpSongPtsCustom.value, 10) || 1;
+      inpSongPtsCustom.value = Math.max(0, cur - 1);
+      syncSongPointsUi(true);
+    });
+  }
+  if (btnSongPtsCustomPlus) {
+    btnSongPtsCustomPlus.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cur = parseInt(inpSongPtsCustom.value, 10) || 1;
+      inpSongPtsCustom.value = Math.min(100, cur + 1);
+      syncSongPointsUi(true);
+    });
+  }
+  if (inpSongPtsCustom) {
+    inpSongPtsCustom.addEventListener('input', () => syncSongPointsUi(true));
+  }
+
   btnEvalCorrect.addEventListener('click', async () => {
     if (currentGameState?.isEvaluating) return;
     playLocalSound('correct');
@@ -1705,7 +1836,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       localAudioPlayer.play().catch(e => console.warn(e));
       setPlayPauseIcon(true);
     }
-    await window.mannisBoxAPI.evaluatePlayer('correct');
+    const { partial } = getSongPointsValues();
+    await window.mannisBoxAPI.evaluatePlayer('correct', null, partial);
   });
 
   btnEvalPerfect.addEventListener('click', async () => {
@@ -1716,8 +1848,42 @@ document.addEventListener('DOMContentLoaded', async () => {
       localAudioPlayer.play().catch(e => console.warn(e));
       setPlayPauseIcon(true);
     }
-    await window.mannisBoxAPI.evaluatePlayer('perfect');
+    const { perfect } = getSongPointsValues();
+    await window.mannisBoxAPI.evaluatePlayer('perfect', null, perfect);
   });
+
+  if (btnEvalCustom) {
+    btnEvalCustom.addEventListener('click', async () => {
+      if (currentGameState?.isEvaluating) return;
+      const ap = currentGameState?.activePlayer;
+      if (!ap) {
+        await showCustomAlert('Niemand hat gebuzzert! Der Custom-Button kann erst geklickt werden, wenn ein Spieler an der Reihe ist.', 'Kein aktiver Spieler');
+        return;
+      }
+      const { custom } = getSongPointsValues();
+      const promptRes = await showCustomPrompt(
+        `Wie viele Punkte möchtest du an "${ap.username}" vergeben?`,
+        String(custom),
+        'Custom Punkte vergeben'
+      );
+      if (promptRes === null || promptRes.trim() === '') return;
+      const num = parseInt(promptRes.trim(), 10);
+      if (isNaN(num)) {
+        await showCustomAlert('Bitte eine gültige Zahl für die Punkte eingeben!', 'Ungültige Punkte');
+        return;
+      }
+      if (inpSongPtsCustom) {
+        inpSongPtsCustom.value = num;
+        syncSongPointsUi(true);
+      }
+      playLocalSound('correct');
+      if (localAudioPlayer && localAudioPlayer.src) {
+        localAudioPlayer.play().catch(e => console.warn(e));
+        setPlayPauseIcon(true);
+      }
+      await window.mannisBoxAPI.evaluatePlayer('custom', null, num);
+    });
+  }
 
   if (btnResumeRound) {
     btnResumeRound.addEventListener('click', async () => {
@@ -3459,7 +3625,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }, 2500);
 
   // ==========================================================================
-  // 15. CHANGELOG & APP-INFO / LEGAL MODALS (V5.0.006)
+  // 15. CHANGELOG & APP-INFO / LEGAL MODALS (V5.1.000)
   // ==========================================================================
   const changelogModal = document.getElementById('changelogModal');
   const btnChangelogClose = document.getElementById('btnChangelogClose');
