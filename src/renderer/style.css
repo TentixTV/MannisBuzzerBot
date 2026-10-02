@@ -7151,16 +7151,21 @@ body {
   background: rgba(15, 23, 42, 0.85);
   border: 1.5px solid rgba(56, 189, 248, 0.4);
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 6px 6px;
   margin: 6px 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .song-points-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
+  gap: 4px;
 }
 
 .song-points-title {
@@ -7168,43 +7173,53 @@ body {
   font-weight: 800;
   color: #38bdf8;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .song-points-sync-badge {
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 800;
   color: #34d399;
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid rgba(16, 185, 129, 0.4);
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 10px;
   display: inline-flex;
   align-items: center;
   gap: 3px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
 }
 
 .song-points-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .song-point-box {
   background: rgba(30, 41, 59, 0.7);
   border: 1.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  padding: 5px 6px;
+  padding: 4px 2px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
   transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .song-point-box.point-box-partial {
@@ -7232,12 +7247,20 @@ body {
 }
 
 .point-box-label {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 800;
   color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  max-width: 100%;
+  width: 100%;
+  line-height: 1.1;
+  padding: 0 1px;
+  box-sizing: border-box;
 }
 
 .point-box-partial .point-box-label {
@@ -7253,20 +7276,24 @@ body {
 .point-stepper-wrap {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   width: 100%;
   justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .btn-mini-stepper {
-  width: 20px;
-  height: 22px;
+  width: 18px;
+  min-width: 18px;
+  max-width: 18px;
+  height: 20px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
   color: #f8fafc;
   font-weight: 900;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -7275,6 +7302,7 @@ body {
   transition: all 0.15s ease;
   user-select: none;
   padding: 0;
+  flex-shrink: 0;
 }
 .btn-mini-stepper:hover {
   background: rgba(255, 255, 255, 0.2);
@@ -7286,18 +7314,22 @@ body {
 }
 
 .song-pts-input {
-  width: 32px;
-  height: 22px;
+  width: 25px;
+  min-width: 20px;
+  max-width: 28px;
+  height: 20px;
   background: rgba(15, 23, 42, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
   color: #fff;
   font-family: var(--font-display, monospace);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   text-align: center;
-  padding: 0 2px;
+  padding: 0 1px;
   -moz-appearance: textfield;
+  box-sizing: border-box;
+  flex: 0 1 25px;
 }
 .song-pts-input::-webkit-outer-spin-button,
 .song-pts-input::-webkit-inner-spin-button {
