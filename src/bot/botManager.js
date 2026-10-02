@@ -1677,7 +1677,7 @@ class BotManager extends EventEmitter {
 
     } else if (action === 'correct' || action === 'perfect' || action === 'custom' || typeof action === 'number') {
       // Fall 1: Correct answer or custom points
-      let gain = this.config.points?.correct || 2;
+      let gain = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
       if (this.gameState.gameMode === 'wallpaper') {
         gain = player.potentialPoints || 4;
         this.resolveWallpaper();
@@ -1686,19 +1686,19 @@ class BotManager extends EventEmitter {
         if (action === 'perfect') {
           gain = (customPoints !== undefined && customPoints !== null && !isNaN(parseInt(customPoints, 10)))
             ? parseInt(customPoints, 10)
-            : (this.config.points?.perfect || 4);
+            : (this.config.points?.perfect !== undefined ? this.config.points.perfect : 4);
         } else if (action === 'custom') {
           if (customPoints !== undefined && customPoints !== null && !isNaN(parseInt(customPoints, 10))) {
             gain = parseInt(customPoints, 10);
           } else {
-            gain = this.config.points?.custom || 1;
+            gain = this.config.points?.custom !== undefined ? this.config.points.custom : 1;
           }
         } else if (typeof action === 'number') {
           gain = action;
         } else {
           gain = (customPoints !== undefined && customPoints !== null && !isNaN(parseInt(customPoints, 10)))
             ? parseInt(customPoints, 10)
-            : (this.config.points?.correct || 2);
+            : (this.config.points?.correct !== undefined ? this.config.points.correct : 2);
         }
       } else if (this.gameState.gameMode === 'hitster') {
         gain = (typeof action === 'number') ? action : (action === 'perfect' ? 4 : (action === 'custom' && customPoints !== undefined ? parseInt(customPoints, 10) : 1));

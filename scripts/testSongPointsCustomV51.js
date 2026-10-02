@@ -156,6 +156,67 @@ app.whenReady().then(async () => {
 
   console.log('✓ Step 3 Passed: Left side and Center evaluation buttons are 100% synchronized in real time.\n');
 
+  // 4. Test Zero Points Edge Case (ensure 0 is not falsely treated as falsy fallback)
+  console.log('[STEP 4] Testing 0 points edge cases in UI and bot evaluation...');
+  const zeroTestResults = await win.webContents.executeJavaScript(`
+    (() => {
+      const inpPartial = document.getElementById('inpSongPtsPartial');
+      const inpPerfect = document.getElementById('inpSongPtsPerfect');
+      const inpCustom = document.getElementById('inpSongPtsCustom');
+
+      const btnPartialMinus = document.getElementById('btnSongPtsPartialMinus');
+      const btnCustomMinus = document.getElementById('btnSongPtsCustomMinus');
+
+      const lblCorrectPts = document.getElementById('lblEvalCorrectPts');
+      const lblPerfectPts = document.getElementById('lblEvalPerfectPts');
+      const lblCustomPts = document.getElementById('lblEvalCustomPts');
+
+      // Set partial to 0
+      inpPartial.value = '0';
+      inpPartial.dispatchEvent(new Event('input'));
+
+      // Set perfect to 0
+      inpPerfect.value = '0';
+      inpPerfect.dispatchEvent(new Event('input'));
+
+      // Step custom down to 0 (currently 2, click minus twice)
+      btnCustomMinus.click(); // 2 -> 1
+      btnCustomMinus.click(); // 1 -> 0
+      // Click minus again at 0 to ensure it does not go below 0 or jump to default
+      btnCustomMinus.click(); // 0 -> 0
+
+      return {
+        partialVal: inpPartial?.value,
+        perfectVal: inpPerfect?.value,
+        customVal: inpCustom?.value,
+        correctText: lblCorrectPts?.textContent,
+        perfectText: lblPerfectPts?.textContent,
+        customText: lblCustomPts?.textContent
+      };
+    })()
+  `);
+
+  console.log('Zero points UI results:', zeroTestResults);
+  assert.strictEqual(zeroTestResults.partialVal, '0', 'Partial input should be 0');
+  assert.strictEqual(zeroTestResults.perfectVal, '0', 'Perfect input should be 0');
+  assert.strictEqual(zeroTestResults.customVal, '0', 'Custom input should be 0 (clamped at min 0)');
+  assert.strictEqual(zeroTestResults.correctText, '+0 Punkte', 'Correct button must show +0 Punkte when partial is 0');
+  assert.strictEqual(zeroTestResults.perfectText, '+0 Punkte', 'Perfect button must show +0 Punkte when perfect is 0');
+  assert.strictEqual(zeroTestResults.customText, '+0 Pkt (Custom)', 'Custom button must show +0 Pkt (Custom) when custom is 0');
+
+  // Test Bot evaluation with 0 points
+  botManager.updateConfig({ points: { correct: 0, perfect: 0, custom: 0 } });
+  botManager.gameState.scores['test-player-zero'] = { id: 'test-player-zero', username: 'ZeroHero', points: 10 };
+  botManager.gameState.activePlayer = { id: 'test-player-zero', username: 'ZeroHero' };
+  await botManager.evaluateActivePlayer('correct');
+  assert.strictEqual(botManager.gameState.scores['test-player-zero'].points, 10, '0 partial points awards 0 (10 + 0 = 10)');
+
+  botManager.gameState.activePlayer = { id: 'test-player-zero', username: 'ZeroHero' };
+  await botManager.evaluateActivePlayer('perfect');
+  assert.strictEqual(botManager.gameState.scores['test-player-zero'].points, 10, '0 perfect points awards 0 (10 + 0 = 10)');
+
+  console.log('✓ Step 4 Passed: 0 points edge cases are correctly evaluated and displayed without reverting to defaults.\n');
+
   console.log('========================================================');
   console.log('🎉 ALL SONG POINTS & CUSTOM BUTTON TESTS PASSED (100%)!');
   console.log('========================================================\n');

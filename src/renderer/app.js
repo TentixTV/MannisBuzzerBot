@@ -1719,9 +1719,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // --- Song Quiz Points Synchronization & Custom Button (V5.1.000) ---
   function getSongPointsValues() {
-    const partial = Math.max(0, parseInt(inpSongPtsPartial?.value, 10) || 2);
-    const perfect = Math.max(0, parseInt(inpSongPtsPerfect?.value, 10) || 4);
-    const custom = Math.max(0, parseInt(inpSongPtsCustom?.value, 10) || 1);
+    const parse = (inp, def) => {
+      const v = parseInt(inp?.value, 10);
+      return Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : def;
+    };
+    const partial = parse(inpSongPtsPartial, 2);
+    const perfect = parse(inpSongPtsPerfect, 4);
+    const custom = parse(inpSongPtsCustom, 1);
     return { partial, perfect, custom };
   }
 
@@ -1771,7 +1775,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnSongPtsPartialMinus) {
     btnSongPtsPartialMinus.addEventListener('click', (e) => {
       e.stopPropagation();
-      const cur = parseInt(inpSongPtsPartial.value, 10) || 2;
+      const val = parseInt(inpSongPtsPartial.value, 10);
+      const cur = Number.isFinite(val) ? val : 2;
       inpSongPtsPartial.value = Math.max(0, cur - 1);
       syncSongPointsUi(true);
     });
@@ -1779,7 +1784,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnSongPtsPartialPlus) {
     btnSongPtsPartialPlus.addEventListener('click', (e) => {
       e.stopPropagation();
-      const cur = parseInt(inpSongPtsPartial.value, 10) || 2;
+      const val = parseInt(inpSongPtsPartial.value, 10);
+      const cur = Number.isFinite(val) ? val : 2;
       inpSongPtsPartial.value = Math.min(100, cur + 1);
       syncSongPointsUi(true);
     });
@@ -1791,7 +1797,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnSongPtsPerfectMinus) {
     btnSongPtsPerfectMinus.addEventListener('click', (e) => {
       e.stopPropagation();
-      const cur = parseInt(inpSongPtsPerfect.value, 10) || 4;
+      const val = parseInt(inpSongPtsPerfect.value, 10);
+      const cur = Number.isFinite(val) ? val : 4;
       inpSongPtsPerfect.value = Math.max(0, cur - 1);
       syncSongPointsUi(true);
     });
@@ -1799,7 +1806,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnSongPtsPerfectPlus) {
     btnSongPtsPerfectPlus.addEventListener('click', (e) => {
       e.stopPropagation();
-      const cur = parseInt(inpSongPtsPerfect.value, 10) || 4;
+      const val = parseInt(inpSongPtsPerfect.value, 10);
+      const cur = Number.isFinite(val) ? val : 4;
       inpSongPtsPerfect.value = Math.min(100, cur + 1);
       syncSongPointsUi(true);
     });
@@ -1811,7 +1819,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnSongPtsCustomMinus) {
     btnSongPtsCustomMinus.addEventListener('click', (e) => {
       e.stopPropagation();
-      const cur = parseInt(inpSongPtsCustom.value, 10) || 1;
+      const val = parseInt(inpSongPtsCustom.value, 10);
+      const cur = Number.isFinite(val) ? val : 1;
       inpSongPtsCustom.value = Math.max(0, cur - 1);
       syncSongPointsUi(true);
     });
@@ -1819,7 +1828,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnSongPtsCustomPlus) {
     btnSongPtsCustomPlus.addEventListener('click', (e) => {
       e.stopPropagation();
-      const cur = parseInt(inpSongPtsCustom.value, 10) || 1;
+      const val = parseInt(inpSongPtsCustom.value, 10);
+      const cur = Number.isFinite(val) ? val : 1;
       inpSongPtsCustom.value = Math.min(100, cur + 1);
       syncSongPointsUi(true);
     });
