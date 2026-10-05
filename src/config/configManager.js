@@ -27,6 +27,8 @@ const defaultConfig = {
     wrongFirst: -1,
     wrongRepeat: -2
   },
+  wallpaperStagePoints: { 1: 4, 2: 3, 3: 2, 4: 1 },
+  wallpaperStageTimes: { 1: 10, 2: 10, 3: 10, 4: 10 },
   soundVolume: 0.8
 };
 
@@ -40,13 +42,32 @@ function loadConfig() {
       const data = fs.readFileSync(localConfigPath, 'utf-8');
       cfg = JSON.parse(data);
     }
+    // If config on disk has an empty token, fall back to local config.json if it has one
+    if ((!cfg || !cfg.token) && fs.existsSync(localConfigPath)) {
+      try {
+        const localData = fs.readFileSync(localConfigPath, 'utf-8');
+        const localCfg = JSON.parse(localData);
+        if (localCfg.token) {
+          cfg = { ...(localCfg || {}), ...(cfg || {}) };
+          if (!cfg.token) cfg.token = localCfg.token;
+        }
+      } catch (e) {}
+    }
     if (cfg) {
       const mergedPoints = { ...defaultConfig.points, ...(cfg.points || {}) };
       // V5.1.000: Default for partial recognition is now 2 points (migrate legacy default 3)
       if (mergedPoints.correct === 3) {
         mergedPoints.correct = 2;
       }
-      const merged = { ...defaultConfig, ...cfg, points: mergedPoints };
+      const mergedWpPoints = { ...defaultConfig.wallpaperStagePoints, ...(cfg.wallpaperStagePoints || {}) };
+      const mergedWpTimes = { ...defaultConfig.wallpaperStageTimes, ...(cfg.wallpaperStageTimes || {}) };
+      const merged = {
+        ...defaultConfig,
+        ...cfg,
+        points: mergedPoints,
+        wallpaperStagePoints: mergedWpPoints,
+        wallpaperStageTimes: mergedWpTimes
+      };
       return merged;
     }
   } catch (err) {
@@ -58,7 +79,44 @@ function loadConfig() {
 
 function saveConfig(newConfig) {
   try {
-    const merged = { ...defaultConfig, ...newConfig };
+    let existing = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(configPath, 'utf-8')) || {};
+      } catch (e) {}
+    } else if (fs.existsSync(localConfigPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(localConfigPath, 'utf-8')) || {};
+      } catch (e) {}
+    }
+
+    const mergedPoints = {
+      ...defaultConfig.points,
+      ...(existing.points || {}),
+      ...(newConfig?.points || {})
+    };
+
+    const mergedWpPoints = {
+      ...defaultConfig.wallpaperStagePoints,
+      ...(existing.wallpaperStagePoints || {}),
+      ...(newConfig?.wallpaperStagePoints || {})
+    };
+
+    const mergedWpTimes = {
+      ...defaultConfig.wallpaperStageTimes,
+      ...(existing.wallpaperStageTimes || {}),
+      ...(newConfig?.wallpaperStageTimes || {})
+    };
+
+    const merged = {
+      ...defaultConfig,
+      ...existing,
+      ...newConfig,
+      points: mergedPoints,
+      wallpaperStagePoints: mergedWpPoints,
+      wallpaperStageTimes: mergedWpTimes
+    };
+
     if (!fs.existsSync(userDataPath)) {
       fs.mkdirSync(userDataPath, { recursive: true });
     }

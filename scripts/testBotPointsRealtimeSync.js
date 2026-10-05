@@ -154,6 +154,72 @@ async function runTests() {
   assert.ok(notifEmbed.data.description.includes('Custom: +1'), 'Notification embed details show Custom: +1');
   console.log('✓ Step 6 Passed: createBuzzNotificationEmbed displays all 3 configured points.\n');
 
+  // STEP 7: Test setSongPoints preservation of token, channels and wrong penalty
+  console.log('[STEP 7] Testing setSongPoints config preservation...');
+  botManager.config.token = 'TEST_DISCORD_TOKEN_XYZ';
+  botManager.config.guildId = '1122334455';
+  botManager.config.voiceChannelId = '99887766';
+  botManager.setSongPoints({ correct: 3, perfect: 7, custom: 4 });
+
+  assert.strictEqual(botManager.config.token, 'TEST_DISCORD_TOKEN_XYZ', 'Token must NOT be wiped out by setSongPoints');
+  assert.strictEqual(botManager.config.guildId, '1122334455', 'guildId must NOT be wiped out by setSongPoints');
+  assert.strictEqual(botManager.config.voiceChannelId, '99887766', 'voiceChannelId must NOT be wiped out by setSongPoints');
+  assert.strictEqual(botManager.config.points.wrongFirst, -1, 'wrongFirst penalty must NOT be lost');
+  assert.strictEqual(botManager.config.points.wrongRepeat, -2, 'wrongRepeat penalty must NOT be lost');
+  assert.strictEqual(botManager.gameState.potentialPoints, '3 - 7', 'potentialPoints updated to 3 - 7');
+  console.log('✓ Step 7 Passed: setSongPoints preserves token, channels, penalties and updates potentialPoints.\n');
+
+  // STEP 8: Test rapid concurrency debouncing in updateBuzzAnnouncementMessage
+  console.log('[STEP 8] Testing concurrency debouncing during rapid point stepper clicks...');
+  let buzzEditCallCount = 0;
+  botManager.lastBuzzMessage = {
+    edit: async (opts) => {
+      buzzEditCallCount++;
+      await new Promise(r => setTimeout(r, 20));
+    }
+  };
+  botManager.lastBuzzData = {
+    userId: 'contestant-1',
+    username: 'ContestantOne',
+    avatar: null,
+    timeOffset: '1. Platz (0.00s)',
+    gameMode: 'song'
+  };
+
+  // Fire 5 rapid setSongPoints calls concurrently
+  await Promise.all([
+    botManager.setSongPoints({ correct: 2, perfect: 4 }),
+    botManager.setSongPoints({ correct: 3, perfect: 5 }),
+    botManager.setSongPoints({ correct: 4, perfect: 6 }),
+    botManager.setSongPoints({ correct: 5, perfect: 7 }),
+    botManager.setSongPoints({ correct: 6, perfect: 8 })
+  ]);
+  // Wait for trailing debounce execution
+  await new Promise(r => setTimeout(r, 60));
+
+  assert.ok(buzzEditCallCount >= 1 && buzzEditCallCount <= 3, `Debouncing must batch rapid edits (got ${buzzEditCallCount} edits)`);
+  assert.strictEqual(botManager.gameState.potentialPoints, '6 - 8', 'Final potentialPoints must be 6 - 8');
+  console.log('✓ Step 8 Passed: Rapid stepper clicks debounced properly without concurrency collision.\n');
+
+  // STEP 9: Test Wallpaper Boost & Singular Unit Formatting
+  console.log('[STEP 9] Testing Wallpaper Boost & singular "Punkt" formatting in createBuzzNotificationEmbed...');
+  const wpBoostEmbed = createBuzzNotificationEmbed({
+    username: 'WpPlayer',
+    gameMode: 'wallpaper',
+    potentialPoints: 4,
+    isBoostActive: true
+  });
+  assert.ok(wpBoostEmbed.data.description.includes('8 Punkte (verdoppelt!)'), 'Wallpaper boost must double potentialPoints in announcement');
+
+  const singularEmbed = createBuzzNotificationEmbed({
+    username: 'SingularPlayer',
+    gameMode: 'song',
+    potentialPoints: 1,
+    pointsConfig: { correct: 1, perfect: 1, custom: 1 }
+  });
+  assert.ok(singularEmbed.data.description.includes('1 Punkt'), 'Singular 1 point must show "1 Punkt" not "1 Punkte"');
+  console.log('✓ Step 9 Passed: Wallpaper boost doubles points, and singular "1 Punkt" is formatted correctly.\n');
+
   // Restore defaults
   saveConfig({ points: { correct: 2, perfect: 4, custom: 1, wrongFirst: -1, wrongRepeat: -2 } });
   botManager.updateConfig({ points: { correct: 2, perfect: 4, custom: 1 } });

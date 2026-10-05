@@ -123,14 +123,22 @@ class BotManager extends EventEmitter {
       wallpaperState: {
         currentImage: '',
         stage: 1,
-        points: 4,
+        points: (this.config?.wallpaperStagePoints && this.config.wallpaperStagePoints[1] !== undefined)
+          ? this.config.wallpaperStagePoints[1]
+          : 4,
         movieTitle: '',
         sharpImage: '',
         resolved: false,
         stages: {}
       },
-      wallpaperStagePoints: { 1: 4, 2: 3, 3: 2, 4: 1 },
-      wallpaperStageTimes: { 1: 10, 2: 10, 3: 10, 4: 10 },
+      wallpaperStagePoints: {
+        1: 4, 2: 3, 3: 2, 4: 1,
+        ...(this.config?.wallpaperStagePoints || {})
+      },
+      wallpaperStageTimes: {
+        1: 10, 2: 10, 3: 10, 4: 10,
+        ...(this.config?.wallpaperStageTimes || {})
+      },
       hitsterState: {
         currentCard: {
           title: '',
@@ -152,7 +160,19 @@ class BotManager extends EventEmitter {
   updateConfig(newConf) {
     const oldVoiceId = this.config.voiceChannelId;
     const oldGuildId = this.config.guildId;
-    this.config = saveConfig(newConf);
+
+    const mergedPoints = {
+      ...(this.config.points || {}),
+      ...(newConf?.points || {})
+    };
+
+    const fullConf = {
+      ...this.config,
+      ...newConf,
+      points: mergedPoints
+    };
+
+    this.config = saveConfig(fullConf);
     if (this.config.soundVolume !== undefined) {
       audioManager.setVolume(this.config.soundVolume);
     }
@@ -182,28 +202,24 @@ class BotManager extends EventEmitter {
     return { success: true, points: this.config.points };
   }
 
-  updatePotentialPointsFromConfig() {
-    const part = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
-    const perf = this.config.points?.perfect !== undefined ? this.config.points.perfect : 4;
-
+  getCalculatedPotentialPoints() {
     if (this.gameState.gameMode === 'wallpaper') {
       const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
-      this.gameState.potentialPoints = this.getWallpaperPoints(elapsed);
-    } else if (this.gameState.gameMode === 'hitster') {
-      this.gameState.potentialPoints = 1;
-    } else {
-      // Song Quiz (default)
-      this.gameState.potentialPoints = (part === perf) ? perf : `${part} - ${perf}`;
+      return this.getWallpaperPoints(elapsed);
     }
+    if (this.gameState.gameMode === 'hitster') {
+      return 1;
+    }
+    const part = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
+    const perf = this.config.points?.perfect !== undefined ? this.config.points.perfect : 4;
+    return (part === perf) ? perf : `${part} - ${perf}`;
+  }
+
+  updatePotentialPointsFromConfig() {
+    this.gameState.potentialPoints = this.getCalculatedPotentialPoints();
 
     if (this.gameState.activePlayer) {
-      if (this.gameState.gameMode === 'wallpaper') {
-        this.gameState.activePlayer.potentialPoints = this.gameState.wallpaperState?.points || 4;
-      } else if (this.gameState.gameMode === 'hitster') {
-        this.gameState.activePlayer.potentialPoints = 1;
-      } else {
-        this.gameState.activePlayer.potentialPoints = this.gameState.potentialPoints;
-      }
+      this.gameState.activePlayer.potentialPoints = this.gameState.potentialPoints;
     }
   }
 
@@ -283,15 +299,15 @@ class BotManager extends EventEmitter {
 
   async updateBuzzAnnouncementMessage() {
     if (!this.lastBuzzMessage || !this.lastBuzzData) return;
+    if (this._updatingBuzzAnnouncement) {
+      this._buzzAnnouncementNeedsUpdate = true;
+      return;
+    }
+    this._updatingBuzzAnnouncement = true;
     try {
-      const part = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
-      const perf = this.config.points?.perfect !== undefined ? this.config.points.perfect : 4;
-      let potentialPoints = (part === perf) ? perf : `${part} - ${perf}`;
-      if (this.gameState.gameMode === 'wallpaper') {
-        potentialPoints = this.gameState.wallpaperState?.points || 4;
-      } else if (this.gameState.gameMode === 'hitster') {
-        potentialPoints = 1;
-      }
+      const potentialPoints = this.gameState.potentialPoints !== undefined
+        ? this.gameState.potentialPoints
+        : this.getCalculatedPotentialPoints();
 
       const buzzEmbed = createBuzzNotificationEmbed({
         username: this.lastBuzzData.username,
@@ -312,6 +328,16 @@ class BotManager extends EventEmitter {
       });
     } catch (err) {
       console.warn('[Bot] Failed to update buzz announcement embed:', err.message);
+      if (err.code === 10008 || err.message?.includes('Unknown Message')) {
+        this.lastBuzzMessage = null;
+        this.lastBuzzData = null;
+      }
+    } finally {
+      this._updatingBuzzAnnouncement = false;
+      if (this._buzzAnnouncementNeedsUpdate) {
+        this._buzzAnnouncementNeedsUpdate = false;
+        this.updateBuzzAnnouncementMessage().catch(() => {});
+      }
     }
   }
 
@@ -412,6 +438,7 @@ class BotManager extends EventEmitter {
       this.gameState.statusText = '❄️ Boost-Runde beendet.';
     }
     this.updateDiscordMessage();
+    this.updateBuzzAnnouncementMessage().catch(() => {});
     this.emitState();
     return { success: true, isBoostActive: this.gameState.isBoostActive };
   }
@@ -644,6 +671,14 @@ class BotManager extends EventEmitter {
           {
             name: 'help',
             description: '📖 Zeige alle Spielregeln und Befehle an'
+          },
+          {
+            name: 'teamwork',
+            description: '👥 Vorschau & Info zum kommenden Team-Modus'
+          },
+          {
+            name: 'teamwork-preview',
+            description: '👥 Vorschau & Info zum kommenden Team-Modus'
           }
         ];
         if (this.client.application) {
@@ -655,7 +690,7 @@ class BotManager extends EventEmitter {
             if (g) await g.commands.set(commands).catch(() => null);
           } catch (e) {}
         }
-        console.log('[Bot] Registered slash commands (global + guild): /buzzer, /goal, /boost, /score, /help');
+        console.log('[Bot] Registered slash commands (global + guild): /buzzer, /goal, /boost, /score, /help, /teamwork-preview');
       } catch (cmdErr) {
         console.warn('[Bot] Slash command registration notice:', cmdErr.message);
       }
@@ -903,6 +938,11 @@ class BotManager extends EventEmitter {
             });
           } else if (commandName === 'help') {
             await sendReply({ embeds: [createHelpEmbed(this.gameState)], ephemeral: true });
+          } else if (commandName === 'teamwork' || commandName === 'teamwork-preview') {
+            await sendReply({
+              content: '👥 **Teamwork / Team-Modus (Vorschau):** In Kürze können Spieler in Teams gegeneinander antreten und gemeinsam buzzern! Weitere Infos folgen im nächsten Update.',
+              ephemeral: false
+            });
           }
         }
       } catch (err) {
@@ -954,6 +994,8 @@ class BotManager extends EventEmitter {
           await msg.reply(`🏆 **Live-Rangliste:**\n${formatDiscordLeaderboard(this.gameState.scores, this.gameState.goal, this.gameState.gameMode)}`);
         } else if (lower === 'help') {
           await msg.reply({ embeds: [createHelpEmbed(this.gameState)] });
+        } else if (lower === 'teamwork' || lower === 'teamwork-preview') {
+          await msg.reply('👥 **Teamwork / Team-Modus (Vorschau):** In Kürze können Spieler in Teams gegeneinander antreten und gemeinsam buzzern!');
         }
       } catch (mErr) {
         console.error('[Bot] Message command error:', mErr);
@@ -1295,6 +1337,7 @@ class BotManager extends EventEmitter {
         const points = this.getWallpaperPoints(t.elapsed);
         this.gameState.wallpaperState.stage = stage;
         this.gameState.wallpaperState.points = points;
+        this.gameState.potentialPoints = points;
 
         if (this.currentWallpaperRound?.stages) {
           this.gameState.wallpaperState.currentImage = this.currentWallpaperRound.stages[stage] || this.currentWallpaperRound.sharpImage;
@@ -1370,17 +1413,7 @@ class BotManager extends EventEmitter {
     }
 
     // Calculate potential points for current mode
-    let potentialPoints = 4;
-    if (this.gameState.gameMode === 'wallpaper') {
-      const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
-      potentialPoints = this.getWallpaperPoints(elapsed);
-    } else if (this.gameState.gameMode === 'song' || !this.gameState.gameMode) {
-      const part = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
-      const perf = this.config.points?.perfect !== undefined ? this.config.points.perfect : 4;
-      potentialPoints = (part === perf) ? perf : `${part} - ${perf}`;
-    } else if (this.gameState.gameMode === 'hitster') {
-      potentialPoints = 1;
-    }
+    const potentialPoints = this.getCalculatedPotentialPoints();
 
     const player = { id: userId, username, avatar, timeOffset, timestamp: now, potentialPoints };
 
@@ -1477,6 +1510,7 @@ class BotManager extends EventEmitter {
       this.gameState.wallpaperState.points = (this.gameState.wallpaperStagePoints && this.gameState.wallpaperStagePoints[1] !== undefined)
         ? this.gameState.wallpaperStagePoints[1]
         : 4;
+      this.gameState.potentialPoints = this.gameState.wallpaperState.points;
       if (this.currentWallpaperRound?.stages) {
         this.gameState.wallpaperState.currentImage = this.currentWallpaperRound.stages[1] || this.currentWallpaperRound.sharpImage;
       }
@@ -1771,7 +1805,15 @@ class BotManager extends EventEmitter {
       // Fall 1: Correct answer or custom points
       let gain = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
       if (this.gameState.gameMode === 'wallpaper') {
-        gain = player.potentialPoints || 4;
+        if (action === 'custom' && customPoints !== undefined && customPoints !== null && !isNaN(parseInt(customPoints, 10))) {
+          gain = parseInt(customPoints, 10);
+        } else if (typeof action === 'number') {
+          gain = action;
+        } else {
+          gain = (player.potentialPoints !== undefined && player.potentialPoints !== null)
+            ? player.potentialPoints
+            : (this.gameState.wallpaperState?.points !== undefined ? this.gameState.wallpaperState.points : 4);
+        }
         this.resolveWallpaper();
       } else if (this.gameState.gameMode === 'song' || !this.gameState.gameMode) {
         this.gameState.songState.revealed = true;
@@ -2208,13 +2250,30 @@ class BotManager extends EventEmitter {
       this.gameState.wallpaperStagePoints = { 1: 4, 2: 3, 3: 2, 4: 1 };
     }
     if (pointsObj && typeof pointsObj === 'object') {
-      this.gameState.wallpaperStagePoints = { ...this.gameState.wallpaperStagePoints, ...pointsObj };
-      if (this.gameState.gameMode === 'wallpaper') {
-        const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
-        this.gameState.wallpaperState.points = this.getWallpaperPoints(elapsed);
-        this.gameState.potentialPoints = this.gameState.wallpaperState.points;
+      const parsed = {};
+      for (const k of [1, 2, 3, 4]) {
+        if (pointsObj[k] !== undefined) parsed[k] = Math.max(0, parseInt(pointsObj[k], 10) || 0);
+        else if (pointsObj[String(k)] !== undefined) parsed[k] = Math.max(0, parseInt(pointsObj[String(k)], 10) || 0);
+      }
+      this.gameState.wallpaperStagePoints = { ...this.gameState.wallpaperStagePoints, ...parsed };
+
+      // Persist to configManager & disk
+      this.config.wallpaperStagePoints = { ...this.gameState.wallpaperStagePoints };
+      try {
+        saveConfig(this.config);
+      } catch (e) {
+        console.warn('[Bot] Failed to save config for wallpaperStagePoints:', e);
+      }
+
+      const elapsed = (this.gameState.roundTimer && this.gameState.roundTimer.active)
+        ? (this.gameState.roundTimer.elapsed || 0)
+        : 0;
+      const currentPts = this.getWallpaperPoints(elapsed);
+      this.gameState.wallpaperState.points = currentPts;
+      if (this.gameState.gameMode === 'wallpaper' || !this.gameState.gameMode) {
+        this.gameState.potentialPoints = currentPts;
         if (this.gameState.activePlayer) {
-          this.gameState.activePlayer.potentialPoints = this.gameState.wallpaperState.points;
+          this.gameState.activePlayer.potentialPoints = currentPts;
         }
       }
       this.updateDiscordMessage().catch(() => {});
@@ -2230,19 +2289,36 @@ class BotManager extends EventEmitter {
       this.gameState.wallpaperStageTimes = { 1: 10, 2: 10, 3: 10, 4: 10 };
     }
     if (timesObj && typeof timesObj === 'object') {
-      this.gameState.wallpaperStageTimes = { ...this.gameState.wallpaperStageTimes, ...timesObj };
-      if (this.gameState.gameMode === 'wallpaper') {
-        const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
-        this.gameState.wallpaperState.stage = this.getWallpaperStage(elapsed);
-        this.gameState.wallpaperState.points = this.getWallpaperPoints(elapsed);
-        this.gameState.potentialPoints = this.gameState.wallpaperState.points;
-        if (this.gameState.roundTimer && this.gameState.roundTimer.active) {
-          this.gameState.roundTimer.duration = this.getWallpaperTotalDuration();
-          this.gameState.roundTimer.remaining = Math.max(0, this.gameState.roundTimer.duration - elapsed);
-        }
-        if (this.gameState.activePlayer) {
-          this.gameState.activePlayer.potentialPoints = this.gameState.wallpaperState.points;
-        }
+      const parsed = {};
+      for (const k of [1, 2, 3, 4]) {
+        if (timesObj[k] !== undefined) parsed[k] = Math.max(1, parseInt(timesObj[k], 10) || 10);
+        else if (timesObj[String(k)] !== undefined) parsed[k] = Math.max(1, parseInt(timesObj[String(k)], 10) || 10);
+      }
+      this.gameState.wallpaperStageTimes = { ...this.gameState.wallpaperStageTimes, ...parsed };
+
+      // Persist to configManager & disk
+      this.config.wallpaperStageTimes = { ...this.gameState.wallpaperStageTimes };
+      try {
+        saveConfig(this.config);
+      } catch (e) {
+        console.warn('[Bot] Failed to save config for wallpaperStageTimes:', e);
+      }
+
+      const elapsed = (this.gameState.roundTimer && this.gameState.roundTimer.active)
+        ? (this.gameState.roundTimer.elapsed || 0)
+        : 0;
+      this.gameState.wallpaperState.stage = this.getWallpaperStage(elapsed);
+      const currentPts = this.getWallpaperPoints(elapsed);
+      this.gameState.wallpaperState.points = currentPts;
+      if (this.gameState.gameMode === 'wallpaper' || !this.gameState.gameMode) {
+        this.gameState.potentialPoints = currentPts;
+      }
+      if (this.gameState.roundTimer && this.gameState.roundTimer.active) {
+        this.gameState.roundTimer.duration = this.getWallpaperTotalDuration();
+        this.gameState.roundTimer.remaining = Math.max(0, this.gameState.roundTimer.duration - elapsed);
+      }
+      if (this.gameState.activePlayer) {
+        this.gameState.activePlayer.potentialPoints = this.gameState.wallpaperState.points;
       }
       this.updateDiscordMessage().catch(() => {});
       this.updateBuzzAnnouncementMessage().catch(() => {});
@@ -2509,7 +2585,7 @@ class BotManager extends EventEmitter {
 
       const components = createBuzzerComponents(
         this.gameState.isLocked,
-        false,
+        !this.gameState.isRoundActive,
         this.gameState.gameMode,
         this.gameState.isBoostActive,
         this.gameState.goal
@@ -2597,7 +2673,10 @@ class BotManager extends EventEmitter {
     };
     this.gameState.wallpaperState.resolved = false;
     this.gameState.wallpaperState.stage = 1;
-    this.gameState.wallpaperState.points = 4;
+    this.gameState.wallpaperState.points = (this.gameState.wallpaperStagePoints && this.gameState.wallpaperStagePoints[1] !== undefined)
+      ? this.gameState.wallpaperStagePoints[1]
+      : 4;
+    this.gameState.potentialPoints = this.gameState.wallpaperState.points;
     this.gameState.songState.revealed = false;
     this.stopRoundTimer();
     this.updateVoiceMembers();
@@ -2748,16 +2827,7 @@ class BotManager extends EventEmitter {
       this.gameState.roundTimer.paused = true;
     }
     const elapsed = this.gameState.roundTimer ? this.gameState.roundTimer.elapsed : 0;
-    let potentialPoints = 4;
-    if (this.gameState.gameMode === 'wallpaper') {
-      potentialPoints = this.getWallpaperPoints(elapsed);
-    } else if (this.gameState.gameMode === 'song' || !this.gameState.gameMode) {
-      const part = this.config.points?.correct !== undefined ? this.config.points.correct : 2;
-      const perf = this.config.points?.perfect !== undefined ? this.config.points.perfect : 4;
-      potentialPoints = (part === perf) ? perf : `${part} - ${perf}`;
-    } else if (this.gameState.gameMode === 'hitster') {
-      potentialPoints = 1;
-    }
+    const potentialPoints = this.getCalculatedPotentialPoints();
 
     this.gameState.activePlayer = {
       id: player.id,
@@ -2966,7 +3036,9 @@ class BotManager extends EventEmitter {
         guildId: this.config.guildId,
         textChannelId: this.config.textChannelId,
         voiceChannelId: this.config.voiceChannelId,
-        points: this.config.points
+        points: this.config.points,
+        wallpaperStagePoints: this.gameState.wallpaperStagePoints,
+        wallpaperStageTimes: this.gameState.wallpaperStageTimes
       }
     };
   }

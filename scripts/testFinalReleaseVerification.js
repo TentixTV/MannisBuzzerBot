@@ -182,7 +182,7 @@ app.whenReady().then(async () => {
   assert.strictEqual(titlebarElements.hasMin, true, 'titlebarMin must exist');
   assert.strictEqual(titlebarElements.hasMax, true, 'titlebarMax must exist');
   assert.strictEqual(titlebarElements.hasClose, true, 'titlebarClose must exist');
-  assert.strictEqual(titlebarElements.versionTag, 'V5.1.000', 'Version tag must be V5.1.000');
+  assert.strictEqual(titlebarElements.versionTag, 'V5.1.001', 'Version tag must be V5.1.001');
   assert.strictEqual(titlebarElements.hasAnswerTimer, true, 'answerTimerBox must exist');
   assert.strictEqual(titlebarElements.hasExpiredAlert, true, 'answerExpiredAlert must exist');
   assert.strictEqual(titlebarElements.hasNextWp, true, 'btnPickNextWallpaper must exist');

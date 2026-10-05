@@ -544,6 +544,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     config = await window.mannisBoxAPI.getConfig();
     populateSettingsForm(config);
     initSongPointsFromConfig(config);
+    if (config?.wallpaperStagePoints) {
+      customWallpaperStagePoints = { ...config.wallpaperStagePoints };
+    }
+    if (config?.wallpaperStageTimes) {
+      customWallpaperStageTimes = { ...config.wallpaperStageTimes };
+    }
     updateHostDisplay();
     updateChannelLabels();
     refreshGuildsAndChannels();
@@ -599,6 +605,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.mannisBoxAPI.onGameState((state) => {
     currentGameState = state;
     if (state.hostName) hostDisplayName = state.hostName;
+    if (state.config?.points && config) {
+      config.points = { ...config.points, ...state.config.points };
+    }
+    if (state.config?.wallpaperStagePoints && config) {
+      config.wallpaperStagePoints = { ...config.wallpaperStagePoints, ...state.config.wallpaperStagePoints };
+    }
+    if (state.config?.wallpaperStageTimes && config) {
+      config.wallpaperStageTimes = { ...config.wallpaperStageTimes, ...state.config.wallpaperStageTimes };
+    }
     renderGameState(state);
   });
 
@@ -1753,12 +1768,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       lblEvalCustomPts.textContent = `+${custom} Pkt (Custom)`;
     }
 
-    if (saveToConfig && config && window.mannisBoxAPI) {
-      config.points = config.points || {};
-      config.points.correct = partial;
-      config.points.perfect = perfect;
-      config.points.custom = custom;
-      window.mannisBoxAPI.saveConfig(config).catch(err => console.warn('Could not save points to config:', err));
+    if (saveToConfig && window.mannisBoxAPI) {
+      if (config) {
+        config.points = config.points || {};
+        config.points.correct = partial;
+        config.points.perfect = perfect;
+        config.points.custom = custom;
+        window.mannisBoxAPI.saveConfig(config).catch(err => console.warn('Could not save points to config:', err));
+      }
+      if (typeof window.mannisBoxAPI.setSongPoints === 'function') {
+        window.mannisBoxAPI.setSongPoints({ correct: partial, perfect, custom }).catch(() => {});
+      }
     }
   }
 
@@ -3159,6 +3179,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         customWallpaperStagePoints[editingScoreStage.stage] = val;
         const el = document.getElementById(`lblWpStage${editingScoreStage.stage}Pts`);
         if (el) el.textContent = `${val} Pkt`;
+        if (config && window.mannisBoxAPI) {
+          config.wallpaperStagePoints = { ...customWallpaperStagePoints };
+          window.mannisBoxAPI.saveConfig(config).catch(err => console.warn('Could not save wp points to config:', err));
+        }
         await window.mannisBoxAPI.setWallpaperStagePoints(customWallpaperStagePoints);
       }
       closeQuickScorePopup();
@@ -3226,11 +3250,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     recalculateModalRanges();
   }
 
-  function openWallpaperStagesModal(targetStage = 1) {
+  function openWallpaperStagesModal(targetStage = 1, focusPoints = false) {
     syncModalInputsFromState();
     if (wpStagesConfigModal) {
       wpStagesConfigModal.classList.remove('hidden');
-      const targetInp = document.getElementById(`inpWpStageTime${targetStage}`);
+      const targetInp = focusPoints
+        ? document.getElementById(`inpWpStagePts${targetStage}`)
+        : document.getElementById(`inpWpStageTime${targetStage}`);
       if (targetInp) {
         setTimeout(() => {
           targetInp.focus();
@@ -3265,7 +3291,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     card.addEventListener('click', (e) => {
       e.stopPropagation();
       const stage = parseInt(card.getAttribute('data-stage'), 10) || 1;
-      openWallpaperStagesModal(stage);
+      openWallpaperStagesModal(stage, true);
     });
   });
 
@@ -3382,6 +3408,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       customWallpaperStageTimes = { ...modalTimes };
       customWallpaperStagePoints = { ...modalPoints };
+
+      // Update local DOM stage score tags immediately
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`lblWpStage${i}Pts`);
+        if (el) el.textContent = `${customWallpaperStagePoints[i]} Pkt`;
+      }
+      const arenaWpStageText = document.getElementById('arenaWpStageText');
+      const arenaWpStageBadge = document.getElementById('arenaWpStageBadge');
+      const lblWpCorrectPointsSub = document.getElementById('lblWpCorrectPointsSub');
+      const currentStage = currentGameState?.wallpaperStage || 1;
+      const curPts = customWallpaperStagePoints[currentStage] ?? customWallpaperStagePoints[1] ?? 4;
+      if (arenaWpStageText) arenaWpStageText.textContent = `Stufe ${currentStage} (${curPts} Pkt)`;
+      if (arenaWpStageBadge) arenaWpStageBadge.textContent = `${curPts} Pkt`;
+      if (lblWpCorrectPointsSub) lblWpCorrectPointsSub.textContent = `+${curPts} Pkt`;
+
+      if (config && window.mannisBoxAPI) {
+        config.wallpaperStageTimes = { ...customWallpaperStageTimes };
+        config.wallpaperStagePoints = { ...customWallpaperStagePoints };
+        window.mannisBoxAPI.saveConfig(config).catch(err => console.warn('Could not save wp config:', err));
+      }
 
       await window.mannisBoxAPI.setWallpaperStageTimes(customWallpaperStageTimes);
       await window.mannisBoxAPI.setWallpaperStagePoints(customWallpaperStagePoints);

@@ -13,7 +13,7 @@ if (!TOKEN) {
 }
 const OWNER = 'TentixTV';
 const REPO = 'MannisBuzzerBot';
-const TAG = 'v5.1.000';
+const TAG = 'v5.1.001';
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
@@ -103,7 +103,7 @@ function uploadAsset(uploadUrlRaw, filePath, contentType) {
 async function main() {
   console.log(`1. Checking if release for ${TAG} exists...`);
   let release = null;
-  const releaseDescription = `## MannisBox ${TAG} — Song-Quiz Punkte konfigurierbar (2 Pkt Teils / 4 Pkt Vollständig) & Neuer Custom-Button\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Highlights in ${TAG}:\n- **Punkte-Vergabe beim Songs-Erkennen an der linken Regie-Seite bearbeitbar:**\n  - In der Regie links gibt es eine neue Punkte-Konfiguration für das Song-Quiz mit interaktiven Plus- und Minus-Steppern sowie Direkteingabe.\n  - **Teils erkannt:** Standardmäßig auf **2 Punkte** gesetzt (vorher 3), wenn z.B. nur der Titel oder nur der Interpret erraten wurde.\n  - **100% Vollständig:** Standardmäßig auf **4 Punkte** gesetzt für die vollständige Lösung (Titel & Interpret).\n  - **Custom Vorgabe:** Schnelle Voreinstellung für benutzerdefinierte Punktvergaben.\n- **Neuer Custom-Bewertungsbutton in der Mitte:**\n  - In der Bewertungsleiste gibt es nun neben Falsch, Weiter, Teils und Vollständig einen stylischen neuen **Custom-Button**.\n  - Klickt der Host darauf, öffnet sich ein modaler Dialog zur Eingabe einer individuellen Punktzahl für den aktuell an der Reihe befindlichen Spieler.\n- **Vollständige Live-Synchronisierung:**\n  - Werden links an den Punkten Änderungen vorgenommen, spiegeln sich diese sofort live auf den Bewertungs-Buttons, im 2X-Boost-Multiplikator und in den Discord-Meldungen wider.\n- **Alle bisherigen Features inklusive:**\n  - /goal & /boost Slash-Commands, Hitster- & Wallpaper-Modi, automatische Audio-Steuerung, E2EE DAVE Voice und frameless Deluxe-Design.`;
+  const releaseDescription = `## MannisBox ${TAG} — Wallpaper Stufen & Punkte Speichern, Größere Stream-Vorschau & Command Polish\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Highlights in ${TAG}:\n- **Wallpaper-Punkte & Stufendauern dauerhaft speichern:**\n  - Angepasste Punkte und Zeiten für jede Unschärfe-Stufe im Film-Quiz bleiben ab sofort dauerhaft in der Konfiguration gespeichert.\n  - Beim Anklicken einer Stufen-Karte im Host-Fenster wird direkt das Punkte-Eingabefeld fokussiert.\n  - Punkte und Schärfe-Stufen aktualisieren sich sofort synchron im Host-Fenster, Stream-Overlay und im Discord-Bot.\n- **Größere Film-Vorschau im OBS Stream-Overlay:**\n  - Die Film-Quiz Vorschau im Stream-Overlay wurde vergrößert (bis zu 1080px Breite und 500px Höhe) für ein noch spektakuläreres Kino-Erlebnis im Stream.\n- **Discord-Befehle erweitert & poliert:**\n  - Neuer Befehl \`/teamwork-preview\` bzw. \`!teamwork\` und verbesserte Hilfe-Übersicht für \`/goal\`, \`/boost\` und Teamwork-Features.\n- **Alle bisherigen Features inklusive:**\n  - Konfigurierbare Song-Quiz Punkte, Custom-Bewertungsbutton, Hitster- & Wallpaper-Modi, automatische Audio-Steuerung, E2EE DAVE Voice und frameless Deluxe-Design.`;
 
   try {
     release = await request({
@@ -119,7 +119,7 @@ async function main() {
     console.log(`Found existing release ID: ${release.id}`);
 
     const updatePayload = JSON.stringify({
-      name: `MannisBox ${TAG} — Song-Quiz Punkte konfigurierbar (2 Pkt Teils / 4 Pkt Vollständig) & Custom-Button`,
+      name: `MannisBox ${TAG} — Wallpaper Stufen & Punkte Speichern, Größere Stream-Vorschau & Command Polish`,
       body: releaseDescription,
       draft: false,
       prerelease: false
@@ -147,7 +147,7 @@ async function main() {
     const releasePayload = JSON.stringify({
       tag_name: TAG,
       target_commitish: 'main',
-      name: `MannisBox ${TAG} — Song-Quiz Punkte konfigurierbar (2 Pkt Teils / 4 Pkt Vollständig) & Custom-Button`,
+      name: `MannisBox ${TAG} — Wallpaper Stufen & Punkte Speichern, Größere Stream-Vorschau & Command Polish`,
       body: releaseDescription,
       draft: false,
       prerelease: false

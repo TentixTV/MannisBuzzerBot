@@ -66,23 +66,33 @@ function createBuzzNotificationEmbed({
 
   let modeText = 'Song Quiz';
   let unit = 'Punkte';
+  let pointsDisplay = potentialPoints !== undefined ? potentialPoints : 4;
+  let pointsDetails = '';
+
   if (gameMode === 'wallpaper') {
     modeText = 'Filme & Wallpaper Quiz';
-    unit = 'Punkte';
+    const mult = isBoostActive ? 2 : 1;
+    const basePts = (typeof potentialPoints === 'number') ? potentialPoints : 4;
+    pointsDisplay = basePts * mult;
+    unit = (pointsDisplay === 1 || pointsDisplay === '1') ? 'Punkt' : 'Punkte';
+    if (isBoostActive) {
+      pointsDetails = ` *(Basis: ${basePts} ${basePts === 1 ? 'Punkt' : 'Punkte'})*`;
+    }
   } else if (gameMode === 'hitster') {
     modeText = 'Hitster Zeitstrahl';
     unit = 'Karte';
-  }
-
-  let pointsDisplay = potentialPoints;
-  let pointsDetails = '';
-  if ((gameMode === 'song' || !gameMode) && pointsConfig) {
-    const mult = isBoostActive ? 2 : 1;
-    const part = (pointsConfig.correct !== undefined ? pointsConfig.correct : 2) * mult;
-    const perf = (pointsConfig.perfect !== undefined ? pointsConfig.perfect : 4) * mult;
-    const cust = (pointsConfig.custom !== undefined ? pointsConfig.custom : 1) * mult;
-    pointsDisplay = (part === perf) ? `${perf}` : `${part} - ${perf}`;
-    pointsDetails = ` *(Teils: +${part} | Vollst.: +${perf} | Custom: +${cust})*`;
+  } else {
+    // Song Quiz (default)
+    unit = (pointsDisplay === 1 || pointsDisplay === '1') ? 'Punkt' : 'Punkte';
+    if (pointsConfig) {
+      const mult = isBoostActive ? 2 : 1;
+      const part = (pointsConfig.correct !== undefined ? pointsConfig.correct : 2) * mult;
+      const perf = (pointsConfig.perfect !== undefined ? pointsConfig.perfect : 4) * mult;
+      const cust = (pointsConfig.custom !== undefined ? pointsConfig.custom : 1) * mult;
+      pointsDisplay = (part === perf) ? `${perf}` : `${part} - ${perf}`;
+      unit = (pointsDisplay === '1' || pointsDisplay === 1) ? 'Punkt' : 'Punkte';
+      pointsDetails = ` *(Teils: +${part} | Vollst.: +${perf} | Custom: +${cust})*`;
+    }
   }
 
   const embed = new EmbedBuilder()
@@ -168,21 +178,24 @@ function createBuzzerEmbed(state) {
 
   // Extra Mode Details
   if (gameMode === 'wallpaper' && wallpaperState) {
-    const pts = isBoostActive ? ((wallpaperState.points || 50) * 2) : (wallpaperState.points || 50);
+    const basePts = wallpaperState.points !== undefined ? wallpaperState.points : 4;
+    const pts = isBoostActive ? (basePts * 2) : basePts;
+    const ptsUnit = (pts === 1) ? 'Punkt' : 'Punkte';
     embed.addFields({
       name: '🖼️ Aktuelle Schärfe-Stufe',
-      value: `**Stufe ${wallpaperState.stage || 1}** (${pts} Punkte erreichbar${isBoostActive ? ' 🔥 BOOST' : ''})\n*Bild schärft sich live im Stream!*`,
+      value: `**Stufe ${wallpaperState.stage || 1}** (${pts} ${ptsUnit} erreichbar${isBoostActive ? ' 🔥 BOOST' : ''})\n*Bild schärft sich live im Stream!*`,
       inline: false
     });
   } else if (gameMode === 'song' || !gameMode) {
     const mult = isBoostActive ? 2 : 1;
     const boostBadge = isBoostActive ? ' 🔥 BOOST (2x)' : '';
-    let songPointsDesc = '';
     if (pointsConfig) {
       const part = (pointsConfig.correct !== undefined ? pointsConfig.correct : 2) * mult;
       const perf = (pointsConfig.perfect !== undefined ? pointsConfig.perfect : 4) * mult;
       const cust = (pointsConfig.custom !== undefined ? pointsConfig.custom : 1) * mult;
       songPointsDesc = `\n💎 **Mögliche Punkte:** \`+${part} Pkt (Teils) | +${perf} Pkt (Vollst.) | +${cust} Pkt (Custom)\`${boostBadge}`;
+    } else if (potentialPoints !== null && potentialPoints !== undefined) {
+      songPointsDesc = `\n💎 **Mögliche Punkte:** \`${potentialPoints} Pkt\`${boostBadge}`;
     }
     if (songState) {
       const displayTitle = songState.revealed ? songState.fullTitle : (songState.censoredTitle || '████████ - ████████');
@@ -454,14 +467,15 @@ function createHelpEmbed(state = {}) {
     .setDescription(
       `**Willkommen in MannisBox!** Hier sind alle Spielmodi und Befehle:\n\n` +
       `**🎮 SPIELMODI:**\n` +
-      `• **🎵 Erkennst du den Song:** Höre Musik-Snippets und buzzere als Erster. (Richtig: +3 Pkt, 100% Song+Interpret: +4 Pkt).\n` +
+      `• **🎵 Erkennst du den Song:** Höre Musik-Snippets und buzzere als Erster. (Teils: +2 Pkt, Vollst.: +4 Pkt).\n` +
       `• **📻 Hitster Zeitstrahl:** Ordne gespielte Songs chronologisch in den Zeitstrahl ein. Ziel sind 10 Karten für den Sieg!\n` +
-      `• **🎬 Filme & Wallpaper:** Das Filmbild schärft sich alle 10 Sekunden! (<10s: 50 Pkt, <20s: 35 Pkt, <30s: 25 Pkt, <40s: 15 Pkt).\n\n` +
+      `• **🎬 Filme & Wallpaper:** Das Filmbild schärft sich dynamisch in 4 Stufen (Standard: Stufe 1: 4 Pkt bis Stufe 4: 1 Pkt, voll anpassbar!).\n\n` +
       `**⚡ BEFEHLE & FUNKTIONEN:**\n` +
       `• \`/buzzer\` oder \`!buzzer\`: Buzzere direkt per Chat-Befehl!\n` +
       `• \`/goal [ziel]\` oder \`!goal [ziel]\`: Zeigt oder setzt das Spielziel (z.B. \`/goal 50\`).\n` +
       `• \`/boost\` oder \`!boost\`: Aktiviert 2x Punkte für den nächsten Treffer!\n` +
       `• \`/score\` oder \`!score\`: Zeigt die aktuelle Live-Rangliste an.\n` +
+      `• \`/teamwork-preview\` oder \`!teamwork\`: Vorschau auf den kommenden Teamwork-Modus.\n` +
       `• \`/help\` oder \`!help\`: Zeigt diese Hilfe an.`
     )
     .setFooter({ text: 'MannisBox • Discord Buzzer & Stream Master' })

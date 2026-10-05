@@ -79,7 +79,7 @@ app.whenReady().then(async () => {
   let win = null;
   try {
     ipcMain.handle('check-for-updates', async () => {
-      return { success: true, updateAvailable: false, currentVersion: 'v5.1.000', latestVersion: 'v5.1.000' };
+      return { success: true, updateAvailable: false, currentVersion: 'v5.1.001', latestVersion: 'v5.1.001' };
     });
     ipcMain.handle('get-config', async () => {
       return { botToken: 'mock', guildId: 'mock' };
@@ -198,9 +198,9 @@ app.whenReady().then(async () => {
 
     console.log('Interactive DOM results:', testResults);
 
-    assert.strictEqual(testResults.titlebarTagText, 'V5.1.000', 'Titlebar tag must be V5.1.000');
-    assert.strictEqual(testResults.brandTagText, 'V5.1.000', 'Brand tag must be V5.1.000');
-    assert.strictEqual(testResults.settingsTagText, 'V5.1.000', 'Settings pill must be V5.1.000');
+    assert.strictEqual(testResults.titlebarTagText, 'V5.1.001', 'Titlebar tag must be V5.1.001');
+    assert.strictEqual(testResults.brandTagText, 'V5.1.001', 'Brand tag must be V5.1.001');
+    assert.strictEqual(testResults.settingsTagText, 'V5.1.001', 'Settings pill must be V5.1.001');
     assert.strictEqual(testResults.quickScoreComputedDisplay, 'none', 'quickScoreEditorPopup MUST have computed display: none');
     assert.strictEqual(testResults.quickScoreHasHidden, true, 'quickScoreEditorPopup must have hidden class');
     assert.strictEqual(testResults.appInfoOpened, true, 'App info modal must open on version click');
