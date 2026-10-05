@@ -68,6 +68,7 @@ app.whenReady().then(async () => {
 
   // TEST 4: Folder Selection & Next Wallpaper cycling
   console.log('\n[CHECK 4] Testing Folder Scanning & Wallpaper Next Button...');
+  botManager.setWallpaperStagePoints({ 1: 4, 2: 3, 3: 2, 4: 1 });
   const wpFolder = path.join(__dirname, '../assets/sample_wallpaper_folder');
   const wpScanRes = botManager.scanWallpaperFolder(wpFolder);
   assert.strictEqual(wpScanRes.success, true, 'Wallpaper scan must succeed');

@@ -151,7 +151,7 @@ function createBuzzerEmbed(state) {
 
   if (gameMode === 'wallpaper') {
     title = `🎬 FILME / WALLPAPER ERKENNEN — RUNDE ${roundNumber}`;
-    footerText = `MannisBox Cinema • <10s: 50 Pkt | <20s: 35 Pkt | <30s: 25 Pkt | <40s: 15 Pkt • Ziel: ${goal} Pkt`;
+    footerText = `MannisBox Cinema • Dynamische Schärfestufen & Punkte • Ziel: ${goal} Pkt • /goal & /boost`;
   } else if (gameMode === 'hitster') {
     title = `📻 HITSTER ZEITSTRAHL — RUNDE ${roundNumber}`;
     footerText = `MannisBox Hitster • Wer erreicht zuerst ${goal} Karten? • /goal & /boost`;

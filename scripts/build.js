@@ -62,7 +62,8 @@ async function build() {
     asar: {
       unpack: '**/{ffmpeg-static,opusscript,@snazzah}/**'
     },
-    prune: true,
+    prune: false,
+    tmpdir: path.join(require('os').homedir(), '.packager_tmp'),
     ignore: (filePath) => {
       if (!filePath) return false;
       // Only ignore top-level build/temp directories, never node_modules internals!
@@ -72,6 +73,8 @@ async function build() {
       if (filePath.startsWith('/scripts') || filePath.startsWith('\\scripts')) return true;
       if (filePath.endsWith('.zip') || filePath.endsWith('.rar') || filePath.endsWith('.lnk')) return true;
       if (filePath.includes('sample_music_folder') || filePath.includes('sample_wallpaper_folder')) return true;
+      if (filePath.includes('node_modules/three/examples') || filePath.includes('node_modules\\three\\examples')) return true;
+      if (filePath.includes('node_modules/three/docs') || filePath.includes('node_modules\\three\\docs')) return true;
       return false;
     }
   });

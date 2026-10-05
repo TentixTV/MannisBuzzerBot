@@ -81,6 +81,28 @@ bot.evaluateActivePlayer('correct');
 assert.strictEqual(bot.gameState.scores['PlayerWp'].points, 7, 'Player should receive 7 points');
 console.log('✓ Step 4 Passed: evaluateActivePlayer awarded accurate custom stage points.\n');
 
+// 4b. Test setWallpaperRound preserves custom stage 1 points
+console.log('[STEP 4b] Testing setWallpaperRound preserves custom stage 1 points (no hardcoded 4 points regression)...');
+bot.setWallpaperRound({
+  stages: { 1: 'stage1.jpg', 2: 'stage2.jpg', 3: 'stage3.jpg', 4: 'stage4.jpg' },
+  sharpImage: 'sharp.jpg',
+  movieTitle: 'Interstellar'
+});
+assert.strictEqual(bot.gameState.wallpaperState.points, 10, 'setWallpaperRound must use custom stage 1 points (10), not hardcoded 4');
+assert.strictEqual(bot.gameState.potentialPoints, 10, 'potentialPoints must match stage 1 points');
+console.log('✓ Step 4b Passed: setWallpaperRound preserves custom stage points accurately.\n');
+
+// 4c. Test updateConfig returns config and updates gameState wallpaper points
+console.log('[STEP 4c] Testing updateConfig returns updated config and synchronizes gameState...');
+const cfgUpdateRes = bot.updateConfig({
+  wallpaperStagePoints: { 1: 12, 2: 9, 3: 6, 4: 3 }
+});
+assert.ok(cfgUpdateRes, 'updateConfig must return the updated config object');
+assert.strictEqual(cfgUpdateRes.wallpaperStagePoints[1], 12, 'Returned config must have new points');
+assert.strictEqual(bot.gameState.wallpaperStagePoints[1], 12, 'gameState.wallpaperStagePoints must be updated');
+assert.strictEqual(bot.gameState.wallpaperState.points, 12, 'gameState.wallpaperState.points must be updated');
+console.log('✓ Step 4c Passed: updateConfig return value and gameState synchronization verified.\n');
+
 // 5. Test Stream Overlay dimensions
 console.log('[STEP 5] Checking stream.html enlarged wallpaper dimensions...');
 const streamHtml = fs.readFileSync(path.join(__dirname, '../src/renderer/stream.html'), 'utf8');

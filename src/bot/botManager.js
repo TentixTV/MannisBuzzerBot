@@ -166,10 +166,22 @@ class BotManager extends EventEmitter {
       ...(newConf?.points || {})
     };
 
+    const mergedWpPoints = {
+      ...(this.config.wallpaperStagePoints || {}),
+      ...(newConf?.wallpaperStagePoints || {})
+    };
+
+    const mergedWpTimes = {
+      ...(this.config.wallpaperStageTimes || {}),
+      ...(newConf?.wallpaperStageTimes || {})
+    };
+
     const fullConf = {
       ...this.config,
       ...newConf,
-      points: mergedPoints
+      points: mergedPoints,
+      wallpaperStagePoints: mergedWpPoints,
+      wallpaperStageTimes: mergedWpTimes
     };
 
     this.config = saveConfig(fullConf);
@@ -177,6 +189,30 @@ class BotManager extends EventEmitter {
       audioManager.setVolume(this.config.soundVolume);
     }
     this.resolveHostName();
+
+    if (newConf?.wallpaperStagePoints || this.config.wallpaperStagePoints) {
+      this.gameState.wallpaperStagePoints = {
+        ...this.gameState.wallpaperStagePoints,
+        ...(newConf?.wallpaperStagePoints || this.config.wallpaperStagePoints)
+      };
+    }
+    if (newConf?.wallpaperStageTimes || this.config.wallpaperStageTimes) {
+      this.gameState.wallpaperStageTimes = {
+        ...this.gameState.wallpaperStageTimes,
+        ...(newConf?.wallpaperStageTimes || this.config.wallpaperStageTimes)
+      };
+    }
+
+    const elapsed = (this.gameState.roundTimer && this.gameState.roundTimer.active)
+      ? (this.gameState.roundTimer.elapsed || 0)
+      : 0;
+    const currentWpPts = this.getWallpaperPoints(elapsed);
+    if (this.gameState.wallpaperState) {
+      this.gameState.wallpaperState.points = currentWpPts;
+      if (this.gameState.roundTimer && this.gameState.roundTimer.active) {
+        this.gameState.wallpaperState.stage = this.getWallpaperStage(elapsed);
+      }
+    }
 
     // Live sync potential points & active player
     this.updatePotentialPointsFromConfig();
@@ -192,6 +228,8 @@ class BotManager extends EventEmitter {
     // Immediately push live updates to Discord message embed and buzz announcement
     this.updateDiscordMessage().catch(() => {});
     this.updateBuzzAnnouncementMessage().catch(() => {});
+
+    return this.config;
   }
 
   setSongPoints(pointsObj) {
@@ -878,6 +916,8 @@ class BotManager extends EventEmitter {
           } else if (commandName === 'boost' && isHost) {
             ephemeral = false;
           } else if (commandName === 'goal' && isHost && interaction.options.getInteger('target') > 0) {
+            ephemeral = false;
+          } else if (commandName === 'teamwork' || commandName === 'teamwork-preview') {
             ephemeral = false;
           }
 
@@ -2182,15 +2222,24 @@ class BotManager extends EventEmitter {
       roundData.stages = this.generatePixelatedStages(roundData.sharpImage);
     }
     this.currentWallpaperRound = roundData;
+    const st1Pts = (this.gameState.wallpaperStagePoints && this.gameState.wallpaperStagePoints[1] !== undefined)
+      ? this.gameState.wallpaperStagePoints[1]
+      : (this.config?.wallpaperStagePoints && this.config.wallpaperStagePoints[1] !== undefined ? this.config.wallpaperStagePoints[1] : 4);
     this.gameState.wallpaperState = {
       currentImage: roundData.stages[1] || roundData.sharpImage,
       stage: 1,
-      points: 4,
+      points: st1Pts,
       movieTitle: roundData.movieTitle,
       sharpImage: roundData.sharpImage,
       resolved: false,
       stages: roundData.stages
     };
+    if (this.gameState.gameMode === 'wallpaper' || !this.gameState.gameMode) {
+      this.gameState.potentialPoints = st1Pts;
+      if (this.gameState.activePlayer) {
+        this.gameState.activePlayer.potentialPoints = st1Pts;
+      }
+    }
     this.emitState();
   }
 

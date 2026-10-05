@@ -550,6 +550,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (config?.wallpaperStageTimes) {
       customWallpaperStageTimes = { ...config.wallpaperStageTimes };
     }
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById(`lblWpStage${i}Pts`);
+      if (el) el.textContent = `${customWallpaperStagePoints[i] ?? (5 - i)} Pkt`;
+    }
+    const currentWpStage = currentGameState?.wallpaperState?.stage || 1;
+    const curWpPts = customWallpaperStagePoints[currentWpStage] ?? (5 - currentWpStage);
+    if (arenaWpStageText) arenaWpStageText.textContent = `Stufe ${currentWpStage} (${curWpPts} Pkt)`;
+    if (arenaWpStageBadge) arenaWpStageBadge.textContent = `STUFE ${currentWpStage} • ${curWpPts} PUNKTE`;
+    if (lblWpCorrectPointsSub) lblWpCorrectPointsSub.textContent = `+${curWpPts} Pkt`;
     updateHostDisplay();
     updateChannelLabels();
     refreshGuildsAndChannels();
@@ -1206,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const curStagePoints = wp.points !== undefined ? wp.points : (pts[st] !== undefined ? pts[st] : 4);
       arenaWpStageText.textContent = `Stufe ${st} (${curStagePoints} Pkt)`;
-      lblWpCorrectPointsSub.textContent = `+${state.activePlayer?.potentialPoints || curStagePoints} Pkt`;
+      lblWpCorrectPointsSub.textContent = `+${state.activePlayer?.potentialPoints ?? curStagePoints} Pkt`;
 
       // Cinema Theater 16:9 Screen & Progressive Blur
       const imgPath = wp.imagePath || wp.currentImage;
@@ -3179,9 +3188,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         customWallpaperStagePoints[editingScoreStage.stage] = val;
         const el = document.getElementById(`lblWpStage${editingScoreStage.stage}Pts`);
         if (el) el.textContent = `${val} Pkt`;
+        const currentStage = currentGameState?.wallpaperState?.stage || 1;
+        const curPts = customWallpaperStagePoints[currentStage] ?? customWallpaperStagePoints[1] ?? 4;
+        if (arenaWpStageText) arenaWpStageText.textContent = `Stufe ${currentStage} (${curPts} Pkt)`;
+        if (arenaWpStageBadge) arenaWpStageBadge.textContent = `STUFE ${currentStage} • ${curPts} PUNKTE`;
+        if (lblWpCorrectPointsSub) lblWpCorrectPointsSub.textContent = `+${curPts} Pkt`;
         if (config && window.mannisBoxAPI) {
           config.wallpaperStagePoints = { ...customWallpaperStagePoints };
-          window.mannisBoxAPI.saveConfig(config).catch(err => console.warn('Could not save wp points to config:', err));
+          try {
+            const savedCfg = await window.mannisBoxAPI.saveConfig(config);
+            if (savedCfg) config = savedCfg;
+          } catch (err) {
+            console.warn('Could not save wp points to config:', err);
+          }
         }
         await window.mannisBoxAPI.setWallpaperStagePoints(customWallpaperStagePoints);
       }
@@ -3417,22 +3436,60 @@ document.addEventListener('DOMContentLoaded', async () => {
       const arenaWpStageText = document.getElementById('arenaWpStageText');
       const arenaWpStageBadge = document.getElementById('arenaWpStageBadge');
       const lblWpCorrectPointsSub = document.getElementById('lblWpCorrectPointsSub');
-      const currentStage = currentGameState?.wallpaperStage || 1;
+      const currentStage = currentGameState?.wallpaperState?.stage || 1;
       const curPts = customWallpaperStagePoints[currentStage] ?? customWallpaperStagePoints[1] ?? 4;
       if (arenaWpStageText) arenaWpStageText.textContent = `Stufe ${currentStage} (${curPts} Pkt)`;
-      if (arenaWpStageBadge) arenaWpStageBadge.textContent = `${curPts} Pkt`;
+      if (arenaWpStageBadge) arenaWpStageBadge.textContent = `STUFE ${currentStage} • ${curPts} PUNKTE`;
       if (lblWpCorrectPointsSub) lblWpCorrectPointsSub.textContent = `+${curPts} Pkt`;
 
       if (config && window.mannisBoxAPI) {
         config.wallpaperStageTimes = { ...customWallpaperStageTimes };
         config.wallpaperStagePoints = { ...customWallpaperStagePoints };
-        window.mannisBoxAPI.saveConfig(config).catch(err => console.warn('Could not save wp config:', err));
+        try {
+          const savedCfg = await window.mannisBoxAPI.saveConfig(config);
+          if (savedCfg) config = savedCfg;
+        } catch (err) {
+          console.warn('Could not save wp config:', err);
+        }
       }
 
       await window.mannisBoxAPI.setWallpaperStageTimes(customWallpaperStageTimes);
       await window.mannisBoxAPI.setWallpaperStagePoints(customWallpaperStagePoints);
 
       closeWallpaperStagesModal();
+    });
+  }
+
+  // Keyboard Enter / Escape inside Wallpaper Stages Modal
+  if (wpStagesConfigModal) {
+    wpStagesConfigModal.querySelectorAll('input').forEach((inp) => {
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          btnWpStagesSave?.click();
+        } else if (e.key === 'Escape') {
+          closeWallpaperStagesModal();
+        }
+      });
+    });
+  }
+
+  // Clapperboard Points Badge click to adjust points directly
+  if (arenaWpStageBadge) {
+    arenaWpStageBadge.style.cursor = 'pointer';
+    arenaWpStageBadge.title = 'Klicke hier, um Punkte & Zeiten für die Schärfestufen anzupassen!';
+    arenaWpStageBadge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const currentStage = currentGameState?.wallpaperState?.stage || 1;
+      openWallpaperStagesModal(currentStage, true);
+    });
+  }
+  if (lblWpCorrectPointsSub) {
+    lblWpCorrectPointsSub.style.cursor = 'pointer';
+    lblWpCorrectPointsSub.title = 'Klicke hier, um Punkte für die Schärfestufen anzupassen!';
+    lblWpCorrectPointsSub.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const currentStage = currentGameState?.wallpaperState?.stage || 1;
+      openWallpaperStagesModal(currentStage, true);
     });
   }
 
