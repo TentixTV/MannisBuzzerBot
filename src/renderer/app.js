@@ -1251,8 +1251,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (arenaWpResolvedOverlay) arenaWpResolvedOverlay.classList.add('hidden');
         if (arenaWpClapperTitle) {
           arenaWpClapperTitle.textContent = 'FILM: ' + (wp.movieTitle || 'Film gesucht...');
-          arenaWpClapperTitle.classList.remove('film-revealed');
-          arenaWpClapperTitle.classList.add('film-blurred');
+          arenaWpClapperTitle.classList.remove('film-blurred');
+          arenaWpClapperTitle.classList.add('film-revealed');
+        }
+        if (txtWpMovieTitle && !txtWpMovieTitle.matches(':focus') && wp.movieTitle) {
+          txtWpMovieTitle.value = wp.movieTitle;
         }
         if (arenaWpStageBadge) arenaWpStageBadge.textContent = `STUFE ${st} • ${curStagePoints} PUNKTE`;
 

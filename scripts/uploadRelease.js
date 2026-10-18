@@ -13,7 +13,7 @@ if (!TOKEN) {
 }
 const OWNER = 'TentixTV';
 const REPO = 'MannisBuzzerBot';
-const TAG = 'v5.1.001';
+const TAG = 'v5.1.002';
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
@@ -103,7 +103,7 @@ function uploadAsset(uploadUrlRaw, filePath, contentType) {
 async function main() {
   console.log(`1. Checking if release for ${TAG} exists...`);
   let release = null;
-  const releaseDescription = `## MannisBox ${TAG} — Wallpaper Stufen & Punkte Speichern, Größere Stream-Vorschau & Command Polish\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Highlights in ${TAG}:\n- **Wallpaper-Punkte & Stufendauern dauerhaft speichern:**\n  - Angepasste Punkte und Zeiten für jede Unschärfe-Stufe im Film-Quiz bleiben ab sofort dauerhaft in der Konfiguration gespeichert.\n  - Beim Anklicken einer Stufen-Karte im Host-Fenster wird direkt das Punkte-Eingabefeld fokussiert.\n  - Punkte und Schärfe-Stufen aktualisieren sich sofort synchron im Host-Fenster, Stream-Overlay und im Discord-Bot.\n- **Größere Film-Vorschau im OBS Stream-Overlay:**\n  - Die Film-Quiz Vorschau im Stream-Overlay wurde vergrößert (bis zu 1080px Breite und 500px Höhe) für ein noch spektakuläreres Kino-Erlebnis im Stream.\n- **Discord-Befehle erweitert & poliert:**\n  - Neuer Befehl \`/teamwork-preview\` bzw. \`!teamwork\` und verbesserte Hilfe-Übersicht für \`/goal\`, \`/boost\` und Teamwork-Features.\n- **Alle bisherigen Features inklusive:**\n  - Konfigurierbare Song-Quiz Punkte, Custom-Bewertungsbutton, Hitster- & Wallpaper-Modi, automatische Audio-Steuerung, E2EE DAVE Voice und frameless Deluxe-Design.`;
+  const releaseDescription = `## MannisBox ${TAG} — Wallpaper Filmtitel in Game-Ansicht Klartext, Stream Zensiert & Engine Polish\n\n### One-Click Instant Download:\n- [MannisBox-Windows-x64.zip](https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/MannisBox-Windows-x64.zip)\n- [MannisBox-Windows-x64.rar](https://github.com/${REPO ? `${OWNER}/${REPO}` : ''}/releases/download/${TAG}/MannisBox-Windows-x64.rar)\n\nKeine Installation nötig! Einfach entpacken und \`MannisBox.exe\` direkt per Doppelklick starten.\n\n### Neuerungen & Highlights in ${TAG}:\n- **Wallpaper (Film-Quiz) Host Game View Unblurred:**\n  - Der Filmtitel im Game-Fenster der Arena bleibt für den Spielleiter während der aktiven Runden stets unverschleiert und klar lesbar (ohne Blur-Effekt), sodass der Host immer sofort weiß, um welchen Film es sich handelt.\n  - Die Stream-Ansicht für Zuschauer/OBS bleibt während der Runde weiterhin streng zensiert (\`██████████\` + Blur-Effekt) und wird erst bei Spielleiter-Auflösung aufgedeckt.\n- **Wallpaper Stufen- & Punkte-Speicherung:**\n  - Dauerhafte Konfigurations-Persistenz der Stufenzeiten und Punkte.\n  - Synchronisierung im Host-Fenster, Stream-Overlay und Discord-Bot.\n- **Alle bisherigen Features inklusive:**\n  - Konfigurierbare Song-Quiz Punkte, Custom-Bewertungsbutton, Hitster- & Wallpaper-Modi, automatische Audio-Steuerung, E2EE DAVE Voice und frameless Deluxe-Design.`;
 
   try {
     release = await request({
@@ -119,7 +119,7 @@ async function main() {
     console.log(`Found existing release ID: ${release.id}`);
 
     const updatePayload = JSON.stringify({
-      name: `MannisBox ${TAG} — Wallpaper Stufen & Punkte Speichern, Größere Stream-Vorschau & Command Polish`,
+      name: `MannisBox ${TAG} — Wallpaper Filmtitel in Game-Ansicht Klartext, Stream Zensiert & Engine Polish`,
       body: releaseDescription,
       draft: false,
       prerelease: false
@@ -147,7 +147,7 @@ async function main() {
     const releasePayload = JSON.stringify({
       tag_name: TAG,
       target_commitish: 'main',
-      name: `MannisBox ${TAG} — Wallpaper Stufen & Punkte Speichern, Größere Stream-Vorschau & Command Polish`,
+      name: `MannisBox ${TAG} — Wallpaper Filmtitel in Game-Ansicht Klartext, Stream Zensiert & Engine Polish`,
       body: releaseDescription,
       draft: false,
       prerelease: false
